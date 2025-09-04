@@ -30,15 +30,13 @@ class MidiNoteViewState {
 class MidiTrackViewState {
   int min = 0;
   int max = 0;
-  MidiTrack track;
+  String name = '';
   List<MidiNoteViewState> notes = [];
 
-  String get name => track.trackName;
+  MidiTrackViewState(this.name);
 
-  MidiTrackViewState(this.track);
-
-  static MidiTrackViewState fromTrack(MidiTrack track, double ts) {
-    var view = MidiTrackViewState(track);
+  static MidiTrackViewState fromTrack(MidiTrack track, double tickInSec) {
+    var view = MidiTrackViewState(track.trackName);
 
     view.notes = track.events.whereType<NoteOnEvent>().map((e) {
       final oct = e.noteNumber ~/ 12;
@@ -46,10 +44,10 @@ class MidiTrackViewState {
       return MidiNoteViewState()
         ..start = e.tick
         ..duration = e.duration!
-        ..durationSeconds = e.duration! * ts
-        ..startSeconds = e.tick * ts
+        ..durationSeconds = e.duration! / tickInSec
+        ..startSeconds = e.tick / tickInSec
         ..name = "$n$oct"
-        ..channel =  e.channel
+        ..channel = e.channel
         ..note = e.noteNumber;
     }).toList();
     view.notes.sort((a, b) => a.note.compareTo(b.note));
@@ -61,8 +59,9 @@ class MidiTrackViewState {
 
 class MidiState {
   List<MidiTrackViewState> tracks = [];
-  MidiFile file;
+  MidiFile? file;
   int track = 0;
+  double totalTimeMills = 0;
 
   MidiState(this.file);
 
@@ -73,16 +72,19 @@ class MidiState {
     MidiFile midi = reader.parseMidiFromFile(file);
 
     final ticksPerBeat = midi.header.ticksPerBeat!;
-    final bpm = 120;
-    final secondsOfTick = (bpm / 60) / ticksPerBeat;
+    final tempo = 120;
+    final secondsOfTick = ticksPerBeat * tempo / 60;
 
     midiState = MidiState(midi)
+      ..totalTimeMills = midi.getTimeInSeconds() * 1000
       ..tracks = midi.tracks
           .map((e) => MidiTrackViewState.fromTrack(e, secondsOfTick))
           .toList();
 
     return midiState;
   }
+
+  static void save() {}
 }
 
-late MidiState midiState;
+MidiState midiState = MidiState(null);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
-import 'package:rwkv_studio/src/midi_device_manager.dart';
+import 'package:rwkv_studio/src/midi/midi_device_manager.dart';
 
 class MidiDevicePage extends StatefulWidget {
   const MidiDevicePage({super.key});

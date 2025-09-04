@@ -3,9 +3,12 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_midi_command/flutter_midi_command.dart';
+import 'package:rwkv_studio/src/widget/midi_track_preview.dart';
+import 'package:rwkv_studio/src/widget/play_progress_line.dart';
 import 'package:xmidi/xmidi.dart';
 
-import 'midi_view_state.dart';
+import 'midi/midi_device_manager.dart' show MidiDeviceManager;
+import 'midi/midi_view_state.dart';
 
 class ParseMidiPage extends StatefulWidget {
   const ParseMidiPage({super.key});
@@ -15,17 +18,25 @@ class ParseMidiPage extends StatefulWidget {
 }
 
 class _ParseMidiPageState extends State<ParseMidiPage> {
-  MidiState? midi;
   final player = MidiPlayer();
 
-  MidiDevice? device;
   late final midiCmd = MidiCommand();
 
   double progress = 0;
+  MidiPlayerStatus playerStatus = MidiPlayerStatus.stop;
 
   @override
   void initState() {
     super.initState();
+
+    MidiDeviceManager.init();
+    MidiDeviceManager.getDeviceList();
+    player.statusStream.listen((e) {
+      print('$e');
+      setState(() {
+        playerStatus = e;
+      });
+    });
     player.midiEventsStream.listen((e) {
       // if (e is! NoteOnEvent || e is! NoteOffEvent) {
       //   return;
@@ -33,12 +44,10 @@ class _ParseMidiPageState extends State<ParseMidiPage> {
       ByteWriter w = ByteWriter();
       e.writeEvent(w);
       final data = Uint8List.fromList(w.buffer);
-      midiCmd.sendData(data, deviceId: device!.id);
+      midiCmd.sendData(data, deviceId: MidiDeviceManager.out!.id);
       setState(() {
-        progress =
-            player.currentTimeMs / (midiState.file.getTimeInSeconds() * 1000);
+        progress = player.currentTimeMs / (midiState.totalTimeMills);
       });
-      print("=>$progress");
     });
   }
 
@@ -49,185 +58,274 @@ class _ParseMidiPageState extends State<ParseMidiPage> {
     midiCmd.dispose();
   }
 
-  void test() async {
-    midi = MidiState.create();
-    player.load(midi!.file);
+  void onImportTap() async {
+    midiState = MidiState.create();
+    player.load(midiState.file!);
     setState(() {});
-  }
-
-  void play() async {
-    if (device == null) {
-      final ds = await midiCmd.devices ?? [];
-      device = ds.firstWhere((e) => e.id.contains("Microsoft"));
-      try {
-        midiCmd.connectToDevice(device!);
-        print('connected');
-      } catch (_) {
-        print('failed!');
-        midiCmd.disconnectDevice(device!);
-        return;
-      }
-    } else {
-      print('${device!.name} connected');
-    }
-    await Future.delayed(Duration(seconds: 2));
-    print('play...');
-    player.play();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Parse Midi'),
-        actions: [
-          IconButton(onPressed: test, icon: Icon(Icons.refresh)),
-          IconButton(onPressed: play, icon: Icon(Icons.play_arrow_rounded)),
+      backgroundColor: Colors.grey.shade500,
+      body: SizedBox(
+        height: double.infinity,
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Material(
+              color: Colors.white60,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                child: Row(
+                  children: [
+                    Text('MIDI-RWKV', style: TextStyle(color: Colors.black87)),
+                    Spacer(),
+                    InkWell(
+                      onTap: () => Navigator.pop(context),
+                      child: Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            buildActions(),
+            Expanded(
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse, // 确保鼠标可以滚动
+                  },
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: buildTrackPreview(),
+                ),
+              ),
+            ),
+            // Center(
+            //   child: Text(
+            //     'MIDI-RWKV',
+            //     style: TextStyle(
+            //       fontWeight: FontWeight.bold,
+            //       fontSize: 20,
+            //       color: Colors.cyanAccent.shade200,
+            //     ),
+            //   ),
+            // ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildActions() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black26, width: 1),
+      ),
+      child: Row(
+        children: [
+          buildTime(),
+          const SizedBox(width: 12),
+          Text(
+            "120BPM",
+            style: TextStyle(
+              color: Colors.cyanAccent,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          IconButton(
+            onPressed: () {
+              if (playerStatus == MidiPlayerStatus.play) {
+                player.pause();
+              } else {
+                player.play();
+              }
+            },
+            color: Colors.cyanAccent,
+            icon: Icon(
+              playerStatus == MidiPlayerStatus.play
+                  ? Icons.pause
+                  : Icons.play_arrow_rounded,
+            ),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            onPressed: () {
+              player.stop();
+              setState(() {
+                progress = 0;
+              });
+            },
+            color: Colors.cyanAccent,
+            icon: Icon(Icons.stop),
+          ),
+          Spacer(),
+          IconButton(
+            onPressed: onImportTap,
+            icon: Icon(Icons.file_open, color: Colors.cyanAccent),
+          ),
+          IconButton(
+            onPressed: () {
+              //
+            },
+            color: Colors.cyanAccent,
+            icon: Icon(Icons.add),
+          ),
+          IconButton(
+            onPressed: () {
+              midiState.tracks.add(MidiTrackViewState('New Track'));
+              setState(() {});
+            },
+            color: Colors.cyanAccent,
+            icon: Icon(Icons.music_note),
+          ),
         ],
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        color: Colors.grey.shade300,
-        child: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(
-            dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse, // 确保鼠标可以滚动
-            },
-          ),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            scrollDirection: Axis.horizontal,
-            child: Stack(
-              children: [
-                IntrinsicHeight(
-                  child: IntrinsicWidth(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var track in midi?.tracks ?? []) ...[
-                          Expanded(
-                            child: SizedBox(
-                              width: 1500,
-                              child: GestureDetector(
-                                onTap: () {
-                                  midiState.track = midi!.tracks.indexOf(track);
-                                  Navigator.pushNamed(context, '/piano');
-                                },
-                                child: TrackPreview(track: track),
-                              ),
-                            ),
-                          ),
-                          Divider(thickness: 1, height: 1, color: Colors.black),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
+    );
+  }
 
-                Positioned(
-                  left: 100 + 1400 * progress,
-                  top: 0,
-                  width: 1,
-                  bottom: 0,
-                  child: VerticalDivider(color: Colors.red),
-                ),
+  String formatTime(double time) {
+    final min = (time / 1000 / 60).toInt();
+    final sec = (time / 1000).toInt() % 60;
+    final ms = time.toInt() % 1000;
+    return "${min.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}:${ms.toString().padLeft(3, '0')}";
+  }
+
+  Widget buildTime() {
+    final p = (midiState.totalTimeMills) * progress;
+    return SizedBox(
+      width: 80,
+      child: Text(
+        formatTime(p),
+        style: TextStyle(
+          color: Colors.cyanAccent,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+      ),
+    );
+  }
+
+  Widget buildTrackPreview() {
+    if (midiState.tracks.isEmpty) {
+      return Container(
+        height: 200,
+        alignment: Alignment.center,
+        color: Colors.grey.shade500,
+        child: Text('Empty', style: TextStyle(color: Colors.grey.shade200)),
+      );
+    }
+    final height = 55.0 * (midiState.tracks.length);
+    return SizedBox(
+      height: height,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            bottom: 0,
+            right: 0,
+            height: height,
+            left: 0,
+            child: Row(
+              children: [
+                SizedBox(width: 100, child: buildTrackNameList()),
+                Expanded(child: buildTrackList()),
               ],
             ),
           ),
-        ),
+          if (progress != 0)
+            Positioned(
+              left: 100,
+              bottom: 0,
+              height: height,
+              right: 0,
+              child: IgnorePointer(child: ProgressLine(progress: progress)),
+            ),
+        ],
       ),
     );
   }
 
-  Widget buildEvent(NoteOnEvent note, double size) {
-    return Positioned(
-      width: note.duration! * 10,
-      left: note.tick * 5,
-      top: note.noteNumber * 1,
-      child: Container(
-        height: size,
-        decoration: BoxDecoration(
-          color: Colors.lime,
-          // borderRadius: BorderRadius.circular(10),
-          // border: Border.all(color: Colors.black, width: 1),
-        ),
-        child: Text("${note.noteNumber}  ${note.tick}  ${note.duration}"),
+  Widget buildTrackList() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black, width: 1.2),
       ),
-    );
-  }
-}
-
-class TrackPreview extends StatelessWidget {
-  final MidiTrackViewState track;
-
-  final double keyHeight = 14;
-  final double widthPerSecond = 10;
-
-  const TrackPreview({super.key, required this.track});
-
-  @override
-  Widget build(BuildContext context) {
-    final span = track.max - track.min;
-    final scale = 100 / span;
-    return Row(
-      children: [
-        Container(
-          width: 100,
-          height: 100,
-          color: Colors.grey,
-          alignment: Alignment.centerLeft,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "${track.track.trackName}\n${track.notes.first.channel}",
-                style: const TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Stack(
-            children: [
-              for (var note in track.notes)
-                Positioned(
-                  left: note.startSeconds * 10,
-                  top: 100 - (note.note - track.min) * scale,
-                  height: scale,
-                  width: note.durationSeconds * 10,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.teal,
-                      borderRadius: BorderRadius.circular(2),
-                      border: Border.all(color: Colors.black, width: 1),
-                    ),
-                    child: Text(
-                      note.note.toString(),
-                      style: const TextStyle(fontSize: 10, height: 1),
-                    ),
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var track in midiState.tracks) ...[
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  print('object');
+                  midiState.track = midiState.tracks.indexOf(track);
+                  Navigator.pushNamed(context, '/piano');
+                },
+                child: Container(
+                  color: Colors.grey.shade800,
+                  child: MidiTrackPreview(
+                    notes: track.notes
+                        .map(
+                          (e) => MidiNote(
+                            note: e.note,
+                            start: e.startSeconds,
+                            duration: e.durationSeconds,
+                          ),
+                        )
+                        .toList(),
+                    trackDuration: midiState.totalTimeMills / 1000,
                   ),
                 ),
-            ],
-          ),
-        ),
-      ],
+              ),
+            ),
+            if (track != midiState.tracks.last)
+              Divider(height: 1.5, thickness: 1.5, color: Colors.black),
+          ],
+        ],
+      ),
     );
   }
-}
 
-class PianoKeyboard extends StatelessWidget {
-  final int startNote;
-  final int endNote;
-
-  const PianoKeyboard({super.key, this.startNote = 21, this.endNote = 108});
-
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+  Widget buildTrackNameList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        for (final track in midiState.tracks)
+          Expanded(
+            child: Container(
+              color: Colors.grey.shade600,
+              alignment: Alignment.centerLeft,
+              margin: EdgeInsets.symmetric(vertical: 1, horizontal: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "${track.name}\n channel:${track.notes.firstOrNull?.channel}",
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.2,
+                      color: Colors.grey.shade200,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

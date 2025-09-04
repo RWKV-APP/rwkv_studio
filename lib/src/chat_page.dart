@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class ChatPage extends StatefulWidget {
+  const ChatPage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<ChatPage> createState() => _ChatPageState();
 }
 
 final RWKV rwkv = RWKV.isolated();
 
-class _HomePageState extends State<HomePage> {
+class _ChatPageState extends State<ChatPage> {
   bool? loading;
   TextEditingController controller = TextEditingController();
   ScrollController scrollController = ScrollController();
@@ -132,6 +132,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Container(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -190,21 +191,6 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                   child: Text('Model Param'),
-                ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: () async {
-                    // Navigator.pushNamed(context, '/test');
-                    Navigator.pushNamed(context, '/parse_midi');
-                  },
-                  child: Text('Parse'),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    // Navigator.pushNamed(context, '/test');
-                    Navigator.pushNamed(context, '/devices');
-                  },
-                  child: Text('Midi'),
                 ),
               ],
             ),

@@ -17,6 +17,7 @@ dependencies:
   rxdart: ^0.28.0
   font_awesome_flutter: ^10.8.0
   flutter_midi_command: ^0.5.3
+  window_manager: ^0.5.1
   xmidi:
     path: ../xmidi
 

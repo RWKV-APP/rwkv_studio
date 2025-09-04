@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rwkv_studio/src/midi_view_state.dart';
-import 'package:rwkv_studio/src/track_editor_view.dart';
+import 'package:rwkv_studio/src/midi/midi_view_state.dart';
+import 'package:rwkv_studio/src/widget/track_editor_view.dart';
 
 class PianoPage extends StatefulWidget {
   const PianoPage({super.key});

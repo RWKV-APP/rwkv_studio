@@ -7,7 +7,7 @@ class MidiDeviceManager {
   static MidiDevice? out;
   static MidiDevice? in_;
 
-  static void init() {
+  static void init() async {
     midiCmd.onMidiSetupChanged?.listen((event) {
       print("onMidiSetupChanged: $event");
     });
@@ -22,18 +22,21 @@ class MidiDeviceManager {
     midiCmd.onBluetoothStateChanged.listen((e) {
       print("onBluetoothStateChanged: ${e}");
     });
+
+    await getDeviceList();
+    await connectDefaultOutputDevice();
   }
 
   static Future<List<MidiDevice>> getDeviceList() async {
     devices.clear();
     devices.addAll((await midiCmd.devices) ?? []);
 
-    try {
-      await connectDefaultOutputDevice();
-    } catch (e) {
-      print(e);
+    final out_ = devices
+        .where((e) => e.connected && e.outputPorts.isNotEmpty)
+        .firstOrNull;
+    if (out_ != null) {
+      out = out_;
     }
-
     return devices;
   }
 
@@ -60,10 +63,8 @@ class MidiDeviceManager {
   static Future connectDefaultOutputDevice() async {
     for (final d in devices) {
       if (d.outputPorts.isNotEmpty && !d.connected) {
-        if (d.name == "Microsoft GS Wavetable Synth") {
-          midiCmd.connectToDevice(d);
-          break;
-        }
+        disconnect(d);
+        connect(d);
       }
     }
   }
