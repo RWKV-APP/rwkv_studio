@@ -62,7 +62,10 @@ class MidiDeviceManager {
 
   static Future connectDefaultOutputDevice() async {
     for (final d in devices) {
-      if (d.outputPorts.isNotEmpty && !d.connected) {
+      print('>${d.id}: output:${d.outputPorts.isNotEmpty}, input:${d.inputPorts.isNotEmpty}');
+      if (d.outputPorts.isNotEmpty &&
+          !d.connected &&
+          d.id.contains("Microsoft")) {
         disconnect(d);
         connect(d);
       }

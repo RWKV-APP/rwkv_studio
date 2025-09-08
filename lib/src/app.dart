@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rwkv_studio/src/midi_device_page.dart';
 import 'package:rwkv_studio/src/parse_midi_page.dart';
 import 'package:rwkv_studio/src/piano_page.dart';
+import 'package:rwkv_studio/src/widget/desktop_title.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'chat_page.dart';
@@ -12,12 +13,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onPanStart: (details) {
-        WindowManager.instance.startDragging();
-      },
-      child: MaterialApp(
+    return MaterialApp(
         title: 'RWKV Studio',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
@@ -61,8 +57,7 @@ class MyApp extends StatelessWidget {
           }
           return null;
         },
-      ),
-    );
+      );
   }
 }
 
@@ -70,7 +65,7 @@ class MainPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(actions: [CloseButton()]),
+      appBar: DesktopTitle(title: 'RWKV Studio'),
       body: Container(
         width: double.infinity,
         child: Column(

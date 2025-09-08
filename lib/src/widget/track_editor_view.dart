@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:rwkv_studio/src/midi_view_state.dart';
+import 'package:rwkv_studio/src/midi/midi_view_state.dart';
 
 class TrackEditorView extends StatelessWidget {
   final double keyHeight = 14;
-  final double widthPerSecond = 10;
+  final double widthPerSecond = 60;
   final List<MidiNoteViewState> notes;
 
   const TrackEditorView({super.key, required this.notes});
@@ -38,7 +38,7 @@ class TrackEditorView extends StatelessWidget {
 
   Widget buildNoteEvent(MidiNoteViewState note) {
     return Positioned(
-      width: note.durationSeconds * 10,
+      width: note.durationSeconds * widthPerSecond,
       height: keyHeight,
       top: (keyHeight * 127) - (note.note) * keyHeight,
       left: note.startSeconds * widthPerSecond,

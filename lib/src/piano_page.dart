@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rwkv_studio/src/midi/midi_view_state.dart';
+import 'package:rwkv_studio/src/widget/desktop_title.dart';
 import 'package:rwkv_studio/src/widget/track_editor_view.dart';
 
 class PianoPage extends StatefulWidget {
@@ -21,7 +22,7 @@ class _PianoPageState extends State<PianoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(track.name)),
+      appBar: DesktopTitle(title: track.name),
       body: Container(child: TrackEditorView(notes: track.notes)),
     );
   }

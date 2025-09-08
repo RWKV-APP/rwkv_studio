@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:xmidi/xmidi.dart';
 
@@ -31,6 +31,7 @@ class MidiTrackViewState {
   int min = 0;
   int max = 0;
   String name = '';
+  int channel = 0;
   List<MidiNoteViewState> notes = [];
 
   MidiTrackViewState(this.name);
@@ -41,6 +42,7 @@ class MidiTrackViewState {
     view.notes = track.events.whereType<NoteOnEvent>().map((e) {
       final oct = e.noteNumber ~/ 12;
       final n = noteNames[e.noteNumber % 12];
+      view.channel = e.channel;
       return MidiNoteViewState()
         ..start = e.tick
         ..duration = e.duration!
@@ -50,9 +52,34 @@ class MidiTrackViewState {
         ..channel = e.channel
         ..note = e.noteNumber;
     }).toList();
-    view.notes.sort((a, b) => a.note.compareTo(b.note));
-    view.min = view.notes.last.note;
-    view.max = view.notes.first.note;
+    if (view.notes.isNotEmpty) {
+      view.notes.sort((a, b) => a.note.compareTo(b.note));
+      view.min = view.notes.last.note;
+      view.max = view.notes.first.note;
+    }
+
+    final ns = track.events.where(
+      (e) => e is! NoteOnEvent && e is! NoteOffEvent,
+    );
+    print('===${view.name} ${view.channel}===');
+    for (final event in ns) {
+      if (event is ControllerEvent) {
+        // print('CC ${note.controllerType} ${note.value}');
+      } else if (event is ProgramChangeMidiEvent) {
+        // print('PC ${note.programNumber} ${note.channel}');
+      } else if (event is MarkerEvent) {
+        print('Marker: ${event.text}');
+      } else if (event is PortPrefixEvent) {
+        print('PortPrefix: ${event.port}');
+      } else if (event is KeySignatureEvent) {
+        print('KeySignature: ${event.key}, ${event.scale}');
+      } else {
+        print('>${event}');
+      }
+    }
+    if (view.name.isEmpty) {
+      view.name = "Track ${view.channel}";
+    }
     return view;
   }
 }
@@ -62,24 +89,58 @@ class MidiState {
   MidiFile? file;
   int track = 0;
   double totalTimeMills = 0;
+  int totalTicks = 0;
+  int ticksPerBeat = 0;
+  int tempo = 120;
+  String fileName = '';
+  String ts = '4/4';
 
   MidiState(this.file);
 
+  String encode() {
+    final wrt = MidiWriter();
+    final bf = wrt.writeMidiToBuffer(file!);
+    return base64Encode(bf);
+  }
+
   static MidiState create() {
-    var file = File(r"C:\Users\dengz\Downloads\test2.mid");
-    // Construct a midi reader
-    var reader = MidiReader();
-    MidiFile midi = reader.parseMidiFromFile(file);
+    var path = r"C:/Users/dengz/Downloads/test.mid";
+    final midi = MidiFile.readFromFile(path);
+
+    final track1 = midi.tracks.firstOrNull?.events;
+    final tempos = track1?.whereType<SetTempoEvent>() ?? [];
+    final mspb = tempos.firstOrNull?.microsecondsPerBeat ?? 500000;
+    final tempo = (60 / (mspb / 1000 / 1000)).round();
+    print('tempo:$tempo');
+
+    final tss = track1?.whereType<TimeSignatureEvent>() ?? [];
+    final ts = tss.firstOrNull;
+    final n = ts?.numerator ?? 4;
+    final d = ts?.denominator ?? 4;
+    print('time signature: $n/$d');
 
     final ticksPerBeat = midi.header.ticksPerBeat!;
-    final tempo = 120;
-    final secondsOfTick = ticksPerBeat * tempo / 60;
+    final secOfTick = ticksPerBeat * tempo / 60;
 
     midiState = MidiState(midi)
+      ..tempo = tempo
+      ..ts = '$n/$d'
       ..totalTimeMills = midi.getTimeInSeconds() * 1000
       ..tracks = midi.tracks
-          .map((e) => MidiTrackViewState.fromTrack(e, secondsOfTick))
+          .map((e) => MidiTrackViewState.fromTrack(e, secOfTick))
           .toList();
+
+    print('tracks:${midiState.tracks.length}, ${midi.tracks.length}');
+
+    midiState.totalTicks = midi.getFileDurationTicks();
+    midiState.ticksPerBeat = ticksPerBeat;
+
+    midiState.tracks.add(MidiTrackViewState(''));
+    midiState.tracks.add(MidiTrackViewState(''));
+    midiState.tracks.add(MidiTrackViewState(''));
+    midiState.tracks.add(MidiTrackViewState(''));
+
+    midiState.fileName = path.split('/').last;
 
     return midiState;
   }
