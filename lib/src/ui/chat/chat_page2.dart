@@ -2,18 +2,19 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+class ChatPage2 extends StatefulWidget {
+  const ChatPage2({super.key});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<ChatPage2> createState() => _ChatPageState();
 }
 
 final RWKV rwkv = RWKV.isolated();
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage2> {
   bool? loading;
   TextEditingController controller = TextEditingController();
   ScrollController scrollController = ScrollController();
@@ -22,7 +23,7 @@ class _ChatPageState extends State<ChatPage> {
   bool initialized = false;
 
   String tokenizerPath =
-      r'D:\dev\RWKV_APP\assets\config\chat\b_rwkv_vocab_v20230424.txt';
+      r'/data/data/com.example.rwkv_studio/cache/b_rwkv_vocab_v20230424.txt';
 
   String dynamicLibraryDir = r"D:\dev\rwkv_dart\windows\";
 
@@ -35,9 +36,6 @@ class _ChatPageState extends State<ChatPage> {
     //   acceptedTypeGroups: <XTypeGroup>[typeGroup],
     // );
     final file = File('path');
-    if (file == null) {
-      return;
-    }
     final f = File(file.path).parent;
     print(f.path);
     setState(() {
@@ -51,10 +49,12 @@ class _ChatPageState extends State<ChatPage> {
       // await selectFiles();
     }
     if (!initialized) {
+      final dir = await getApplicationCacheDirectory();
       await rwkv.init(
         InitParam(
           // dynamicLibDir: dynamicLibraryDir,
           // logLevel: RWKVLogLevel.info,
+          qnnLibDir: "${dir.path}/qnn",
         ),
       );
       setState(() {
@@ -64,15 +64,12 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void onLoadModelTap() async {
+    final dir = await getApplicationCacheDirectory();
     if (Platform.isAndroid) {
-      // final dir = await getApplicationCacheDirectory();
-      model = "${''}/rwkv7-g1-0.1b-20250307-ctx4096_Q8_0.gguf";
+      model = "${dir.path}/rwkv7-g1a-0.1b-20250728-ctx4096-a16w8-8gen3.bin";
       setState(() {});
     } else {
       final file = File('path');
-      if (file == null) {
-        return;
-      }
       setState(() {
         model = file.path;
         loading = true;
@@ -84,7 +81,7 @@ class _ChatPageState extends State<ChatPage> {
         LoadModelParam(
           modelPath: model,
           tokenizerPath: tokenizerPath,
-          backend: Backend.webRwkv,
+          backend: Backend.qnn,
         ),
       );
     } catch (e) {
@@ -110,7 +107,7 @@ class _ChatPageState extends State<ChatPage> {
         .chat(history)
         .listen(
           (e) {
-            controller.text = '$content\n\nAssistant: $e\n';
+            controller.text = '$content\nAssistant: $e\n';
             final max = scrollController.position.maxScrollExtent;
             final remain = max - scrollController.position.pixels;
             if (0 < remain && remain < 80) {
@@ -172,17 +169,17 @@ class _ChatPageState extends State<ChatPage> {
                 const SizedBox(width: 12),
                 FilledButton(
                   onPressed: () async {
-                    await rwkv.stopGeneration();
+                    await rwkv.stopGenerate();
                   },
                   child: Text('Stop'),
                 ),
                 const SizedBox(width: 12),
                 FilledButton(
                   onPressed: () async {
-                    await rwkv.setGenerationParam(
-                      GenerationParam(
+                    await rwkv.setGenerationConfig(
+                      GenerationConfig(
                         maxTokens: 4000,
-                        thinkingToken: GenerationParam.thinkingTokenFree,
+                        thinkingToken: GenerationConfig.thinkingTokenFree,
                         chatReasoning: true,
                         completionStopToken: 0,
                         returnWholeGeneratedResult: false,
@@ -214,6 +211,15 @@ class _ChatPageState extends State<ChatPage> {
                 child: TextField(
                   scrollController: scrollController,
                   controller: controller,
+                  onSubmitted: (s) {
+                    onSubmit();
+                  },
+                  onChanged: (v) {
+                    if (v.endsWith('\n')) {
+                      onSubmit();
+                    }
+                  },
+                  textInputAction: TextInputAction.send,
                   decoration: InputDecoration(border: OutlineInputBorder()),
                   maxLines: 1000,
                 ),
