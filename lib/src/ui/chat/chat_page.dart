@@ -15,6 +15,7 @@ class ChatPage extends StatelessWidget {
         VerticalDivider(width: .5, thickness: .5),
         Expanded(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ChatTitleBar(),
               Divider(height: .5, thickness: .5),
