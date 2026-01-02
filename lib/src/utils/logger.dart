@@ -14,7 +14,7 @@ void _listenToLogs() {
   Logger.root.onRecord.listen((record) {
     final time =
         '${record.time.hour}:${record.time.minute}:${record.time.second}';
-    print('$time\rwkv_studio/${record.level.name}: ${record.message}');
+    print('RWKV-Studio/${record.level.name}: ${record.message}');
   });
 }
 

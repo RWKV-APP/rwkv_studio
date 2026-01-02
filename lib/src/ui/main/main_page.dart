@@ -88,12 +88,12 @@ class _MainPageState extends State<MainPage> {
       PaneItemExpander(
         icon: const WindowsIcon(WindowsIcons.flow),
         title: const Text('工作流程'),
-        body: WorkFlowPage(),
+        body: SizedBox(),
         items: [
           PaneItem(
             icon: const WindowsIcon(FluentIcons.chart_template),
             title: const Text('Prompt 工程'),
-            body: WorkFlowPage(),
+            body: SizedBox(),
           ),
           PaneItem(
             icon: const WindowsIcon(WindowsIcons.search_and_apps),
@@ -103,7 +103,7 @@ class _MainPageState extends State<MainPage> {
           PaneItem(
             icon: const WindowsIcon(FluentIcons.search_data),
             title: const Text('知识库'),
-            body: WorkFlowPage(),
+            body: SizedBox(),
           ),
         ],
       ),
@@ -164,9 +164,9 @@ class _MainPageState extends State<MainPage> {
       ),
       pane: NavigationPane(
         // header: const Text('RWKV Studio'),
-        size: const NavigationPaneSize(openWidth: 200),
+        size: const NavigationPaneSize(openWidth: 220),
         selected: selected,
-        displayMode: PaneDisplayMode.compact,
+        displayMode: PaneDisplayMode.auto,
         onItemPressed: (i) {
           logd('selected: $i');
           if ({14, 12, 7, 1}.contains(i)) {

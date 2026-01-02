@@ -23,7 +23,7 @@ class _ChatPageState extends State<ChatPage2> {
   bool initialized = false;
 
   String tokenizerPath =
-      r'/data/data/com.example.rwkv_studio/cache/b_rwkv_vocab_v20230424.txt';
+      r'/data/data/com.example.rwkv_studio/cache.dart/b_rwkv_vocab_v20230424.txt';
 
   String dynamicLibraryDir = r"D:\dev\rwkv_dart\windows\";
 

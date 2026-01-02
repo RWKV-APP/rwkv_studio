@@ -7,8 +7,8 @@ class ChatTitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
-      child: Text('Chat'),
       alignment: Alignment.centerLeft,
+      child: Text('Chat'),
     );
   }
 }
