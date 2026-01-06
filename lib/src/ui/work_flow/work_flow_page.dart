@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/ui/work_flow/node_editor.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/ui/work_flow/node_editor_cubit.dart';
 
 class WorkFlowPage extends StatelessWidget {
   const WorkFlowPage({super.key});
@@ -14,20 +15,15 @@ class WorkFlowPage extends StatelessWidget {
 class _Editor extends StatelessWidget {
   final FocusNode focusNode = FocusNode();
 
-  void _onKeyEvent(KeyEvent event) {
-    logd('key event: $event');
-  }
-
-  void _onPointerUp(PointerEvent event) {
-    logd('pointer up: ${event.kind}, ${event.buttons}');
-  }
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: NodeEditor(),
+      child: BlocProvider<NodeEditorCubit>(
+        create: (context) => NodeEditorCubit(),
+        child: NodeEditor(),
+      ),
     );
   }
 }

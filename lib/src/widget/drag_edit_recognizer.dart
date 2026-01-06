@@ -32,12 +32,12 @@ class DragEditRecognizer extends TapAndPanGestureRecognizer {
 
 class DragEditable extends StatelessWidget {
   /// local offset of widget
-  final ValueChanged<Offset>? onStartUpdatePosition;
+  final ValueChanged<TapDragStartDetails>? onStartUpdatePosition;
   final Function(bool isRangeStart)? onStartUpdateRange;
 
   /// global offset
   final ValueChanged<TapDragUpdateDetails>? onUpdate;
-  final VoidCallback? onUpdateEnd;
+  final ValueChanged<TapDragEndDetails>? onUpdateEnd;
   final VoidCallback? onTap;
 
   final Rect? dragArea;
@@ -121,14 +121,14 @@ class DragEditable extends StatelessWidget {
                   if (isHandle) {
                     onStartUpdateRange?.call(isRangeStart);
                   } else {
-                    onStartUpdatePosition?.call(i.localPosition);
+                    onStartUpdatePosition?.call(i);
                   }
                 };
                 i.onDragUpdate = (i) {
                   onUpdate?.call(i);
                 };
                 i.onDragEnd = (i) {
-                  onUpdateEnd?.call();
+                  onUpdateEnd?.call(i);
                 };
                 i.onTapUp = (i) {
                   onTap?.call();

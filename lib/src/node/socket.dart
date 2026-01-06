@@ -18,10 +18,10 @@ class SocketPrototype<T> {
 
 typedef SocketId = String;
 
-class NodeSocket<T> {
+class NodeSocket {
   final NodeId nodeId;
   final SocketId id;
-  final SocketPrototype<T> prototype;
+  final SocketPrototype prototype;
   final Value? defaultValue;
 
   NodeSocket({
