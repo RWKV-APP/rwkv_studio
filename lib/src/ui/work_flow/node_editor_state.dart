@@ -3,18 +3,18 @@ part of 'node_editor_cubit.dart';
 class EdgeState {
   final String id;
   final NodeId from;
-  final NodeId to;
+  final NodeId targetNode;
   final Color color;
   final String fromSocket;
-  final String toSocket;
+  final String targetSocket;
 
   EdgeState({
     required this.from,
-    required this.to,
+    required this.targetNode,
     required this.color,
     required this.fromSocket,
-    required this.toSocket,
-  }) : id = '${from}_${to}_${fromSocket}_$toSocket';
+    required this.targetSocket,
+  }) : id = '${from}_${targetNode}_${fromSocket}_$targetSocket';
 
   EdgeState copyWith({
     NodeId? from,
@@ -25,10 +25,10 @@ class EdgeState {
   }) {
     return EdgeState(
       from: from ?? this.from,
-      to: to ?? this.to,
+      targetNode: to ?? this.targetNode,
       color: color ?? this.color,
       fromSocket: fromSocket ?? this.fromSocket,
-      toSocket: toSocket ?? this.toSocket,
+      targetSocket: toSocket ?? this.targetSocket,
     );
   }
 }
@@ -127,36 +127,49 @@ class NodeCardState {
 class EdgeEditingState {
   final String fromNodeId;
   final SocketId fromSocket;
-  final String toNodeId;
-  final SocketId toSocket;
+  final String targetNode;
+  final SocketId targetSocket;
   final Offset fromPos;
   final Offset toPos;
   final Color color;
-  final bool output2input;
+  final bool linkInput;
 
-  bool get isValid => toSocket != '' && toNodeId != '';
+  bool get isValid => targetSocket != '' && targetNode != '';
 
   static final empty = EdgeEditingState(
     fromNodeId: '',
     fromPos: Offset.zero,
     fromSocket: '',
-    toNodeId: '',
-    toSocket: '',
+    targetNode: '',
+    targetSocket: '',
     toPos: Offset.zero,
     color: Colors.black,
-    output2input: false,
+    linkInput: false,
   );
 
   EdgeEditingState({
-    required this.output2input,
+    required this.linkInput,
     required this.fromNodeId,
     required this.fromSocket,
-    required this.toNodeId,
-    required this.toSocket,
+    required this.targetNode,
+    required this.targetSocket,
     required this.fromPos,
     required this.toPos,
     required this.color,
   });
+
+  EdgeEditingState inverse() {
+    return EdgeEditingState(
+      fromNodeId: targetNode,
+      fromSocket: targetSocket,
+      targetNode: fromNodeId,
+      targetSocket: fromSocket,
+      toPos: toPos,
+      fromPos: fromPos,
+      color: color,
+      linkInput: linkInput,
+    );
+  }
 
   EdgeEditingState copyWith({
     Offset? fromPos,
@@ -166,16 +179,17 @@ class EdgeEditingState {
     String? toSocket,
     Offset? toPos,
     Color? color,
+    bool? linkInput
   }) {
     return EdgeEditingState(
       fromPos: fromPos ?? this.fromPos,
       fromNodeId: fromNodeId ?? this.fromNodeId,
       fromSocket: fromSocket ?? this.fromSocket,
-      toNodeId: toNodeId ?? this.toNodeId,
-      toSocket: toSocket ?? this.toSocket,
+      targetNode: toNodeId ?? this.targetNode,
+      targetSocket: toSocket ?? this.targetSocket,
       toPos: toPos ?? this.toPos,
       color: color ?? this.color,
-      output2input: output2input,
+      linkInput: linkInput ?? this.linkInput,
     );
   }
 }

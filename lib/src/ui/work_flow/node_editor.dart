@@ -66,8 +66,8 @@ class NodeEditor extends StatelessWidget {
                             start: state.cards[edge.from]!.getOutputPosition(
                               edge.fromSocket,
                             ),
-                            end: state.cards[edge.to]!.getInputPosition(
-                              edge.toSocket,
+                            end: state.cards[edge.targetNode]!.getInputPosition(
+                              edge.targetSocket,
                             ),
                             color: edge.color,
                           ),

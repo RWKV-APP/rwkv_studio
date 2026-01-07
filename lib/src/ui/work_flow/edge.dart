@@ -14,8 +14,8 @@ class EditingEdge extends StatelessWidget {
         if (editing != EdgeEditingState.empty) {
           return CustomPaint(
             painter: NodeEdgeCustomPainter(
-              end: editing.output2input ? editing.toPos : editing.fromPos,
-              start: editing.output2input ? editing.fromPos : editing.toPos,
+              end: editing.linkInput ? editing.toPos : editing.fromPos,
+              start: editing.linkInput ? editing.fromPos : editing.toPos,
               color: editing.color,
             ),
           );
@@ -47,13 +47,14 @@ class NodeEdgeCustomPainter extends CustomPainter {
     required this.end,
     required this.color,
   });
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawPath(
       Path()
-        ..moveTo(start.dx, start.dy)
+        ..moveTo(start.dx, start.dy - 2)
         ..quadraticBezierTo(start.dx + offset, start.dy, center.dx, center.dy)
-        ..quadraticBezierTo(end.dx - offset, end.dy, end.dx, end.dy),
+        ..quadraticBezierTo(end.dx - offset, end.dy - 1, end.dx, end.dy - 1),
       _paint,
     );
   }

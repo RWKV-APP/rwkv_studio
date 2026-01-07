@@ -105,12 +105,7 @@ class _NodeCardViewState extends State<NodeCardView> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (r.key != null)
-                          Flexible(
-                            child: Container(
-                              color: Colors.green.withAlpha(50),
-                              child: NodeSocketView(socket: r.key!),
-                            ),
-                          ),
+                          Flexible(child: NodeSocketView(socket: r.key!)),
                         if (r.value != null)
                           Flexible(child: NodeSocketView(socket: r.value!)),
                       ],

@@ -1,13 +1,8 @@
-import 'dart:async';
-import 'dart:math';
-
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/node/export.dart';
 import 'package:rwkv_studio/src/ui/work_flow/node_card.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
-import 'package:rwkv_studio/src/utils/pair.dart';
-import 'package:rxdart/rxdart.dart';
 
 part 'node_editor_state.dart';
 
@@ -44,12 +39,7 @@ extension Ext on BuildContext {
 }
 
 class NodeEditorCubit extends Cubit<NodeEditorState> {
-  NodeEditorCubit() : super(NodeEditorState.initial()) {}
-
-  @override
-  Future<void> close() {
-    return super.close();
-  }
+  NodeEditorCubit() : super(NodeEditorState.initial());
 
   void addNode(Offset position, NodePrototype proto) {
     final node = proto.create();
@@ -73,16 +63,46 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
   void startLink(NodeSocket socket, Offset position) {
     final pos = state.cards[socket.nodeId]!.getSocketPosition(socket);
     logd('startLink=>$pos');
+
+    final socketEdges = state.edges.values.where((e) {
+      return e.fromSocket == socket.id || e.targetSocket == socket.id;
+    });
+    final old = socketEdges.firstOrNull;
+    if (old != null) {
+      final fromPos = state.cards[old.from]!.getOutputPosition(old.fromSocket);
+      final toPos = state.cards[old.targetNode]!.getInputPosition(
+        old.targetSocket,
+      );
+      final linkInput = socket is NodeInput;
+      EdgeEditingState edit = EdgeEditingState(
+        linkInput: linkInput,
+        fromNodeId: linkInput ? old.from : old.targetNode,
+        fromSocket: linkInput ? old.fromSocket : old.targetSocket,
+        targetNode: socket.nodeId,
+        targetSocket: socket.id,
+        fromPos: linkInput ? fromPos : toPos,
+        toPos: linkInput ? toPos : fromPos,
+        color: old.color,
+      );
+      emit(
+        state.copyWith(
+          editingEdge: edit,
+          edges: {...state.edges}..remove(old.id),
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         editingEdge: EdgeEditingState(
-          output2input: socket is NodeOutput,
+          linkInput: socket is NodeOutput,
           fromPos: pos,
           fromNodeId: socket.nodeId,
           fromSocket: socket.id,
           toPos: pos,
-          toNodeId: '',
-          toSocket: '',
+          targetNode: '',
+          targetSocket: '',
           color: Colors.yellow,
         ),
       ),
@@ -103,7 +123,7 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
     }
     final card = state.cards[socket.nodeId]!;
     final toPos = card.getSocketPosition(socket);
-    if (socket.id == old.toSocket && toPos == old.toPos) {
+    if (socket.id == old.targetSocket && toPos == old.toPos) {
       return;
     }
     logd('socket connected=>${socket.prototype.name}');
@@ -123,24 +143,24 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
 
     EdgeState? edge;
     if (state.editingEdge.isValid) {
-      final startNodeId = state.editingEdge.output2input
+      final startNodeId = state.editingEdge.linkInput
           ? state.editingEdge.fromNodeId
-          : state.editingEdge.toNodeId;
-      final endNodeId = state.editingEdge.output2input
-          ? state.editingEdge.toNodeId
+          : state.editingEdge.targetNode;
+      final endNodeId = state.editingEdge.linkInput
+          ? state.editingEdge.targetNode
           : state.editingEdge.fromNodeId;
-      final startSocketId = state.editingEdge.output2input
+      final startSocketId = state.editingEdge.linkInput
           ? state.editingEdge.fromSocket
-          : state.editingEdge.toSocket;
-      final endSocketId = state.editingEdge.output2input
-          ? state.editingEdge.toSocket
+          : state.editingEdge.targetSocket;
+      final endSocketId = state.editingEdge.linkInput
+          ? state.editingEdge.targetSocket
           : state.editingEdge.fromSocket;
       logd('$startNodeId->$endNodeId from: $startSocketId, to $endSocketId');
       edge = EdgeState(
         from: startNodeId,
-        to: endNodeId,
+        targetNode: endNodeId,
         fromSocket: startSocketId,
-        toSocket: endSocketId,
+        targetSocket: endSocketId,
         color: state.editingEdge.color,
       );
     }
@@ -182,7 +202,7 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
   }
 
   NodeSocket? _hitTestSocket(NodeCardState node, Offset position) {
-    final isInput = state.editingEdge.output2input;
+    final isInput = state.editingEdge.linkInput;
     for (final socket in isInput ? node.node.inputs : node.node.outputs) {
       final pos = node.getSocketPosition(socket);
       final dist = (position - pos).distanceSquared;
