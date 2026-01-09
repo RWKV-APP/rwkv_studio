@@ -19,6 +19,8 @@ class NodeDataType<T> {
   static const list = _ListDataType();
   static const map = _MapDataType();
   static const any = _AnyDataType();
+
+  static const void_ = _VoidDataType();
 }
 
 class Value {
@@ -109,6 +111,16 @@ class _AnyDataType extends NodeDataType<dynamic> {
         id: 'any',
         name: 'Any',
         description: 'Any value',
+        defaultValue: null,
+      );
+}
+
+class _VoidDataType extends NodeDataType<void> {
+  const _VoidDataType()
+    : super(
+        id: 'void',
+        name: 'Void',
+        description: 'No value',
         defaultValue: null,
       );
 }

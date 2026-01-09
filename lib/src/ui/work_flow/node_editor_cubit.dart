@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/node/export.dart';
@@ -5,32 +7,6 @@ import 'package:rwkv_studio/src/ui/work_flow/node_card.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'node_editor_state.dart';
-
-final addNodeProto = NodePrototype(
-  name: 'Add',
-  description: 'description',
-  inputs: [
-    SocketPrototype(name: 'a', description: '', type: NodeDataType.int),
-    SocketPrototype(name: 'b', description: '', type: NodeDataType.int),
-  ],
-  outputs: [
-    SocketPrototype(name: 'result', description: '', type: NodeDataType.int),
-  ],
-  executor: NodeExecutor(),
-);
-
-final multiplyNodeProto = NodePrototype(
-  name: 'Multiply',
-  description: 'description',
-  inputs: [
-    SocketPrototype(name: 'a', description: '', type: NodeDataType.int),
-    SocketPrototype(name: 'b', description: '', type: NodeDataType.int),
-  ],
-  outputs: [
-    SocketPrototype(name: 'result', description: '', type: NodeDataType.int),
-  ],
-  executor: NodeExecutor(),
-);
 
 extension Ext on BuildContext {
   NodeEditorCubit get editorCubit {
@@ -43,9 +19,12 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
 
   void addNode(Offset position, NodePrototype proto) {
     final node = proto.create();
+    double height = nodeHeaderHeight;
+    final rows = max(proto.inputs.length, proto.outputs.length);
+    height += rows * (nodeSocketSpacing + nodeSocketSize) + nodeSocketSpacing;
     final card = NodeCardState(
       node: node,
-      bounds: Rect.fromLTWH(position.dx, position.dy, 160, 100),
+      bounds: Rect.fromLTWH(position.dx, position.dy, 200, height),
     );
     emit(state.copyWith(cards: {...state.cards, card.id: card}));
   }
@@ -68,20 +47,17 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
       return e.fromSocket == socket.id || e.targetSocket == socket.id;
     });
     final old = socketEdges.firstOrNull;
-    if (old != null) {
-      final fromPos = state.cards[old.from]!.getOutputPosition(old.fromSocket);
-      final toPos = state.cards[old.targetNode]!.getInputPosition(
-        old.targetSocket,
-      );
-      final linkInput = socket is NodeInput;
+    if (old != null && socket is NodeInput) {
+      final fromNode = state.cards[old.from]!;
+      final toNode = state.cards[old.targetNode]!;
+      final fromPos = fromNode.getOutputPosition(old.fromSocket);
+      final toPos = toNode.getInputPosition(old.targetSocket);
       EdgeEditingState edit = EdgeEditingState(
-        linkInput: linkInput,
-        fromNodeId: linkInput ? old.from : old.targetNode,
-        fromSocket: linkInput ? old.fromSocket : old.targetSocket,
-        targetNode: socket.nodeId,
-        targetSocket: socket.id,
-        fromPos: linkInput ? fromPos : toPos,
-        toPos: linkInput ? toPos : fromPos,
+        linkInput: true,
+        from: fromNode.findSocket(old.fromSocket),
+        target: toNode.findSocket(old.targetSocket),
+        fromPos: fromPos,
+        toPos: toPos,
         color: old.color,
       );
       emit(
@@ -96,13 +72,11 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
     emit(
       state.copyWith(
         editingEdge: EdgeEditingState(
+          from: socket,
+          target: null,
           linkInput: socket is NodeOutput,
           fromPos: pos,
-          fromNodeId: socket.nodeId,
-          fromSocket: socket.id,
           toPos: pos,
-          targetNode: '',
-          targetSocket: '',
           color: Colors.yellow,
         ),
       ),
@@ -115,25 +89,19 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
     final old = state.editingEdge;
     if (socket == null) {
       emit(
-        state.copyWith(
-          editingEdge: old.copyWith(toPos: pos, toNodeId: '', toSocket: ''),
-        ),
+        state.copyWith(editingEdge: old.copyWith(toPos: pos)..target = null),
       );
       return;
     }
     final card = state.cards[socket.nodeId]!;
     final toPos = card.getSocketPosition(socket);
-    if (socket.id == old.targetSocket && toPos == old.toPos) {
+    if (socket.id == old.target?.id && toPos == old.toPos) {
       return;
     }
     logd('socket connected=>${socket.prototype.name}');
     emit(
       state.copyWith(
-        editingEdge: state.editingEdge.copyWith(
-          toPos: toPos,
-          toNodeId: socket.nodeId,
-          toSocket: socket.id,
-        ),
+        editingEdge: state.editingEdge.copyWith(toPos: toPos)..target = socket,
       ),
     );
   }
@@ -143,24 +111,18 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
 
     EdgeState? edge;
     if (state.editingEdge.isValid) {
-      final startNodeId = state.editingEdge.linkInput
-          ? state.editingEdge.fromNodeId
-          : state.editingEdge.targetNode;
-      final endNodeId = state.editingEdge.linkInput
-          ? state.editingEdge.targetNode
-          : state.editingEdge.fromNodeId;
-      final startSocketId = state.editingEdge.linkInput
-          ? state.editingEdge.fromSocket
-          : state.editingEdge.targetSocket;
-      final endSocketId = state.editingEdge.linkInput
-          ? state.editingEdge.targetSocket
-          : state.editingEdge.fromSocket;
-      logd('$startNodeId->$endNodeId from: $startSocketId, to $endSocketId');
+      final from = state.editingEdge.linkInput
+          ? state.editingEdge.from
+          : state.editingEdge.target;
+      final to = state.editingEdge.linkInput
+          ? state.editingEdge.target
+          : state.editingEdge.from;
+      logd('${from!.nodeId}->${to!.nodeId} from: ${from.id}, to ${to.id}');
       edge = EdgeState(
-        from: startNodeId,
-        targetNode: endNodeId,
-        fromSocket: startSocketId,
-        targetSocket: endSocketId,
+        from: from.nodeId,
+        targetNode: to.nodeId,
+        fromSocket: from.id,
+        targetSocket: to.id,
         color: state.editingEdge.color,
       );
     }
@@ -201,9 +163,21 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
     return renderBox!.globalToLocal(position);
   }
 
+  /// Todo: optimize: cache hit test variables, socket edge
   NodeSocket? _hitTestSocket(NodeCardState node, Offset position) {
     final isInput = state.editingEdge.linkInput;
+    final from = state.editingEdge.from!;
     for (final socket in isInput ? node.node.inputs : node.node.outputs) {
+      final connected = state.edges.values.where((e) {
+        return e.targetNode == node.id && e.targetSocket == socket.id;
+      }).isNotEmpty;
+      if (connected) {
+        continue;
+      }
+
+      if (!state.engine.registry.isSocketLinkable(from, socket)) {
+        continue;
+      }
       final pos = node.getSocketPosition(socket);
       final dist = (position - pos).distanceSquared;
       if (dist.abs() < nodeSocketSize * nodeSocketSize) {
@@ -216,7 +190,7 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
   NodeSocket? _edgeSocketHitTest(Offset pos) {
     NodeCardState? hitNode;
     for (final card in state.cards.values) {
-      if (card.id == state.editingEdge.fromNodeId) {
+      if (card.id == state.editingEdge.from?.nodeId) {
         continue;
       }
       if (card.hitTestBounds.contains(pos)) {

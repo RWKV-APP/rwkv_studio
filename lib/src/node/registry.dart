@@ -16,6 +16,15 @@ class Registry {
   void registerType(NodeDataType type) {
     types.add(type);
   }
+
+  bool isSocketLinkable(NodeSocket from, NodeSocket to) {
+    final type1 = from.prototype.type.id;
+    final type2 = to.prototype.type.id;
+    if (type1 == type2) {
+      return true;
+    }
+    return false;
+  }
 }
 
 void test() {

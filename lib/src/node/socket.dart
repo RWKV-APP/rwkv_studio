@@ -47,3 +47,18 @@ class NodeOutput extends NodeSocket {
     required super.nodeId,
   });
 }
+
+class ControlPrototype extends SocketPrototype {
+  ControlPrototype({required super.name})
+    : super(description: 'control', type: NodeDataType.void_);
+}
+
+class NodeControlOut extends NodeOutput {
+  NodeControlOut({required super.id, required super.nodeId, String name = ''})
+    : super(prototype: ControlPrototype(name: name));
+}
+
+class NodeControlIn extends NodeInput {
+  NodeControlIn({required super.id, required super.nodeId, String name = ''})
+    : super(prototype: ControlPrototype(name: name));
+}

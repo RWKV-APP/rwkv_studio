@@ -88,6 +88,20 @@ class NodeCardState {
     return bounds.topLeft + Offset(dx, dy);
   }
 
+  NodeSocket findSocket(SocketId socketId) {
+    for (final socket in node.inputs) {
+      if (socket.id == socketId) {
+        return socket;
+      }
+    }
+    for (final socket in node.outputs) {
+      if (socket.id == socketId) {
+        return socket;
+      }
+    }
+    throw Exception('Socket not found');
+  }
+
   double getSocketDy(int index) {
     double dy = 0;
     dy += nodeHeaderHeight;
@@ -125,23 +139,19 @@ class NodeCardState {
 }
 
 class EdgeEditingState {
-  final String fromNodeId;
-  final SocketId fromSocket;
-  final String targetNode;
-  final SocketId targetSocket;
+  NodeSocket? from;
+  NodeSocket? target;
   final Offset fromPos;
   final Offset toPos;
   final Color color;
   final bool linkInput;
 
-  bool get isValid => targetSocket != '' && targetNode != '';
+  bool get isValid => from != null && target != null;
 
   static final empty = EdgeEditingState(
-    fromNodeId: '',
+    from: null,
+    target: null,
     fromPos: Offset.zero,
-    fromSocket: '',
-    targetNode: '',
-    targetSocket: '',
     toPos: Offset.zero,
     color: Colors.black,
     linkInput: false,
@@ -149,44 +159,23 @@ class EdgeEditingState {
 
   EdgeEditingState({
     required this.linkInput,
-    required this.fromNodeId,
-    required this.fromSocket,
-    required this.targetNode,
-    required this.targetSocket,
+    required this.from,
+    required this.target,
     required this.fromPos,
     required this.toPos,
     required this.color,
   });
 
-  EdgeEditingState inverse() {
-    return EdgeEditingState(
-      fromNodeId: targetNode,
-      fromSocket: targetSocket,
-      targetNode: fromNodeId,
-      targetSocket: fromSocket,
-      toPos: toPos,
-      fromPos: fromPos,
-      color: color,
-      linkInput: linkInput,
-    );
-  }
-
   EdgeEditingState copyWith({
     Offset? fromPos,
-    String? fromNodeId,
-    String? fromSocket,
-    String? toNodeId,
-    String? toSocket,
     Offset? toPos,
     Color? color,
-    bool? linkInput
+    bool? linkInput,
   }) {
     return EdgeEditingState(
+      from: from,
+      target: target,
       fromPos: fromPos ?? this.fromPos,
-      fromNodeId: fromNodeId ?? this.fromNodeId,
-      fromSocket: fromSocket ?? this.fromSocket,
-      targetNode: toNodeId ?? this.targetNode,
-      targetSocket: toSocket ?? this.targetSocket,
       toPos: toPos ?? this.toPos,
       color: color ?? this.color,
       linkInput: linkInput ?? this.linkInput,
@@ -200,6 +189,7 @@ class NodeEditorState {
   final NodeGroup group;
   final Map<String, NodeCardState> cards;
   final Map<String, EdgeState> edges;
+  final NodeEngine engine;
 
   NodeEditorState({
     required this.keyCanvas,
@@ -207,6 +197,7 @@ class NodeEditorState {
     required this.group,
     required this.cards,
     required this.edges,
+    required this.engine,
   });
 
   factory NodeEditorState.initial() {
@@ -216,6 +207,7 @@ class NodeEditorState {
       group: NodeGroupPrototype.instance.create(),
       cards: {},
       edges: {},
+      engine: NodeEngine.def(),
     );
   }
 
@@ -224,6 +216,7 @@ class NodeEditorState {
     NodeGroup? group,
     Map<String, NodeCardState>? cards,
     Map<String, EdgeState>? edges,
+    NodeEngine? engine,
   }) {
     return NodeEditorState(
       keyCanvas: keyCanvas,
@@ -231,6 +224,7 @@ class NodeEditorState {
       group: group ?? this.group,
       cards: cards ?? this.cards,
       edges: edges ?? this.edges,
+      engine: engine ?? this.engine,
     );
   }
 }

@@ -24,7 +24,7 @@ class RWKVApp extends StatelessWidget {
             theme: theme.copyWith(
               typography: Typography.fromBrightness(
                 brightness: theme.brightness,
-              ).apply(fontFamily: 'Microsoft YaHei'),
+              ).apply(fontFamily: 'NotoSansSC', ),
               buttonTheme: ButtonThemeData(
                 defaultButtonStyle: ButtonStyle(
                   padding: WidgetStateProperty.all(

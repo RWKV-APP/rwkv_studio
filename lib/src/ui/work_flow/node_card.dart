@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rwkv_studio/src/node/export.dart';
 import 'package:rwkv_studio/src/ui/work_flow/node_editor_cubit.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/widget/drag_edit_recognizer.dart';
 
 const nodeHeaderHeight = 18.0;
@@ -15,7 +14,7 @@ final dataType2color = {
   NodeDataType.bool: Colors.yellow.shade800,
   NodeDataType.list: Colors.purple.shade800,
   NodeDataType.map: Colors.orange.shade800,
-  NodeDataType.any: Colors.grey.shade800,
+  NodeDataType.any: Colors.white,
 };
 
 class NodeCardView extends StatefulWidget {

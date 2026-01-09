@@ -1,6 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/global/app/app_cubit.dart';
+import 'package:rwkv_studio/src/python/interprater.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:window_manager/window_manager.dart';
 
 final _lightTheme = FluentThemeData.light();
@@ -20,6 +22,16 @@ class SettingPage extends StatelessWidget {
           Text('Appearance', style: theme.typography.title),
           const SizedBox(height: 16),
           Row(children: [Text('Theme'), const SizedBox(width: 16), _theme()]),
+          const SizedBox(height: 16),
+          Row(children: [Text('Font'), const SizedBox(width: 16), _theme()]),
+          const SizedBox(height: 16),
+          Button(
+            onPressed: () async {
+              final path = await PythonInterpreter.getPythonPath();
+              logd(path.join('\n'));
+            },
+            child: Text('Python'),
+          ),
         ],
       ),
     );

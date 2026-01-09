@@ -16,7 +16,8 @@ class EditingEdge extends StatelessWidget {
             painter: NodeEdgeCustomPainter(
               end: editing.linkInput ? editing.toPos : editing.fromPos,
               start: editing.linkInput ? editing.fromPos : editing.toPos,
-              color: editing.color,
+              startColor: editing.color,
+              endColor: editing.color,
             ),
           );
         } else {
@@ -30,10 +31,12 @@ class EditingEdge extends StatelessWidget {
 class NodeEdgeCustomPainter extends CustomPainter {
   final Offset start;
   final Offset end;
-  final Color color;
+  final Color startColor;
+
+  final Color endColor;
 
   late final _paint = Paint()
-    ..color = color
+    ..color = startColor
     ..strokeWidth = 2
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round;
@@ -45,7 +48,8 @@ class NodeEdgeCustomPainter extends CustomPainter {
   NodeEdgeCustomPainter({
     required this.start,
     required this.end,
-    required this.color,
+    required this.startColor,
+    required this.endColor,
   });
 
   @override
@@ -63,5 +67,6 @@ class NodeEdgeCustomPainter extends CustomPainter {
   bool shouldRepaint(NodeEdgeCustomPainter oldDelegate) =>
       oldDelegate.start != start ||
       oldDelegate.end != end ||
-      oldDelegate.color != color;
+      oldDelegate.startColor != startColor ||
+      oldDelegate.endColor != endColor;
 }

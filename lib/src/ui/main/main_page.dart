@@ -1,8 +1,8 @@
-import 'package:fluent_ui/fluent_ui.dart' hide Colors;
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
+import 'package:rwkv_studio/src/ui/common/logcat_panel.dart';
 import 'package:rwkv_studio/src/ui/common/theme_preview_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
@@ -74,7 +74,7 @@ class _MainPageState extends State<MainPage> {
             body: ChatPage(),
           ),
           PaneItem(
-            icon: const WindowsIcon(Icons.multitrack_audio),
+            icon: const WindowsIcon(FluentIcons.text_document_edit),
             title: const Text('文本转语音'),
             body: ChatPage(),
           ),
@@ -140,7 +140,7 @@ class _MainPageState extends State<MainPage> {
       PaneItem(
         icon: const WindowsIcon(WindowsIcons.settings),
         title: const Text('设置'),
-        body: Material(child: SettingPage()),
+        body: SettingPage(),
       ),
     ];
 
@@ -157,7 +157,13 @@ class _MainPageState extends State<MainPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Spacer(),
-              Button(child: Text("button"), onPressed: () {}),
+              IconButton(
+                icon: const Icon(FluentIcons.print),
+                onPressed: () {
+                  LogcatPanel.attachToRootOverlay(context);
+                },
+              ),
+              const SizedBox(width: 16),
             ],
           ),
         ),
@@ -166,7 +172,7 @@ class _MainPageState extends State<MainPage> {
         // header: const Text('RWKV Studio'),
         size: const NavigationPaneSize(openWidth: 220),
         selected: selected,
-        displayMode: PaneDisplayMode.auto,
+        displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
           logd('selected: $i');
           if ({14, 12, 7, 1}.contains(i)) {

@@ -265,38 +265,3 @@ class NodeGroup extends Node {
     addEdge(edge);
   }
 }
-
-class LoopNodePrototype extends NodePrototype {
-  LoopNodePrototype._({
-    super.name = 'Loop',
-    super.description = 'Loop',
-    required super.inputs,
-    required super.outputs,
-    required super.executor,
-  });
-
-  static LoopNodePrototype instance = LoopNodePrototype._(
-    inputs: [],
-    outputs: [],
-    executor: NodeExecutor(),
-  );
-
-  @override
-  LoopNode create() {
-    return LoopNode(
-      id: '${name}_${DateTime.now().millisecondsSinceEpoch}',
-      inputs: [],
-      outputs: [],
-      prototype: this,
-    );
-  }
-}
-
-class LoopNode extends Node {
-  LoopNode({
-    required super.id,
-    required super.inputs,
-    required super.outputs,
-    required super.prototype,
-  });
-}
