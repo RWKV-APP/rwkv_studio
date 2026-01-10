@@ -4,6 +4,8 @@ import 'package:rwkv_studio/src/app/router.dart';
 import 'package:rwkv_studio/src/global/app/app_cubit.dart';
 import 'package:rwkv_studio/src/global/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/ui/generation/text_generation_cubit.dart';
 
 class RWKVApp extends StatelessWidget {
   const RWKVApp({super.key});
@@ -15,6 +17,8 @@ class RWKVApp extends StatelessWidget {
         BlocProvider(create: (_) => ModelManageCubit()),
         BlocProvider(create: (_) => ChatCubit()),
         BlocProvider(create: (_) => AppCubit()),
+        BlocProvider(create: (_) => RwkvCubit()),
+        BlocProvider(create: (_) => TextGenerationCubit()),
       ],
       child: BlocSelector<AppCubit, AppState, FluentThemeData>(
         selector: (state) => state.theme,
@@ -24,7 +28,7 @@ class RWKVApp extends StatelessWidget {
             theme: theme.copyWith(
               typography: Typography.fromBrightness(
                 brightness: theme.brightness,
-              ).apply(fontFamily: 'NotoSansSC', ),
+              ).apply(fontFamily: 'NotoSansSC'),
               buttonTheme: ButtonThemeData(
                 defaultButtonStyle: ButtonStyle(
                   padding: WidgetStateProperty.all(

@@ -4,6 +4,7 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/logcat_panel.dart';
 import 'package:rwkv_studio/src/ui/common/theme_preview_page.dart';
+import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
 import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
@@ -14,20 +15,6 @@ class MainPage extends StatefulWidget {
 
   @override
   State<MainPage> createState() => _MainPageState();
-}
-
-class _Nav {
-  final String title;
-  final IconData icon;
-  final Widget body;
-  final List<_Nav>? children;
-
-  _Nav({
-    required this.title,
-    required this.icon,
-    required this.body,
-    this.children,
-  });
 }
 
 class _MainPageState extends State<MainPage> {
@@ -71,7 +58,7 @@ class _MainPageState extends State<MainPage> {
           PaneItem(
             icon: const WindowsIcon(FluentIcons.text_document_edit),
             title: const Text('文本生成'),
-            body: ChatPage(),
+            body: TextGenerationPage(),
           ),
           PaneItem(
             icon: const WindowsIcon(FluentIcons.text_document_edit),
@@ -144,46 +131,56 @@ class _MainPageState extends State<MainPage> {
       ),
     ];
 
-    return NavigationView(
-      appBar: NavigationAppBar(
-        // title: Text('RWKV Studio'),
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text('RWKV Studio', style: context.typography.bodyStrong),
-        ),
-        actions: SizedBox(
-          height: double.infinity,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Spacer(),
-              IconButton(
-                icon: const Icon(FluentIcons.print),
-                onPressed: () {
-                  LogcatPanel.attachToRootOverlay(context);
-                },
-              ),
-              const SizedBox(width: 16),
-            ],
+    return ScaffoldPage(
+      header: null,
+      padding: EdgeInsets.zero,
+      content: NavigationView(
+        appBar: NavigationAppBar(
+          // title: Text('RWKV Studio'),
+          leading: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text('RWKV Studio', style: context.typography.bodyStrong),
+          ),
+          actions: SizedBox(
+            height: double.infinity,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Spacer(),
+                IconButton(
+                  icon: const Icon(FluentIcons.print),
+                  onPressed: () {
+                    LogcatPanel.attachToRootOverlay(context);
+                  },
+                ),
+                const SizedBox(width: 16),
+              ],
+            ),
           ),
         ),
-      ),
-      pane: NavigationPane(
-        // header: const Text('RWKV Studio'),
-        size: const NavigationPaneSize(openWidth: 220),
-        selected: selected,
-        displayMode: PaneDisplayMode.compact,
-        onItemPressed: (i) {
-          logd('selected: $i');
-          if ({14, 12, 7, 1}.contains(i)) {
-            return;
-          }
-          setState(() {
-            selected = i;
-          });
+        paneBodyBuilder: (context, child) {
+          return Mica(
+            backgroundColor: Colors.white,
+            child: child ?? SizedBox(),
+          );
         },
-        items: items,
-        footerItems: footer,
+        pane: NavigationPane(
+          // header: const Text('RWKV Studio'),
+          size: const NavigationPaneSize(openWidth: 220),
+          selected: selected,
+          displayMode: PaneDisplayMode.compact,
+          onItemPressed: (i) {
+            logd('selected: $i');
+            if ({14, 12, 7, 1}.contains(i)) {
+              return;
+            }
+            setState(() {
+              selected = i;
+            });
+          },
+          items: items,
+          footerItems: footer,
+        ),
       ),
     );
   }

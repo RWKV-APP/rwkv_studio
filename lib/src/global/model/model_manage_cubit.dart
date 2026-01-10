@@ -39,10 +39,12 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       );
     });
 
+    final models = manager.models;
+    models.sort((a, b) => a.name.compareTo(b.name));
     emit(
       state.copyWith(
         initialized: true,
-        models: [...manager.models],
+        models: models,
         modelStates: {
           for (final entry in tasks.entries)
             entry.key: ModelDownloadState(
@@ -86,7 +88,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   void updateConfig() async {
     await manager.updateConfig();
-    emit(state.copyWith(models: [...manager.models]));
+    final models = manager.models;
+    models.sort((a, b) => a.name.compareTo(b.name));
+    emit(state.copyWith(models: models));
   }
 
   void changeDownloadSource(DownloadSource source) {

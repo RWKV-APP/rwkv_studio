@@ -15,12 +15,17 @@ dependencies:
 
   rwkv_dart:
     path: ../rwkv_dart
+#    git:
+#      url: https://github.com/RWKV-APP/rwkv_dart.git
+#      ref: dev
 
   rwkv_downloader:
     path: ../rwkv_downloader
 #    git:
 #      url: https://github.com/RWKV-APP/rwkv_downloader.git
 #      ref: dev
+  rwkv_libs:
+    path: ../rwkv_libs
 
   flutter_bloc: ^9.1.1
   dio: ^5.0.0

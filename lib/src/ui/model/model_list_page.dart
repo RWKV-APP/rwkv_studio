@@ -47,14 +47,15 @@ class _ModelListPageState extends State<ModelListPage>
           itemCount: state.models.length,
           itemBuilder: (context, index) {
             final model = state.models[index];
-            return Container(
-              decoration: _selectedModel?.id != model.id
-                  ? null
-                  : BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: context.theme.colorScheme.surfaceContainerHigh,
-                    ),
-              child: ModelListItem(
+            return ListTile.selectable(
+              // decoration: _selectedModel?.id != model.id
+              //     ? null
+              //     : BoxDecoration(
+              //         borderRadius: BorderRadius.circular(8),
+              //         color: context.theme.colorScheme.surfaceContainerHigh,
+              //       ),
+              selected: _selectedModel?.id == model.id,
+              title: ModelListItem(
                 model: model,
                 onTap: () {
                   setState(() {
