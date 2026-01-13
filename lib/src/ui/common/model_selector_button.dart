@@ -1,8 +1,9 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/ui/common/model_list_flyout.dart';
+import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ModelSelector extends StatefulWidget {
   final String? modelInstanceId;
@@ -29,22 +30,16 @@ class _ModelSelectorState extends State<ModelSelector> {
         .firstOrNull
         ?.value;
     if (widget.load) {
-      modelState ??= await context.rwkv.loadModel(model);
+      modelState ??= await context.rwkv.loadModel(model).withToast(context);
     }
-    if (!mounted) {
+    if (!mounted || widget.onModelSelected == null) {
       return;
     }
+    context.rwkv.clearLoadState();
     widget.onModelSelected?.call(model, modelState);
   }
 
   void _showMenu() async {
-    final models = context.modelManage.state.models.where(
-      (e) => e.localPath.isNotEmpty,
-    );
-    ModelInstanceState? modelState = context.rwkvState.models.entries
-        .where((e) => e.key == widget.modelInstanceId)
-        .firstOrNull
-        ?.value;
     itemsController.showFlyout(
       autoModeConfiguration: FlyoutAutoConfiguration(
         preferredMode: FlyoutPlacementMode.bottomCenter,
@@ -53,22 +48,9 @@ class _ModelSelectorState extends State<ModelSelector> {
       dismissOnPointerMoveAway: false,
       dismissWithEsc: true,
       builder: (ctx) {
-        return MenuFlyout(
-          items: [
-            for (final model in models)
-              ToggleMenuFlyoutItem(
-                text: Text(model.name),
-                value: modelState?.info.id == model.id,
-                onChanged: (bool value) {
-                  if (value) {
-                    _onModelSelected(model);
-                  }
-                },
-              ),
-            MenuFlyoutSeparator(),
-            MenuFlyoutItem(text: const Text('模型管理'), onPressed: () {}),
-            MenuFlyoutItem(text: const Text('导入本地模型'), onPressed: () {}),
-          ],
+        return ModelListFlyout(
+          modelInstanceId: widget.modelInstanceId,
+          onModelSelected: (info) => _onModelSelected(info),
         );
       },
     );
@@ -93,13 +75,32 @@ class _ModelSelectorState extends State<ModelSelector> {
           );
         }
 
-        final model = state.models[widget.modelInstanceId];
-
+        Widget content;
+        if (state.modelLoadState.error.isNotEmpty) {
+          content = Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Tooltip(
+                message: state.modelLoadState.error,
+                style: const TooltipThemeData(
+                  preferBelow: true,
+                  waitDuration: Duration.zero,
+                ),
+                child: Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
+              ),
+              const SizedBox(width: 8),
+              Text('加载失败'),
+            ],
+          );
+        } else {
+          final model = state.models[widget.modelInstanceId];
+          content = Text(model?.info.name ?? '加载模型');
+        }
         return FlyoutTarget(
           controller: itemsController,
           child: Button(
             onPressed: widget.onModelSelected == null ? null : _showMenu,
-            child: Text(model?.info.name ?? '选择模型'),
+            child: content,
           ),
         );
       },

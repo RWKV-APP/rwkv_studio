@@ -4,8 +4,8 @@ import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/bloc_builders/rwkv_builders.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
+import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_cubit.dart';
-import 'package:rwkv_studio/src/ui/widget/model_selector.dart';
 import 'package:rwkv_studio/src/widget/labeled_slider.dart';
 
 extension _Ext on BuildContext {
@@ -30,6 +30,8 @@ class TextGenerationPage extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: _TitleBar(),
                     ),
+                    Divider(),
+                    const SizedBox(height: 12),
                     Expanded(child: _TextBox()),
                   ],
                 ),
@@ -48,7 +50,7 @@ class TextGenerationPage extends StatelessWidget {
                         horizontal: 12,
                         vertical: 12,
                       ),
-                      child: !state.showSettingPane ? null : _SettingPanel(),
+                      child: _SettingPanel(),
                     ),
                   );
                 },

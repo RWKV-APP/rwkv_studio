@@ -16,9 +16,12 @@ class RWKVApp extends StatelessWidget {
           return FluentApp(
             title: 'RWKV Studio',
             theme: theme.copyWith(
+              navigationPaneTheme: NavigationPaneThemeData(
+                backgroundColor: Colors.transparent
+              ),
               typography: Typography.fromBrightness(
                 brightness: theme.brightness,
-              ).apply(fontFamily: 'NotoSansSC'),
+              ).apply(fontFamily: 'Microsoft YaHei'),
               buttonTheme: ButtonThemeData(
                 defaultButtonStyle: ButtonStyle(
                   padding: WidgetStateProperty.all(

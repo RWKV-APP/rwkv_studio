@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/utils/assets.dart';
 
 part 'rwkv_state.dart';
 
@@ -18,6 +19,14 @@ class RwkvCubit extends Cubit<RwkvState> {
     //
   }
 
+  void clearLoadState() {
+    emit(state.copyWith(modelLoadState: ModelLoadState.initial()));
+    }
+
+  ModelInstanceState? getModelInstance(String? modelInstanceId) {
+    return state.models[modelInstanceId];
+  }
+
   Future stop(String modelInstanceId) async {
     final instance = state.models[modelInstanceId]!;
     await instance.rwkv.stopGenerate();
@@ -28,15 +37,19 @@ class RwkvCubit extends Cubit<RwkvState> {
     await instance.rwkv.setDecodeParam(param);
   }
 
-  Stream<String> generate(
-    String prompt,
-    String modelInstanceId,
-    DecodeParam param,
-    int maxTokens,
-  ) async* {
+  Stream<String> generate(String prompt,
+      String modelInstanceId,
+      DecodeParam param,
+      int maxTokens,) async* {
     final instance = state.models[modelInstanceId]!;
     await _syncModelConfig(modelInstanceId, param, maxTokens);
     yield* instance.rwkv.generate(prompt);
+  }
+
+  Future release(String modelInstanceId) async {
+    final instance = state.models[modelInstanceId]!;
+    await instance.rwkv.release();
+    emit(state.copyWith(models: {...state.models}..remove(modelInstanceId)));
   }
 
   Future<ModelInstanceState> loadModel(ModelInfo model) async {
@@ -51,8 +64,7 @@ class RwkvCubit extends Cubit<RwkvState> {
       await rwkv.loadModel(
         LoadModelParam(
           modelPath: model.localPath,
-          tokenizerPath:
-              r'E:\dev\rwkv_studio\examples\b_rwkv_vocab_v20230424.txt',
+          tokenizerPath: AppAssets.rwkvVocab20230424,
         ),
       );
     } catch (e) {
@@ -65,6 +77,7 @@ class RwkvCubit extends Cubit<RwkvState> {
           ),
         ),
       );
+      rethrow;
     }
     final instance = ModelInstanceState(rwkv: rwkv, info: model);
     emit(
@@ -89,11 +102,9 @@ class RwkvCubit extends Cubit<RwkvState> {
     return instance;
   }
 
-  Future _syncModelConfig(
-    String instanceId,
-    DecodeParam param,
-    int maxLen,
-  ) async {
+  Future _syncModelConfig(String instanceId,
+      DecodeParam param,
+      int maxLen,) async {
     final instance = state.models[instanceId]!;
     if (instance.decodeParam != param) {
       await instance.rwkv.setDecodeParam(param);

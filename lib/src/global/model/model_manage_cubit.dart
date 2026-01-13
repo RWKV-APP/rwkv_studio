@@ -17,6 +17,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   ModelManageCubit() : super(ModelManageState.initial());
 
+  Iterable<ModelInfo> get localModels =>
+      state.models.where((e) => e.localPath.isNotEmpty);
+
   Future init() async {
     if (state.initialized) {
       logw('ModelManageCubit already initialized');
@@ -124,6 +127,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }) {
     emit(
       state.copyWith(
+        models: update.isCompleted ? manager.models : null,
         modelStates: {
           ...state.modelStates,
           modelId: ModelDownloadState(update: update, error: error),

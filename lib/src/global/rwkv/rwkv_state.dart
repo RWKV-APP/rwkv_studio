@@ -3,7 +3,7 @@ part of 'rwkv_cubit.dart';
 class ModelLoadState {
   final ModelInfo? model;
   final bool loading;
-  final dynamic error;
+  final String error;
 
   ModelLoadState({
     required this.model,
@@ -12,7 +12,7 @@ class ModelLoadState {
   });
 
   factory ModelLoadState.initial() {
-    return ModelLoadState(model: null, loading: false, error: null);
+    return ModelLoadState(model: null, loading: false, error: '');
   }
 }
 
