@@ -20,25 +20,35 @@ class ModelInstanceState {
   final String id;
   final RWKV rwkv;
   final ModelInfo info;
-  GenerationState state;
+  final GenerationState state;
+  final GenerationConfig config;
+  final DecodeParam decodeParam;
 
   ModelInstanceState({
     required this.rwkv,
     required this.info,
     String? id,
     GenerationState? state,
+    GenerationConfig? config,
+    DecodeParam? decodeParam,
   }) : id = id ?? "${info.id}_${rwkv.hashCode}",
-       state = state ?? GenerationState.initial();
+       decodeParam = decodeParam ?? DecodeParam.initial(),
+       state = state ?? GenerationState.initial(),
+       config = config ?? GenerationConfig.initial();
 
   ModelInstanceState copyWith({
     RWKV? rwkv,
     ModelInfo? info,
     GenerationState? state,
+    GenerationConfig? config,
+    DecodeParam? decodeParam,
   }) {
     return ModelInstanceState(
       rwkv: rwkv ?? this.rwkv,
       info: info ?? this.info,
       state: state ?? this.state,
+      config: config ?? this.config,
+      decodeParam: decodeParam ?? this.decodeParam,
     );
   }
 }

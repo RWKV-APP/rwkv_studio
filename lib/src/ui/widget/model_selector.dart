@@ -98,7 +98,7 @@ class _ModelSelectorState extends State<ModelSelector> {
         return FlyoutTarget(
           controller: itemsController,
           child: Button(
-            onPressed: _showMenu,
+            onPressed: widget.onModelSelected == null ? null : _showMenu,
             child: Text(model?.info.name ?? '选择模型'),
           ),
         );

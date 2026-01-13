@@ -19,11 +19,88 @@ class SettingPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Appearance', style: theme.typography.title),
+          Text('设置', style: theme.typography.title),
           const SizedBox(height: 16),
-          Row(children: [Text('Theme'), const SizedBox(width: 16), _theme()]),
+          Text('外观', style: theme.typography.subtitle),
           const SizedBox(height: 16),
-          Row(children: [Text('Font'), const SizedBox(width: 16), _theme()]),
+          Row(children: [Text('主题'), const SizedBox(width: 16), _theme()]),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text('字体'),
+              const SizedBox(width: 12),
+              ComboBox(
+                value: 'Microsoft YaHei',
+                onChanged: (v) {
+                  //
+                },
+                items: [
+                  ComboBoxItem(
+                    value: 'Microsoft YaHei',
+                    child: Text('Microsoft YaHei'),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 24),
+              Text('字体大小'),
+              const SizedBox(width: 12),
+              ComboBox(
+                value: '16',
+                onChanged: (v) {
+                  //
+                },
+                items: [
+                  ComboBoxItem(value: '16', child: Text('16')),
+                  ComboBoxItem(value: '18', child: Text('18')),
+                  ComboBoxItem(value: '20', child: Text('20')),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('缓存', style: theme.typography.subtitle),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text('模型下载目录'),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 300,
+                child: TextBox(
+                  controller: TextEditingController(
+                    text: r'C:\Users\Administrator\Downloads',
+                  ),
+                  suffix: IconButton(
+                    icon: const Icon(WindowsIcons.folder),
+                    onPressed: () {
+                      //
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text('缓存目录'),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 300,
+                child: TextBox(
+                  controller: TextEditingController(
+                    text: r'C:\Users\Administrator\Downloads',
+                  ),
+                  suffix: IconButton(
+                    icon: const Icon(WindowsIcons.folder),
+                    onPressed: () {
+                      //
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           Button(
             onPressed: () async {

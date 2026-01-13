@@ -52,7 +52,7 @@ class _MainPageState extends State<MainPage> {
           ),
           PaneItem(
             icon: const WindowsIcon(FluentIcons.file_image),
-            title: const Text('图片转文本'),
+            title: const Text('图像生成'),
             body: ChatPage(),
           ),
           PaneItem(
@@ -158,15 +158,12 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
         ),
-        paneBodyBuilder: (context, child) {
-          return Mica(
-            backgroundColor: Colors.white,
-            child: child ?? SizedBox(),
-          );
+        paneBodyBuilder: (item, child) {
+          return Acrylic(child: child ?? SizedBox());
         },
         pane: NavigationPane(
           // header: const Text('RWKV Studio'),
-          size: const NavigationPaneSize(openWidth: 220),
+          size: const NavigationPaneSize(openWidth: 220, openMinWidth: 120),
           selected: selected,
           displayMode: PaneDisplayMode.compact,
           onItemPressed: (i) {

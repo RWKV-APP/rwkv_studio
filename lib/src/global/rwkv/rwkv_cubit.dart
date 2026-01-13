@@ -23,9 +23,20 @@ class RwkvCubit extends Cubit<RwkvState> {
     await instance.rwkv.stopGenerate();
   }
 
-  Stream<String> generate(String prompt, String modelInstanceId) {
+  Future setDecodeParam(String modelInstanceId, DecodeParam param) async {
     final instance = state.models[modelInstanceId]!;
-    return instance.rwkv.generate(prompt);
+    await instance.rwkv.setDecodeParam(param);
+  }
+
+  Stream<String> generate(
+    String prompt,
+    String modelInstanceId,
+    DecodeParam param,
+    int maxTokens,
+  ) async* {
+    final instance = state.models[modelInstanceId]!;
+    await _syncModelConfig(modelInstanceId, param, maxTokens);
+    yield* instance.rwkv.generate(prompt);
   }
 
   Future<ModelInstanceState> loadModel(ModelInfo model) async {
@@ -76,5 +87,39 @@ class RwkvCubit extends Cubit<RwkvState> {
     });
 
     return instance;
+  }
+
+  Future _syncModelConfig(
+    String instanceId,
+    DecodeParam param,
+    int maxLen,
+  ) async {
+    final instance = state.models[instanceId]!;
+    if (instance.decodeParam != param) {
+      await instance.rwkv.setDecodeParam(param);
+      emit(
+        state.copyWith(
+          models: {
+            ...state.models,
+            instanceId: instance.copyWith(decodeParam: param),
+          },
+        ),
+      );
+    }
+    if (instance.config.maxTokens != maxLen) {
+      await instance.rwkv.setGenerationConfig(
+        instance.config.copyWith(maxTokens: maxLen),
+      );
+      emit(
+        state.copyWith(
+          models: {
+            ...state.models,
+            instanceId: instance.copyWith(
+              config: instance.config.copyWith(maxTokens: maxLen),
+            ),
+          },
+        ),
+      );
+    }
   }
 }

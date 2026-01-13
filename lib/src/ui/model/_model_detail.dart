@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart' hide Tooltip;
 import 'package:flutter/material.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/model/_model_tag_badge.dart';
-import 'package:rwkv_studio/src/utils/gguf_file.dart';
 import 'package:rwkv_studio/src/utils/string_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 

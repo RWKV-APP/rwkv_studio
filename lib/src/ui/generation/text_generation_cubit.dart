@@ -1,51 +1,17 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
-class TextGenerationState {
-  final TextEditingController controllerText;
-  final ScrollController controllerScroll;
-  final String modelInstanceId;
-  final bool autoScrolling;
-  final bool generating;
-
-  TextGenerationState({
-    required this.controllerText,
-    required this.controllerScroll,
-    required this.modelInstanceId,
-    required this.generating,
-    required this.autoScrolling,
-  });
-
-  factory TextGenerationState.initial() {
-    return TextGenerationState(
-      controllerScroll: ScrollController(),
-      controllerText: TextEditingController(),
-      modelInstanceId: '',
-      generating: false,
-      autoScrolling: true,
-    );
-  }
-
-  TextGenerationState copyWith({
-    TextEditingController? controllerText,
-    ScrollController? controllerScroll,
-    String? modelInstanceId,
-    bool? generating,
-    bool? autoScrolling,
-  }) {
-    return TextGenerationState(
-      controllerText: controllerText ?? this.controllerText,
-      modelInstanceId: modelInstanceId ?? this.modelInstanceId,
-      generating: generating ?? this.generating,
-      controllerScroll: controllerScroll ?? this.controllerScroll,
-      autoScrolling: autoScrolling ?? this.autoScrolling,
-    );
-  }
-}
+part 'text_generation_state.dart';
 
 typedef GenerateFunc =
-    Stream<String> Function(String prompt, String modelInstanceId);
+    Stream<String> Function(
+      String prompt,
+      String modelInstanceId,
+      DecodeParam decodeParam,
+      int maxTokens,
+    );
 
 class TextGenerationCubit extends Cubit<TextGenerationState>
     with SubscriptionManagerMixin {
@@ -58,6 +24,22 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     });
   }
 
+  void resetSettings() {
+    emit(state.copyWith(decodeParam: DecodeParam.initial(), maxTokens: 2000));
+  }
+
+  void setMaxTokens(int maxTokens) {
+    emit(state.copyWith(maxTokens: maxTokens));
+  }
+
+  void toggleSettingPane() {
+    emit(state.copyWith(showSettingPane: !state.showSettingPane));
+  }
+
+  void setDecodeParam(DecodeParam param) {
+    emit(state.copyWith(decodeParam: param));
+  }
+
   void selectModel(String modelInstanceId) {
     emit(state.copyWith(modelInstanceId: modelInstanceId));
   }
@@ -68,18 +50,24 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
 
     String result = state.controllerText.text;
 
-    final sp = func(prompt, state.modelInstanceId).listen(
-      (e) {
-        result += e;
-        state.controllerText.text = result.substring(prompt.length);
-      },
-      onError: (e) {
-        emit(state.copyWith(generating: false));
-      },
-      onDone: () {
-        emit(state.copyWith(generating: false));
-      },
-    );
+    final sp =
+        func(
+          prompt,
+          state.modelInstanceId,
+          state.decodeParam,
+          state.maxTokens,
+        ).listen(
+          (e) {
+            result += e;
+            state.controllerText.text = result.substring(prompt.length);
+          },
+          onError: (e) {
+            emit(state.copyWith(generating: false));
+          },
+          onDone: () {
+            emit(state.copyWith(generating: false));
+          },
+        );
     addSubscription(sp);
   }
 }
