@@ -14,6 +14,7 @@ class ModelManageState {
   final List<ModelInfo> localModels;
   final Map<String, ModelDownloadState?> modelStates;
   final DownloadSource downloadSource;
+  final String downloadDir;
 
   ModelManageState._({
     required this.initialized,
@@ -21,6 +22,7 @@ class ModelManageState {
     required this.localModels,
     required this.modelStates,
     required this.downloadSource,
+    required this.downloadDir,
   });
 
   factory ModelManageState.initial() {
@@ -30,6 +32,7 @@ class ModelManageState {
       modelStates: {},
       localModels: [],
       downloadSource: DownloadSource.aiFastHub,
+      downloadDir: '',
     );
   }
 
@@ -39,6 +42,7 @@ class ModelManageState {
     List<ModelInfo>? localModels,
     Map<String, ModelDownloadState?>? modelStates,
     DownloadSource? downloadSource,
+    String? downloadDir,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
@@ -46,6 +50,7 @@ class ModelManageState {
       localModels: localModels ?? this.localModels,
       modelStates: modelStates ?? this.modelStates,
       downloadSource: downloadSource ?? this.downloadSource,
+      downloadDir: downloadDir ?? this.downloadDir,
     );
   }
 }

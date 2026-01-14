@@ -10,9 +10,6 @@ dependencies:
   flutter:
     sdk: flutter
 
- # rwkv_libs:
-   # path: ../rwkv_libs
-
   rwkv_dart:
     path: ../rwkv_dart
 #    git:

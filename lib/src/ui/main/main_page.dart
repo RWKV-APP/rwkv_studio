@@ -39,6 +39,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final dark = context.fluent.brightness == Brightness.dark;
     return NavigationView(
       appBar: NavigationAppBar(
         // title: Text('RWKV Studio'),
@@ -64,8 +65,10 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
       paneBodyBuilder: (item, child) {
-        return Mica(
-          backgroundColor: Colors.white.withAlpha(160),
+        return ColoredBox(
+          color: dark
+              ? Colors.black.withAlpha(100)
+              : Colors.white.withAlpha(100),
           child: child ?? SizedBox(),
         );
       },
@@ -76,7 +79,7 @@ class _MainPageState extends State<MainPage> {
         displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
           logd('selected: $i');
-          if ({14, 12, 7, 1}.contains(i)) {
+          if ({12, 7, 1}.contains(i)) {
             return;
           }
           setState(() {

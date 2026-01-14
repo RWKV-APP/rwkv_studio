@@ -41,14 +41,9 @@ List<NavigationPaneItem> buildNavItems(BuildContext context) => [
   ),
   PaneItemExpander(
     icon: const WindowsIcon(WindowsIcons.flow),
-    title: const Text('工作流程'),
+    title: const Text('工作流'),
     body: SizedBox(),
     items: [
-      PaneItem(
-        icon: const WindowsIcon(FluentIcons.chart_template),
-        title: const Text('Prompt 工程'),
-        body: SizedBox(),
-      ),
       PaneItem(
         icon: const WindowsIcon(WindowsIcons.search_and_apps),
         title: const Text('深度研究'),
@@ -65,6 +60,12 @@ List<NavigationPaneItem> buildNavItems(BuildContext context) => [
     icon: const WindowsIcon(WindowsIcons.apps),
     title: const Text('模型管理'),
     body: ModelListPage(),
+  ),
+  PaneItemExpander(
+    icon: const WindowsIcon(FluentIcons.machine_learning),
+    title: const Text('训练/微调'),
+    body: SizedBox(),
+    items: [],
   ),
   PaneItemExpander(
     icon: const WindowsIcon(WindowsIcons.developer_tools),

@@ -1,9 +1,13 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/global/app/app_cubit.dart';
 import 'package:rwkv_studio/src/python/interprater.dart';
+import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:window_manager/window_manager.dart';
+
+part '_cache_settings.dart';
 
 final _lightTheme = FluentThemeData.light();
 final _darkTheme = FluentThemeData.dark();
@@ -58,49 +62,7 @@ class SettingPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text('缓存', style: theme.typography.subtitle),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text('模型下载目录'),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 300,
-                child: TextBox(
-                  controller: TextEditingController(
-                    text: r'C:\Users\Administrator\Downloads',
-                  ),
-                  suffix: IconButton(
-                    icon: const Icon(WindowsIcons.folder),
-                    onPressed: () {
-                      //
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text('缓存目录'),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 300,
-                child: TextBox(
-                  controller: TextEditingController(
-                    text: r'C:\Users\Administrator\Downloads',
-                  ),
-                  suffix: IconButton(
-                    icon: const Icon(WindowsIcons.folder),
-                    onPressed: () {
-                      //
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
+          CacheSettingsCard(),
           const SizedBox(height: 16),
           Button(
             onPressed: () async {
@@ -124,13 +86,17 @@ class SettingPage extends StatelessWidget {
             ComboBoxItem(value: _darkTheme, child: Text('Dark')),
           ],
           value: theme,
-          placeholder: Text(theme == _lightTheme ? 'Light' : 'Dark'),
+          placeholder: Text(theme == _lightTheme ? 'Dark' : 'Light'),
           onChanged: (value) {
             if (value == _lightTheme) {
               WindowManager.instance.setBrightness(Brightness.light);
             } else {
               WindowManager.instance.setBrightness(Brightness.dark);
             }
+            Window.setEffect(
+              effect: WindowEffect.mica,
+              dark: value == _darkTheme,
+            );
             context.app.changeTheme(value!);
           },
         );

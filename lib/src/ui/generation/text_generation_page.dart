@@ -4,6 +4,7 @@ import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/bloc_builders/rwkv_builders.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
+import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/widget/labeled_slider.dart';
@@ -61,7 +62,12 @@ class TextGenerationPage extends StatelessWidget {
         Divider(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: _PerformanceInfo(),
+          child: BlocBuilder<TextGenerationCubit, TextGenerationState>(
+            buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
+            builder: (context, state) {
+              return DecodeSpeedInfo(modelInstanceId: state.modelInstanceId);
+            },
+          ),
         ),
       ],
     );
@@ -82,11 +88,11 @@ class _TitleBar extends StatelessWidget {
             Spacer(),
             ModelSelector(
               modelInstanceId: state.modelInstanceId,
-              load: true,
+              autoLoad: true,
               onModelSelected: state.generating
                   ? null
                   : (info, instance) {
-                      context.cubit.selectModel(instance!.id);
+                      context.cubit.onModelSelected(instance!.id);
                     },
             ),
             const SizedBox(width: 8),
@@ -97,7 +103,7 @@ class _TitleBar extends StatelessWidget {
                       if (state.generating) {
                         context.rwkv.stop(state.modelInstanceId);
                       } else {
-                        context.cubit.generate(context.rwkv.generate);
+                        context.cubit.generate(context.rwkv);
                       }
                     },
               child: Row(
@@ -221,48 +227,6 @@ class _SettingPanel extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PerformanceInfo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<TextGenerationCubit, TextGenerationState>(
-      builder: (context, state) {
-        return RwkvModelStateBuilder(
-          modelInstanceId: state.modelInstanceId,
-          builder: (ctx, model) {
-            final decode = model.state.decodeSpeed.toStringAsFixed(2);
-            final prefill = model.state.prefillSpeed.toStringAsFixed(2);
-            final label = Text(
-              'decode: $decode t/s \t prefill: $prefill t/s',
-              textAlign: TextAlign.end,
-              style: context.fluent.typography.caption?.copyWith(
-                fontFamily: 'monospace',
-              ),
-            );
-            if (model.state.prefillProgress < 1.0) {
-              return Row(
-                children: [
-                  Spacer(),
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: ProgressRing(
-                      strokeWidth: 2,
-                      value: model.state.prefillProgress * 100,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  label,
-                ],
-              );
-            }
-            return label;
-          },
-        );
-      },
     );
   }
 }

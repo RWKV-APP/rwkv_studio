@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/rwkv/rwkv.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 
 part 'rwkv_state.dart';
@@ -12,7 +13,7 @@ extension Ext on BuildContext {
   RwkvState get rwkvState => rwkv.state;
 }
 
-class RwkvCubit extends Cubit<RwkvState> {
+class RwkvCubit extends Cubit<RwkvState> implements RwkvInterface {
   RwkvCubit() : super(RwkvState.initial());
 
   void init() async {
@@ -21,14 +22,15 @@ class RwkvCubit extends Cubit<RwkvState> {
 
   void clearLoadState() {
     emit(state.copyWith(modelLoadState: ModelLoadState.initial()));
-    }
+  }
 
   ModelInstanceState? getModelInstance(String? modelInstanceId) {
     return state.models[modelInstanceId];
   }
 
-  Future stop(String modelInstanceId) async {
-    final instance = state.models[modelInstanceId]!;
+  @override
+  Future stop(String instanceId) async {
+    final instance = state.models[instanceId]!;
     await instance.rwkv.stopGenerate();
   }
 
@@ -37,17 +39,36 @@ class RwkvCubit extends Cubit<RwkvState> {
     await instance.rwkv.setDecodeParam(param);
   }
 
-  Stream<String> generate(String prompt,
-      String modelInstanceId,
-      DecodeParam param,
-      int maxTokens,) async* {
-    final instance = state.models[modelInstanceId]!;
-    await _syncModelConfig(modelInstanceId, param, maxTokens);
+  @override
+  Stream<String> chat(
+    List<String> message,
+    String instanceId,
+    DecodeParam param,
+    int maxTokens,
+  ) async* {
+    final instance = state.models[instanceId];
+    if (instance == null) throw "Model not found";
+    await _syncModelConfig(instanceId, param, maxTokens);
+    yield* instance.rwkv.chat(message);
+  }
+
+  @override
+  Stream<String> generate(
+    String prompt,
+    String instanceId,
+    DecodeParam param,
+    int maxTokens,
+  ) async* {
+    final instance = state.models[instanceId];
+    if (instance == null) throw "Model not found";
+    await _syncModelConfig(instanceId, param, maxTokens);
+    await instance.rwkv.clearState();
     yield* instance.rwkv.generate(prompt);
   }
 
   Future release(String modelInstanceId) async {
-    final instance = state.models[modelInstanceId]!;
+    final instance = state.models[modelInstanceId];
+    if (instance == null) throw "Model not found";
     await instance.rwkv.release();
     emit(state.copyWith(models: {...state.models}..remove(modelInstanceId)));
   }
@@ -102,9 +123,11 @@ class RwkvCubit extends Cubit<RwkvState> {
     return instance;
   }
 
-  Future _syncModelConfig(String instanceId,
-      DecodeParam param,
-      int maxLen,) async {
+  Future _syncModelConfig(
+    String instanceId,
+    DecodeParam param,
+    int maxLen,
+  ) async {
     final instance = state.models[instanceId]!;
     if (instance.decodeParam != param) {
       await instance.rwkv.setDecodeParam(param);
@@ -132,5 +155,10 @@ class RwkvCubit extends Cubit<RwkvState> {
         ),
       );
     }
+  }
+
+  @override
+  String getModelName(String instanceId) {
+    return state.models[instanceId]!.info.name;
   }
 }

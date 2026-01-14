@@ -8,13 +8,13 @@ import 'package:rwkv_studio/src/utils/toast_util.dart';
 class ModelSelector extends StatefulWidget {
   final String? modelInstanceId;
   final Function(ModelInfo? info, ModelInstanceState? model)? onModelSelected;
-  final bool load;
+  final bool autoLoad;
 
   const ModelSelector({
     super.key,
     this.modelInstanceId,
     this.onModelSelected,
-    this.load = true,
+    this.autoLoad = true,
   });
 
   @override
@@ -29,7 +29,7 @@ class _ModelSelectorState extends State<ModelSelector> {
         .where((e) => e.value.info.id == model.id)
         .firstOrNull
         ?.value;
-    if (widget.load) {
+    if (widget.autoLoad) {
       modelState ??= await context.rwkv.loadModel(model).withToast(context);
     }
     if (!mounted || widget.onModelSelected == null) {

@@ -1,17 +1,10 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/rwkv/rwkv.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'text_generation_state.dart';
-
-typedef GenerateFunc =
-    Stream<String> Function(
-      String prompt,
-      String modelInstanceId,
-      DecodeParam decodeParam,
-      int maxTokens,
-    );
 
 class TextGenerationCubit extends Cubit<TextGenerationState>
     with SubscriptionManagerMixin {
@@ -40,23 +33,24 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     emit(state.copyWith(decodeParam: param));
   }
 
-  void selectModel(String modelInstanceId) {
+  void onModelSelected(String modelInstanceId) {
     emit(state.copyWith(modelInstanceId: modelInstanceId));
   }
 
-  void generate(GenerateFunc func) {
+  void generate(RwkvInterface rwkv) {
     final prompt = state.controllerText.text.trim();
     emit(state.copyWith(generating: true));
 
     String result = state.controllerText.text;
 
-    final sp =
-        func(
+    final sp = rwkv
+        .generate(
           prompt,
           state.modelInstanceId,
           state.decodeParam,
           state.maxTokens,
-        ).listen(
+        )
+        .listen(
           (e) {
             result += e;
             state.controllerText.text = result.substring(prompt.length);
