@@ -7,7 +7,7 @@ class MessageState {
   final String role;
   final String error;
   final String modelName;
-  final int stopReason;
+  final StopReason stopReason;
 
   bool get isUser => role == 'user';
 
@@ -17,7 +17,7 @@ class MessageState {
     required this.datetime,
     required this.role,
     required this.modelName,
-    this.stopReason = 0,
+    this.stopReason = StopReason.none,
     this.error = '',
   });
 
@@ -28,7 +28,7 @@ class MessageState {
     String? role,
     String? error,
     String? modelName,
-    int? stopReason,
+    StopReason? stopReason,
   }) {
     return MessageState(
       id: id ?? this.id,

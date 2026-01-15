@@ -9,11 +9,10 @@ abstract class RwkvInterface {
     //
   }
 
-  Stream<String> chat(
+  Stream<GenerationResponse> chat(
     List<String> message,
     String instanceId,
     DecodeParam param,
-    int maxTokens,
   ) async* {
     //
   }
@@ -22,7 +21,6 @@ abstract class RwkvInterface {
     String prompt,
     String instanceId,
     DecodeParam decodeParam,
-    int maxTokens,
   ) async* {
     //
   }

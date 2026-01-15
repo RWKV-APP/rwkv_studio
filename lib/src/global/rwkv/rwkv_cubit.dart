@@ -4,6 +4,7 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/rwkv/rwkv.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'rwkv_state.dart';
 
@@ -40,16 +41,21 @@ class RwkvCubit extends Cubit<RwkvState> implements RwkvInterface {
   }
 
   @override
-  Stream<String> chat(
+  Stream<GenerationResponse> chat(
     List<String> message,
     String instanceId,
     DecodeParam param,
-    int maxTokens,
   ) async* {
     final instance = state.models[instanceId];
     if (instance == null) throw "Model not found";
-    await _syncModelConfig(instanceId, param, maxTokens);
-    yield* instance.rwkv.chat(message);
+    await _syncModelConfig(instanceId, param);
+    try {
+      yield* instance.rwkv.chat(message);
+    } catch (e, s) {
+      loge(e);
+      loge(s);
+      rethrow;
+    }
   }
 
   @override
@@ -57,13 +63,18 @@ class RwkvCubit extends Cubit<RwkvState> implements RwkvInterface {
     String prompt,
     String instanceId,
     DecodeParam param,
-    int maxTokens,
   ) async* {
     final instance = state.models[instanceId];
     if (instance == null) throw "Model not found";
-    await _syncModelConfig(instanceId, param, maxTokens);
+    await _syncModelConfig(instanceId, param);
     await instance.rwkv.clearState();
-    yield* instance.rwkv.generate(prompt);
+    try {
+      yield* instance.rwkv.generate(prompt);
+    } catch (e, s) {
+      loge(e);
+      loge(s);
+      rethrow;
+    }
   }
 
   Future release(String modelInstanceId) async {
@@ -123,11 +134,7 @@ class RwkvCubit extends Cubit<RwkvState> implements RwkvInterface {
     return instance;
   }
 
-  Future _syncModelConfig(
-    String instanceId,
-    DecodeParam param,
-    int maxLen,
-  ) async {
+  Future _syncModelConfig(String instanceId, DecodeParam param) async {
     final instance = state.models[instanceId]!;
     if (instance.decodeParam != param) {
       await instance.rwkv.setDecodeParam(param);
@@ -136,21 +143,6 @@ class RwkvCubit extends Cubit<RwkvState> implements RwkvInterface {
           models: {
             ...state.models,
             instanceId: instance.copyWith(decodeParam: param),
-          },
-        ),
-      );
-    }
-    if (instance.config.maxTokens != maxLen) {
-      await instance.rwkv.setGenerationConfig(
-        instance.config.copyWith(maxTokens: maxLen),
-      );
-      emit(
-        state.copyWith(
-          models: {
-            ...state.models,
-            instanceId: instance.copyWith(
-              config: instance.config.copyWith(maxTokens: maxLen),
-            ),
           },
         ),
       );

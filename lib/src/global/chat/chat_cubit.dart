@@ -70,7 +70,7 @@ class ChatCubit extends Cubit<ChatState> {
           ...state.messages,
           state.selected: [
             ...history.take(history.length - 1),
-            last.copyWith(stopReason: 1),
+            last.copyWith(stopReason: StopReason.canceled),
           ],
         },
       ),
@@ -97,7 +97,6 @@ class ChatCubit extends Cubit<ChatState> {
 
     emit(
       state.copyWith(
-        generating: true,
         messages: {
           ...state.messages,
           state.selected: [...history, generated],
@@ -135,11 +134,10 @@ class ChatCubit extends Cubit<ChatState> {
       state.copyWith(
         conversations: conversations,
         messages: {...state.messages, state.selected: history},
-        generating: true,
       ),
     );
 
-    MessageState generated = MessageState(
+    MessageState assistant = MessageState(
       id: DateTime.now().toString(),
       text: '',
       datetime: DateTime.now(),
@@ -147,31 +145,32 @@ class ChatCubit extends Cubit<ChatState> {
       modelName: rwkv.getModelName(state.modelInstanceId),
     );
 
-    await _sendInternal(rwkv, history, generated);
+    await _sendInternal(rwkv, history, assistant);
   }
 
   Future _sendInternal(
     RwkvInterface rwkv,
     List<MessageState> history,
-    MessageState generated,
+    MessageState assistant,
   ) async {
-    final historyText = history.map((e) => e.text).toList();
-    if (generated.text.isNotEmpty) {
-      historyText.add(generated.text);
+    final messages = history.map((e) => e.text).toList();
+    if (assistant.text.isNotEmpty) {
+      messages.add(assistant.text);
     }
+    emit(state.copyWith(generating: true));
     rwkv
-        .chat(historyText, state.modelInstanceId, state.decodeParam, 1000)
+        .chat(messages, state.modelInstanceId, state.decodeParam)
         .listen(
-          (text) {
-            generated = generated.copyWith(
-              text: generated.text + text,
-              stopReason: 0,
+          (resp) {
+            assistant = assistant.copyWith(
+              text: assistant.text + resp.text,
+              stopReason: resp.stopReason,
             );
             emit(
               state.copyWith(
                 messages: {
                   ...state.messages,
-                  state.selected: [...history, generated],
+                  state.selected: [...history, assistant],
                 },
               ),
             );
@@ -180,14 +179,13 @@ class ChatCubit extends Cubit<ChatState> {
             emit(state.copyWith(generating: false));
           },
           onError: (e, s) {
-            loge(s);
-            generated = generated.copyWith(error: e.toString());
+            assistant = assistant.copyWith(error: e.toString());
             emit(
               state.copyWith(
                 generating: false,
                 messages: {
                   ...state.messages,
-                  state.selected: [...history, generated],
+                  state.selected: [...history, assistant],
                 },
               ),
             );

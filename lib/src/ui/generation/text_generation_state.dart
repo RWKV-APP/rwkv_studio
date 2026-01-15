@@ -8,7 +8,6 @@ class TextGenerationState {
   final bool generating;
   final bool showSettingPane;
   final DecodeParam decodeParam;
-  final int maxTokens;
 
   TextGenerationState({
     required this.controllerText,
@@ -18,7 +17,6 @@ class TextGenerationState {
     required this.autoScrolling,
     required this.decodeParam,
     required this.showSettingPane,
-    required this.maxTokens,
   });
 
   factory TextGenerationState.initial() {
@@ -30,7 +28,6 @@ class TextGenerationState {
       generating: false,
       autoScrolling: true,
       showSettingPane: false,
-      maxTokens: 1000,
     );
   }
 
@@ -42,7 +39,6 @@ class TextGenerationState {
     bool? autoScrolling,
     DecodeParam? decodeParam,
     bool? showSettingPane,
-    int? maxTokens,
   }) {
     return TextGenerationState(
       controllerText: controllerText ?? this.controllerText,
@@ -52,7 +48,6 @@ class TextGenerationState {
       autoScrolling: autoScrolling ?? this.autoScrolling,
       decodeParam: decodeParam ?? this.decodeParam,
       showSettingPane: showSettingPane ?? this.showSettingPane,
-      maxTokens: maxTokens ?? this.maxTokens,
     );
   }
 }

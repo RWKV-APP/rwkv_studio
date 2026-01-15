@@ -2,7 +2,6 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
-import 'package:rwkv_studio/src/ui/bloc_builders/rwkv_builders.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
@@ -192,15 +191,19 @@ class _SettingPanel extends StatelessWidget {
             child: Column(
               children: [
                 BlocBuilder<TextGenerationCubit, TextGenerationState>(
-                  buildWhen: (p, c) => p.maxTokens != c.maxTokens,
+                  buildWhen: (p, c) =>
+                      p.decodeParam != c.decodeParam ||
+                      p.generating != c.generating,
                   builder: (cxt, state) {
                     return LabeledSlider(
                       title: '最大长度',
                       max: 10000,
                       min: 1,
-                      value: state.maxTokens,
+                      value: state.decodeParam.maxTokens,
                       onChanged: (v) {
-                        cxt.cubit.setMaxTokens(v.toInt());
+                        cxt.cubit.setDecodeParam(
+                          state.decodeParam.copyWith(maxTokens: v.toInt()),
+                        );
                       },
                     );
                   },

@@ -18,11 +18,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
   }
 
   void resetSettings() {
-    emit(state.copyWith(decodeParam: DecodeParam.initial(), maxTokens: 2000));
-  }
-
-  void setMaxTokens(int maxTokens) {
-    emit(state.copyWith(maxTokens: maxTokens));
+    emit(state.copyWith(decodeParam: DecodeParam.initial()));
   }
 
   void toggleSettingPane() {
@@ -44,12 +40,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     String result = state.controllerText.text;
 
     final sp = rwkv
-        .generate(
-          prompt,
-          state.modelInstanceId,
-          state.decodeParam,
-          state.maxTokens,
-        )
+        .generate(prompt, state.modelInstanceId, state.decodeParam)
         .listen(
           (e) {
             result += e;
