@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
@@ -11,6 +12,11 @@ class AppAssets {
 
   static Future init() async {
     final name = 'b_rwkv_vocab_v20230424.txt';
+
+    if (kIsWeb) {
+      return;
+    }
+
     final vocab = await _assetsPath('assets/rwkv/$name', name);
     rwkvVocab20230424 = vocab.path;
   }

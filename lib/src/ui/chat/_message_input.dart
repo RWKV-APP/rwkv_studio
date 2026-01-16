@@ -30,7 +30,7 @@ class ChatMessageInput extends StatelessWidget {
                   decoration: WidgetStatePropertyAll(
                     BoxDecoration(border: Border(), color: Colors.transparent),
                   ),
-                  placeholder: 'Type a message',
+                  placeholder: '请输入内容',
                   onSubmitted: (String text) => context.chat.send(context.rwkv),
                   maxLines: 1,
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),

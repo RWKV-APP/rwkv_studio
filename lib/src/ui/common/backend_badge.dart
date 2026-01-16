@@ -9,15 +9,25 @@ class ModelBackendBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        color: context.fluent.accentColor.lightest,
-      ),
-      child: Text(
-        info.backend.name,
-        style: context.typography.caption?.copyWith(color: Colors.white),
+    String label = info.backend.name;
+    if (label == ModelBackend.albatross.name ||
+        info.tags.contains('albatross')) {
+      label = '🕊️';
+    } else if (label == ModelBackend.llama_cpp.name) {
+      label = '🦙';
+    }
+    return Tooltip(
+      message: info.backend.name,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4),
+          color: context.fluent.accentColor.lightest,
+        ),
+        child: Text(
+          label,
+          style: context.typography.caption?.copyWith(color: Colors.white),
+        ),
       ),
     );
   }

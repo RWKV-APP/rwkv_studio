@@ -1,5 +1,4 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/bloc_builders/rwkv_builders.dart';
 
 class DecodeSpeedInfo extends StatelessWidget {
@@ -15,14 +14,19 @@ class DecodeSpeedInfo extends StatelessWidget {
         final decode = model.state.decodeSpeed.toStringAsFixed(2);
         final prefill = model.state.prefillSpeed.toStringAsFixed(2);
         final label = Text(
-          'decode: $decode t/s \t prefill: $prefill t/s',
+          'prefill: $prefill t/s \t decode: $decode t/s',
           textAlign: TextAlign.end,
-          style: context.fluent.typography.caption?.copyWith(
+          style: TextStyle(
             fontFamily: 'monospace',
+            color: Colors.grey[100],
+            height: 1,
+            fontSize: 12,
           ),
         );
-        if (model.state.prefillProgress < 1.0) {
+        if (model.state.prefillProgress < 1.0 &&
+            model.state.prefillProgress > 0) {
           return Row(
+            mainAxisAlignment: .end,
             children: [
               SizedBox(
                 width: 16,

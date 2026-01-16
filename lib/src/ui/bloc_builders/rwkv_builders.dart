@@ -18,6 +18,7 @@ class RwkvModelStateBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<RwkvCubit, RwkvState>(
+      key: ValueKey(modelInstanceId),
       buildWhen: (p, c) =>
           p.models[modelInstanceId] != c.models[modelInstanceId],
       builder: (context, state) {

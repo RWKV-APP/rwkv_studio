@@ -66,7 +66,11 @@ class _MessageItem extends StatelessWidget {
     if (isLast) {
       content = MeasureSize(
         onChange: (s) {
-          Scrollable.ensureVisible(context);
+          Scrollable.ensureVisible(
+            context,
+            duration: Duration(milliseconds: 200),
+            alignmentPolicy: .keepVisibleAtEnd
+          );
         },
         child: content,
       );

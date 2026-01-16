@@ -47,11 +47,11 @@ class ChatTitleBar extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               IconButton(
                 icon: Icon(FluentIcons.settings),
                 onPressed: () {
-                  //
+                  context.chat.toggleSettingPanelVisible();
                 },
               ),
             ],

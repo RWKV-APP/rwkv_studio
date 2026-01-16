@@ -17,7 +17,7 @@ abstract class RwkvInterface {
     //
   }
 
-  Stream<String> generate(
+  Stream<GenerationResponse> generate(
     String prompt,
     String instanceId,
     DecodeParam decodeParam,

@@ -33,7 +33,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     emit(state.copyWith(modelInstanceId: modelInstanceId));
   }
 
-  void generate(RwkvInterface rwkv) {
+  Future generate(RwkvInterface rwkv) async {
     final prompt = state.controllerText.text.trim();
     emit(state.copyWith(generating: true));
 
@@ -43,7 +43,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
         .generate(prompt, state.modelInstanceId, state.decodeParam)
         .listen(
           (e) {
-            result += e;
+            result += e.text;
             state.controllerText.text = result.substring(prompt.length);
           },
           onError: (e) {

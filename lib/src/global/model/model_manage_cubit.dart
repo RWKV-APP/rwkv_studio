@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
@@ -26,6 +27,25 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       return;
     }
     logi('ModelManageCubit init');
+
+    if (kIsWeb) {
+      emit(
+        state.copyWith(
+          initialized: true,
+          models: [
+            ModelInfo.base(
+              id: 'id',
+              name: 'RWKV7 7.2B',
+              url: '',
+              localPath: 'rwkv-7',
+              backend: ModelBackend.albatross,
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     manager = ModelManager(
       downloadSource: DownloadSource.aiFastHub,
       configProviderUrl: 'http://localhost:8081/model_config.json',

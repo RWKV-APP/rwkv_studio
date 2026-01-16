@@ -94,7 +94,7 @@ class _ModelSelectorState extends State<ModelSelector> {
           );
         } else {
           final model = state.models[widget.modelInstanceId];
-          content = Text(model?.info.name ?? '加载模型');
+          content = Text(model?.info.name ?? '选择模型');
         }
         return FlyoutTarget(
           controller: itemsController,

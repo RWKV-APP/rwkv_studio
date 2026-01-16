@@ -6,7 +6,8 @@ import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_cubit.dart';
-import 'package:rwkv_studio/src/widget/labeled_slider.dart';
+import 'package:rwkv_studio/src/utils/toast_util.dart';
+import 'package:rwkv_studio/src/widget/side_bar.dart';
 
 extension _Ext on BuildContext {
   TextGenerationCubit get cubit => BlocProvider.of<TextGenerationCubit>(this);
@@ -21,10 +22,17 @@ class TextGenerationPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
+          child: BlocBuilder<TextGenerationCubit, TextGenerationState>(
+            buildWhen: (p, c) => p.showSettingPane != c.showSettingPane,
+            builder: (context, state) {
+              return CollapsibleSidebarLayout(
+                open: state.showSettingPane,
+                sidebar: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  child: _SettingPanel(),
+                ),
+                divider: Divider(direction: .vertical),
+                content: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -35,27 +43,8 @@ class TextGenerationPage extends StatelessWidget {
                     Expanded(child: _TextBox()),
                   ],
                 ),
-              ),
-              Divider(direction: Axis.vertical),
-              BlocBuilder<TextGenerationCubit, TextGenerationState>(
-                buildWhen: (p, c) => p.showSettingPane != c.showSettingPane,
-                builder: (context, state) {
-                  return AnimatedSlide(
-                    offset: Offset(state.showSettingPane ? 0 : 1, 0),
-                    duration: const Duration(milliseconds: 100),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 100),
-                      width: state.showSettingPane ? 240 : 0,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      child: _SettingPanel(),
-                    ),
-                  );
-                },
-              ),
-            ],
+              );
+            },
           ),
         ),
         Divider(),
@@ -100,9 +89,11 @@ class _TitleBar extends StatelessWidget {
                   ? null
                   : () async {
                       if (state.generating) {
-                        context.rwkv.stop(state.modelInstanceId);
+                        context.rwkv
+                            .stop(state.modelInstanceId)
+                            .withToast(context);
                       } else {
-                        context.cubit.generate(context.rwkv);
+                        context.cubit.generate(context.rwkv).withToast(context);
                       }
                     },
               child: Row(
@@ -116,8 +107,8 @@ class _TitleBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Button(
-              child: Row(children: [Icon(FluentIcons.settings, size: 18)]),
+            IconButton(
+              icon: Icon(FluentIcons.settings),
               onPressed: () {
                 context.cubit.toggleSettingPane();
               },
@@ -190,25 +181,6 @@ class _SettingPanel extends StatelessWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                BlocBuilder<TextGenerationCubit, TextGenerationState>(
-                  buildWhen: (p, c) =>
-                      p.decodeParam != c.decodeParam ||
-                      p.generating != c.generating,
-                  builder: (cxt, state) {
-                    return LabeledSlider(
-                      title: '最大长度',
-                      max: 10000,
-                      min: 1,
-                      value: state.decodeParam.maxTokens,
-                      onChanged: (v) {
-                        cxt.cubit.setDecodeParam(
-                          state.decodeParam.copyWith(maxTokens: v.toInt()),
-                        );
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
                 BlocBuilder<TextGenerationCubit, TextGenerationState>(
                   buildWhen: (p, c) =>
                       p.decodeParam != c.decodeParam ||

@@ -17,6 +17,18 @@ class ChatCubit extends Cubit<ChatState> {
     emit(state.copyWith(modelInstanceId: modelInstanceId));
   }
 
+  void toggleSettingPanelVisible() {
+    emit(state.copyWith(showSettingPanel: !state.showSettingPanel));
+  }
+
+  void resetSettings() {
+    emit(state.copyWith(decodeParam: DecodeParam.initial()));
+  }
+
+  void setDecodeParam(DecodeParam param) {
+    emit(state.copyWith(decodeParam: param));
+  }
+
   void toggleThinkMode() {
     emit(state.copyWith());
   }

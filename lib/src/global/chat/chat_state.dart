@@ -71,8 +71,10 @@ class ChatState {
   final DecodeParam decodeParam;
   final GenerationConfig generationConfig;
   final bool generating;
+  final bool showSettingPanel;
 
   ChatState({
+    required this.showSettingPanel,
     required this.conversations,
     required this.selected,
     required this.messages,
@@ -85,6 +87,7 @@ class ChatState {
 
   ChatState.empty()
     : this(
+        showSettingPanel: false,
         conversations: [],
         selected: '',
         messages: {},
@@ -104,6 +107,7 @@ class ChatState {
     DecodeParam? decodeParam,
     bool? generating,
     GenerationConfig? generationConfig,
+    bool? showSettingPanel,
   }) {
     return ChatState(
       conversations: conversations ?? this.conversations,
@@ -114,6 +118,7 @@ class ChatState {
       decodeParam: decodeParam ?? this.decodeParam,
       generating: generating ?? this.generating,
       generationConfig: generationConfig ?? this.generationConfig,
+      showSettingPanel: showSettingPanel ?? this.showSettingPanel,
     );
   }
 }
