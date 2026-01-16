@@ -47,7 +47,10 @@ class ModelListFlyout extends StatelessWidget {
                                     .release(loadedModels[model.id]!.id)
                                     .withToast(context);
                               },
-                        child: Text('释放'),
+                        child: Text(
+                          '释放',
+                          style: TextStyle(fontSize: 13, height: 1.1),
+                        ),
                       )
                     : null,
                 value: selectedInstance?.info.id == model.id,

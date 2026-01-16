@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 
-class AppTextTheme {
-  AppTextTheme._();
+class AppTextStyle {
+  AppTextStyle._();
 
+  static final bodySecondary = TextStyle(fontSize: 14, color: Colors.grey[100]);
   static final body = TextStyle(fontSize: 14);
   static final label = TextStyle(fontSize: 12);
   static final bodyBold = TextStyle(fontSize: 14, fontWeight: FontWeight.w500);

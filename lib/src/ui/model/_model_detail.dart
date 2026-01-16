@@ -1,8 +1,9 @@
 import 'dart:io';
+import 'package:fluent_ui/fluent_ui.dart';
 
-import 'package:flutter/material.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/ui/model/_model_tag_badge.dart';
 import 'package:rwkv_studio/src/utils/string_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,7 +18,7 @@ class ModelDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (model == null) {
-      return const Center(child: Text('未选择模型'));
+      return Center(child: Text('未选择模型', style: AppTextStyle.bodySecondary));
     }
 
     String fileSize = '';
@@ -32,7 +33,7 @@ class ModelDetail extends StatelessWidget {
     if (model!.updatedAt > 0) {
       datetime = DateTime.fromMillisecondsSinceEpoch(
         model!.updatedAt,
-      ).datetimeString;
+      ).dateString;
     }
     return Container(
       padding: const EdgeInsets.all(16),
@@ -59,7 +60,7 @@ class ModelDetail extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text(
                               model!.name,
-                              style: AppTextTheme.headingL,
+                              style: AppTextStyle.headingL,
                             ),
                           ),
                         ),
@@ -70,12 +71,20 @@ class ModelDetail extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text("更新时间:  $datetime", style: AppTextTheme.caption),
+                Text("更新时间:  $datetime", style: AppTextStyle.caption),
                 const SizedBox(height: 8),
                 _buildLabel("模型ID: ${model!.id}"),
                 _buildLabel("参数大小: ${model!.modelSize}B"),
                 _buildLabel("量化方式: ${model!.quantization}"),
-                _buildLabel("推理后端: ${model!.backend.name}"),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildLabel("推理后端: "),
+                    ModelBackendBadge(info: model!),
+                    const SizedBox(width: 8),
+                    _buildLabel(model!.backend.name),
+                  ],
+                ),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -110,7 +119,7 @@ class ModelDetail extends StatelessWidget {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: SelectableText(text, style: AppTextTheme.body),
+      child: SelectableText(text, style: AppTextStyle.body),
     );
   }
 }
@@ -122,41 +131,45 @@ class ModelSuggestBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final suggested = model.modelSize > 1;
+    final isTextModel =
+        model.groups.contains('chat') ||
+        model.groups.contains('albatross') ||
+        model.groups.contains('roleplay');
+    final showNotSuggest = !suggested && model.modelSize > 0 && isTextModel;
     return Row(
       children: [
-        Tooltip(
-          message: '推荐下载',
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: context.theme.colorScheme.surfaceContainerLow,
-            ),
-            child: Text(
-              '👍推荐',
-              style: AppTextTheme.body.copyWith(
-                color: context.theme.colorScheme.onSurface,
+        if (suggested)
+          Tooltip(
+            message: '推荐下载',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.green.withAlpha(50),
+              ),
+              child: Text(
+                '👍推荐',
+                style: AppTextStyle.body.copyWith(color: Colors.green),
               ),
             ),
           ),
-        ),
         const SizedBox(width: 8),
-        Tooltip(
-          message: '不推荐',
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: context.theme.colorScheme.errorContainer,
-            ),
-            child: Text(
-              '❗不推荐',
-              style: AppTextTheme.body.copyWith(
-                color: context.theme.colorScheme.onErrorContainer,
+        if (showNotSuggest)
+          Tooltip(
+            message: '不推荐',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.red.withAlpha(50),
+              ),
+              child: Text(
+                '❗不推荐',
+                style: AppTextStyle.body.copyWith(color: Colors.red.light),
               ),
             ),
           ),
-        ),
       ],
     );
   }

@@ -62,7 +62,6 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     });
 
     final models = manager.models;
-    models.sort((a, b) => a.name.compareTo(b.name));
     emit(
       state.copyWith(
         initialized: true,
@@ -108,14 +107,17 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     await manager.pauseTask(id);
   }
 
-  void updateConfig() async {
+  Future updateConfig() async {
+    // final models = manager.models;
+    // models.sort2();
+    // emit(state.copyWith(models: models));
+
     await manager.updateConfig();
     final models = manager.models;
-    models.sort((a, b) => a.name.compareTo(b.name));
     emit(state.copyWith(models: models));
   }
 
-  void changeDownloadSource(DownloadSource source) {
+  void setDownloadSource(DownloadSource source) {
     manager.downloadSource = source;
     emit(state.copyWith(downloadSource: source));
   }
@@ -145,9 +147,11 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     required TaskUpdate update,
     Object? error,
   }) {
+    logd('download update: ${update.state}, ${update.progress.toStringAsFixed(2)}');
+    final m = update.isCompleted ? manager.models : null;
     emit(
       state.copyWith(
-        models: update.isCompleted ? manager.models : null,
+        models: m,
         modelStates: {
           ...state.modelStates,
           modelId: ModelDownloadState(update: update, error: error),

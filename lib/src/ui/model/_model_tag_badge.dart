@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 
 class ModelTagBadge extends StatelessWidget {
   final String tag;
@@ -17,7 +16,7 @@ class ModelTagBadge extends StatelessWidget {
       margin: const EdgeInsets.only(left: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: context.theme.colorScheme.outline),
+        border: Border.all(color: Colors.grey),
       ),
       child: Text(display),
     );

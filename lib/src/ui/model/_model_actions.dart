@@ -55,13 +55,13 @@ class ModelItemActions extends StatelessWidget {
               if (!state.update.requesting)
                 Text(
                   '${state.update.progress.toStringAsFixed(2)}%',
-                  style: AppTextTheme.caption,
+                  style: AppTextStyle.caption,
                 ),
               if (!state.update.requesting) const SizedBox(width: 12),
               if (!state.update.requesting)
                 Text(
                   '${state.update.speedInMB.toStringAsFixed(2)}MB/s',
-                  style: AppTextTheme.caption,
+                  style: AppTextStyle.caption,
                 ),
               const SizedBox(width: 12),
             ],
@@ -130,7 +130,7 @@ class ModelItemActions extends StatelessWidget {
           onPressed: onPressed,
           style: ButtonStyle(
             foregroundColor: WidgetStateProperty.resolveWith((states) {
-              return Colors.errorPrimaryColor;
+              return Colors.red.light;
             }),
           ),
           child: child,

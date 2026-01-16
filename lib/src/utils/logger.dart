@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
@@ -32,6 +30,7 @@ class AppLog with ChangeNotifier {
   static final instance = AppLog();
 
   void _log(Log log) {
+    print(log);
     history.add(log);
     if (history.length > 100) {
       history.removeAt(0);
