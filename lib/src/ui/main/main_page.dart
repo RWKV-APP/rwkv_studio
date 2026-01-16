@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/app/router.dart';
-import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/logcat_panel.dart';

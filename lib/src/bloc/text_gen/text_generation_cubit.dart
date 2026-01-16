@@ -1,7 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/rwkv/rwkv.dart';
+import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'text_generation_state.dart';
@@ -29,8 +30,18 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     emit(state.copyWith(decodeParam: param));
   }
 
-  void onModelSelected(String modelInstanceId) {
-    emit(state.copyWith(modelInstanceId: modelInstanceId));
+  void loadModel(RwkvInterface rwkv, ModelInfo model) {
+    final sp = rwkv
+        .loadOrGetModelInstance(model)
+        .listen(
+          (e) {
+            emit(state.copyWith(modelState: e));
+          },
+          onError: (e, s) {
+            emit(state.copyWith(modelState: ModelLoadState.error(model.id, e)));
+          },
+        );
+    addSubscription(sp);
   }
 
   Future generate(RwkvInterface rwkv) async {

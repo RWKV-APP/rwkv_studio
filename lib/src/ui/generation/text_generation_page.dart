@@ -1,11 +1,11 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
-import 'package:rwkv_studio/src/ui/generation/text_generation_cubit.dart';
+import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
@@ -67,20 +67,18 @@ class _TitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<TextGenerationCubit, TextGenerationState>(
       buildWhen: (p, c) =>
-          p.modelInstanceId != c.modelInstanceId ||
-          p.generating != c.generating,
+          p.modelState != c.modelState || p.generating != c.generating,
       builder: (context, state) {
         return Row(
           children: [
             Text('文本生成', style: context.fluent.typography.subtitle),
             Spacer(),
             ModelSelector(
-              modelInstanceId: state.modelInstanceId,
-              autoLoad: true,
+              modelState: state.modelState,
               onModelSelected: state.generating
                   ? null
-                  : (info, instance) {
-                      context.cubit.onModelSelected(instance!.id);
+                  : (model) {
+                      context.cubit.loadModel(context.rwkv, model);
                     },
             ),
             const SizedBox(width: 8),
@@ -158,9 +156,7 @@ class _SettingPanel extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            Expanded(
-              child: Text('设置', style: context.fluent.typography.subtitle),
-            ),
+            Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
             IconButton(
               icon: Icon(FluentIcons.chrome_close),
               onPressed: () {

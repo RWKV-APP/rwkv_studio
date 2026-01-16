@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/global_providers.dart';
 import 'package:rwkv_studio/src/app/router.dart';
-import 'package:rwkv_studio/src/global/app/app_cubit.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/widget/colorful_background.dart';
 
 class RWKVApp extends StatelessWidget {

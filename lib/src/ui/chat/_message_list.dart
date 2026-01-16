@@ -1,8 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/global/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/measure_size.dart';
@@ -39,13 +39,15 @@ class _MessageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.fluent;
-
     Widget content;
     if (message.error.isNotEmpty) {
       final error = Text(
         message.error,
-        style: TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
+        style: TextStyle(
+          color: Colors.errorPrimaryColor,
+          fontSize: 12,
+          fontStyle: .italic,
+        ),
       );
       if (message.text.isEmpty) {
         content = error;
@@ -69,23 +71,46 @@ class _MessageItem extends StatelessWidget {
           Scrollable.ensureVisible(
             context,
             duration: Duration(milliseconds: 200),
-            alignmentPolicy: .keepVisibleAtEnd
+            alignmentPolicy: .keepVisibleAtEnd,
           );
         },
         child: content,
       );
     }
 
+    return _MessageBox(
+      alignmentEnd: message.isUser,
+      footer: message.isUser
+          ? null
+          : _MessageItemFooter(message: message, isLast: isLast),
+      child: content,
+    );
+  }
+}
+
+class _MessageBox extends StatelessWidget {
+  final bool alignmentEnd;
+  final Widget child;
+  final Widget? footer;
+
+  const _MessageBox({
+    required this.alignmentEnd,
+    required this.child,
+    this.footer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       margin: .only(top: 16),
       child: Column(
         mainAxisSize: .min,
-        crossAxisAlignment: message.isUser ? .end : .start,
+        crossAxisAlignment: alignmentEnd ? .end : .start,
         children: [
           Container(
             decoration: BoxDecoration(
-              color: theme.cardColor,
+              color: context.theme.cardColor,
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
@@ -97,15 +122,15 @@ class _MessageItem extends StatelessWidget {
             ),
             padding: .symmetric(horizontal: 12, vertical: 12),
             margin: .only(
-              right: message.isUser ? 0 : 100,
-              left: message.isUser ? 100 : 0,
+              right: alignmentEnd ? 0 : 100,
+              left: alignmentEnd ? 100 : 0,
             ),
-            child: content,
+            child: child,
           ),
-          if (!message.isUser && message.modelName.isNotEmpty)
+          if (footer != null)
             Padding(
               padding: .symmetric(horizontal: 4, vertical: 4),
-              child: _MessageItemFooter(message: message, isLast: isLast),
+              child: footer,
             ),
         ],
       ),

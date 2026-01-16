@@ -1,6 +1,6 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
-import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ImportModelDropArea extends StatelessWidget {

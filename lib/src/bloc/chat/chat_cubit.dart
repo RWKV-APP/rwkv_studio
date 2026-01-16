@@ -1,8 +1,9 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/rwkv/rwkv.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'chat_state.dart';
 
@@ -10,11 +11,21 @@ extension Ext on BuildContext {
   ChatCubit get chat => read<ChatCubit>();
 }
 
-class ChatCubit extends Cubit<ChatState> {
+class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   ChatCubit() : super(ChatState.empty());
 
-  void onModelSelected(String modelInstanceId) {
-    emit(state.copyWith(modelInstanceId: modelInstanceId));
+  Future loadModel(RwkvInterface rwkv, ModelInfo model) async {
+    final sp = rwkv
+        .loadOrGetModelInstance(model)
+        .listen(
+          (e) {
+            emit(state.copyWith(modelState: e));
+          },
+          onError: (e, s) {
+            emit(state.copyWith(modelState: ModelLoadState.error(model.id, e)));
+          },
+        );
+    addSubscription(sp);
   }
 
   void toggleSettingPanelVisible() {
@@ -104,7 +115,7 @@ class ChatCubit extends Cubit<ChatState> {
       text: '',
       datetime: DateTime.now(),
       role: 'assistant',
-      modelName: rwkv.getModelName(state.modelInstanceId),
+      modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
     emit(
@@ -129,7 +140,7 @@ class ChatCubit extends Cubit<ChatState> {
       text: text,
       datetime: DateTime.now(),
       role: 'user',
-      modelName: rwkv.getModelName(state.modelInstanceId),
+      modelName: await rwkv.getModelName(state.modelInstanceId),
     );
     state.inputController.clear();
     final history = <MessageState>[
@@ -154,7 +165,7 @@ class ChatCubit extends Cubit<ChatState> {
       text: '',
       datetime: DateTime.now(),
       role: 'assistant',
-      modelName: rwkv.getModelName(state.modelInstanceId),
+      modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
     await _sendInternal(rwkv, history, assistant);

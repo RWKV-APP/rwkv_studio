@@ -1,9 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
-import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
@@ -34,9 +33,9 @@ class ModelListFlyout extends StatelessWidget {
               ToggleMenuFlyoutItem(
                 text: Row(
                   children: [
-                    Text(model.name),
-                    const SizedBox(width: 8),
                     ModelBackendBadge(info: model),
+                    const SizedBox(width: 8),
+                    Text(model.name),
                   ],
                 ),
                 trailing: loadedModels.containsKey(model.id)

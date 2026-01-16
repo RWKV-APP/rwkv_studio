@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/global/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
@@ -31,7 +31,8 @@ class ChatMessageInput extends StatelessWidget {
                     BoxDecoration(border: Border(), color: Colors.transparent),
                   ),
                   placeholder: '请输入内容',
-                  onSubmitted: (String text) => context.chat.send(context.rwkv),
+                  onSubmitted: (String text) =>
+                      context.chat.send(context.rwkv).withToast(context),
                   maxLines: 1,
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 );
@@ -66,7 +67,7 @@ class ChatMessageInput extends StatelessWidget {
 
 class _SendButton extends StatelessWidget {
   void _onTapSend(BuildContext context) {
-    context.chat.send(context.rwkv);
+    context.chat.send(context.rwkv).withToast(context);
   }
 
   void _onTapPause(BuildContext context) {

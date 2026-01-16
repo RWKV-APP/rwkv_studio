@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/global/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 
@@ -36,13 +37,12 @@ class ChatTitleBar extends StatelessWidget {
                 ),
               ),
               BlocBuilder<ChatCubit, ChatState>(
-                buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
+                buildWhen: (p, c) => p.modelState != c.modelState,
                 builder: (context, state) {
                   return ModelSelector(
-                    modelInstanceId: state.modelInstanceId,
-                    autoLoad: true,
-                    onModelSelected: (info, instance) {
-                      context.chat.onModelSelected(instance!.id);
+                    modelState: state.modelState,
+                    onModelSelected: (s) {
+                      context.chat.loadModel(context.rwkv, s);
                     },
                   );
                 },

@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/global/app/app_cubit.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/python/interprater.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';

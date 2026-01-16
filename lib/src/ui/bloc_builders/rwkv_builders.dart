@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/global/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 
 typedef StateBuilder =
     Widget Function(BuildContext context, ModelInstanceState model);

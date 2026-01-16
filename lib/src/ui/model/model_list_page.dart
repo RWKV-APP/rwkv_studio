@@ -3,7 +3,7 @@ import 'package:flutter/material.dart'
     show PopupMenuButton, PopupMenuItem, Icons, TextButton, VerticalDivider;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/model/_model_detail.dart';
 import 'package:rwkv_studio/src/ui/model/_model_list_item.dart';

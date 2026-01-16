@@ -1,8 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/global/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/ui/chat/_chat_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_input.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
@@ -87,9 +85,7 @@ class _SettingPanel extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            Expanded(
-              child: Text('设置', style: context.fluent.typography.subtitle),
-            ),
+            Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
             IconButton(
               icon: Icon(FluentIcons.chrome_close),
               onPressed: () {

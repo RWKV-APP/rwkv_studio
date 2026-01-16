@@ -1,4 +1,4 @@
-import 'package:rwkv_studio/src/global/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 
 class ImportChatResult {}
 

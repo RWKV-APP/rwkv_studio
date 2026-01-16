@@ -1,21 +1,5 @@
 part of 'rwkv_cubit.dart';
 
-class ModelLoadState {
-  final ModelInfo? model;
-  final bool loading;
-  final String error;
-
-  ModelLoadState({
-    required this.model,
-    required this.loading,
-    required this.error,
-  });
-
-  factory ModelLoadState.initial() {
-    return ModelLoadState(model: null, loading: false, error: '');
-  }
-}
-
 class ModelInstanceState {
   final String id;
   final RWKV rwkv;
@@ -55,21 +39,14 @@ class ModelInstanceState {
 
 class RwkvState {
   final Map<String, ModelInstanceState> models;
-  final ModelLoadState modelLoadState;
 
-  RwkvState({required this.models, required this.modelLoadState});
+  RwkvState({required this.models});
 
   factory RwkvState.initial() {
-    return RwkvState(models: {}, modelLoadState: ModelLoadState.initial());
+    return RwkvState(models: {});
   }
 
-  RwkvState copyWith({
-    Map<String, ModelInstanceState>? models,
-    ModelLoadState? modelLoadState,
-  }) {
-    return RwkvState(
-      models: models ?? this.models,
-      modelLoadState: modelLoadState ?? this.modelLoadState,
-    );
+  RwkvState copyWith({Map<String, ModelInstanceState>? models}) {
+    return RwkvState(models: models ?? this.models);
   }
 }

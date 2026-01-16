@@ -67,11 +67,14 @@ class ChatState {
   final Map<String, List<MessageState>> messages;
   final String selected;
   final TextEditingController inputController;
-  final String modelInstanceId;
   final DecodeParam decodeParam;
   final GenerationConfig generationConfig;
   final bool generating;
   final bool showSettingPanel;
+
+  final ModelLoadState modelState;
+
+  String get modelInstanceId => modelState.instanceId;
 
   ChatState({
     required this.showSettingPanel,
@@ -79,10 +82,10 @@ class ChatState {
     required this.selected,
     required this.messages,
     required this.inputController,
-    required this.modelInstanceId,
     required this.decodeParam,
     required this.generationConfig,
     required this.generating,
+    required this.modelState,
   });
 
   ChatState.empty()
@@ -92,10 +95,10 @@ class ChatState {
         selected: '',
         messages: {},
         inputController: TextEditingController(),
-        modelInstanceId: '',
         decodeParam: DecodeParam.initial(),
         generating: false,
         generationConfig: GenerationConfig.initial(),
+        modelState: ModelLoadState.empty(),
       );
 
   ChatState copyWith({
@@ -103,22 +106,22 @@ class ChatState {
     Map<String, List<MessageState>>? messages,
     String? selected,
     TextEditingController? inputController,
-    String? modelInstanceId,
     DecodeParam? decodeParam,
     bool? generating,
     GenerationConfig? generationConfig,
     bool? showSettingPanel,
+    ModelLoadState? modelState,
   }) {
     return ChatState(
       conversations: conversations ?? this.conversations,
       messages: messages ?? this.messages,
       selected: selected ?? this.selected,
       inputController: inputController ?? this.inputController,
-      modelInstanceId: modelInstanceId ?? this.modelInstanceId,
       decodeParam: decodeParam ?? this.decodeParam,
       generating: generating ?? this.generating,
       generationConfig: generationConfig ?? this.generationConfig,
       showSettingPanel: showSettingPanel ?? this.showSettingPanel,
+      modelState: modelState ?? this.modelState,
     );
   }
 }

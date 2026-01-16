@@ -9,26 +9,60 @@ class ModelBackendBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String label = info.backend.name;
-    if (label == ModelBackend.albatross.name ||
-        info.tags.contains('albatross')) {
-      label = '🕊️';
-    } else if (label == ModelBackend.llama_cpp.name) {
-      label = '🦙';
-    }
+    Widget icon =
+        _getIcon() ??
+        Text(
+          info.backend.name,
+          overflow: TextOverflow.clip,
+          maxLines: 1,
+          textAlign: .center,
+          style: TextStyle(color: Colors.white, fontSize: 10, height: 1),
+        );
     return Tooltip(
       message: info.backend.name,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           color: context.fluent.accentColor.lightest,
         ),
-        child: Text(
-          label,
-          style: context.typography.caption?.copyWith(color: Colors.white),
-        ),
+        height: 20,
+        width: 20,
+        clipBehavior: Clip.antiAlias,
+        alignment: Alignment.center,
+        child: icon,
       ),
     );
+  }
+
+  Widget? _getIcon() {
+    if (info.backend == ModelBackend.albatross ||
+        info.tags.contains('albatross')) {
+      return ColoredBox(
+        color: Colors.grey[60],
+        child: Image.asset(
+          'assets/img/icon_albatross.png',
+          fit: BoxFit.contain,
+        ),
+      );
+    } else if (info.backend == ModelBackend.llama_cpp) {
+      return Image.asset('assets/img/icon_llama_cpp.png', fit: BoxFit.contain);
+    } else if (info.backend == ModelBackend.web_rwkv) {
+      return Container(
+        height: 20,
+        width: 20,
+        color: Colors.grey[20],
+        child: Row(
+          mainAxisAlignment: .center,
+          children: [
+            Text(
+              'W',
+              style: TextStyle(color: Colors.blue.lightest, fontSize: 10),
+            ),
+            Text('R', style: TextStyle(color: Colors.black, fontSize: 10)),
+          ],
+        ),
+      );
+    }
+    return null;
   }
 }

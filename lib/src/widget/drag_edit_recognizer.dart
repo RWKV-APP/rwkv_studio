@@ -35,7 +35,7 @@ class DragEditable extends StatelessWidget {
   final ValueChanged<TapDragStartDetails>? onStartUpdatePosition;
   final Function(bool isRangeStart)? onStartUpdateRange;
 
-  /// global offset
+  /// bloc offset
   final ValueChanged<TapDragUpdateDetails>? onUpdate;
   final ValueChanged<TapDragEndDetails>? onUpdateEnd;
   final VoidCallback? onTap;

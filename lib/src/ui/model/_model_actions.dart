@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/global/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 
 class ModelItemActions extends StatelessWidget {
