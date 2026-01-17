@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -33,7 +34,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         state.copyWith(
           initialized: true,
           models: [
-            ModelInfo.base(
+            RemoteModelInfo.base(
               id: 'id',
               name: 'RWKV7 7.2B',
               url: '',
@@ -147,7 +148,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     required TaskUpdate update,
     Object? error,
   }) {
-    logd('download update: ${update.state}, ${update.progress.toStringAsFixed(2)}');
+    logd(
+      'download update: ${update.state}, ${update.progress.toStringAsFixed(2)}',
+    );
     final m = update.isCompleted ? manager.models : null;
     emit(
       state.copyWith(

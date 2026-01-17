@@ -246,7 +246,14 @@ class _ModelListPageState extends State<ModelListPage> {
                 ),
               ),
               Divider(direction: .vertical),
-              Expanded(flex: 5, child: ModelDetail(model: _selectedModel)),
+              Expanded(
+                flex: 5,
+                child: _selectedModel == null
+                    ? Center(
+                        child: Text('未选择模型', style: AppTextStyle.bodySecondary),
+                      )
+                    : ModelDetail(model: _selectedModel!),
+              ),
             ],
           ),
         ),
@@ -448,7 +455,7 @@ class _FilterButton extends StatelessWidget {
   }
 
   void _showFilter(BuildContext context) {
-    final config = context.modelManage.manager.modelConfig;
+    final managerState = context.modelManage.state;
 
     controller.showFlyout<void>(
       autoModeConfiguration: FlyoutAutoConfiguration(
@@ -476,7 +483,7 @@ class _FilterButton extends StatelessWidget {
                     runSpacing: 4,
                     spacing: 8,
                     children: [
-                      for (final g in config.groups)
+                      for (final g in managerState.groups)
                         Checkbox(
                           checked: filters.contains(g.name),
                           onChanged: (e) {
@@ -501,7 +508,7 @@ class _FilterButton extends StatelessWidget {
                     runSpacing: 4,
                     spacing: 8,
                     children: [
-                      for (final tag in config.tags)
+                      for (final tag in managerState.tags)
                         Checkbox(
                           checked: filters.contains(tag.name),
                           content: Text(tag.name),

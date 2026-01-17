@@ -15,6 +15,9 @@ class ModelManageState {
   final Map<String, ModelDownloadState?> modelStates;
   final DownloadSource downloadSource;
   final String downloadDir;
+  final List<ModelTag> tags;
+  final List<ModelGroup> groups;
+  final List<ModelBackend> backends;
 
   ModelManageState._({
     required this.initialized,
@@ -23,6 +26,9 @@ class ModelManageState {
     required this.modelStates,
     required this.downloadSource,
     required this.downloadDir,
+    required this.tags,
+    required this.groups,
+    required this.backends,
   });
 
   factory ModelManageState.initial() {
@@ -33,6 +39,9 @@ class ModelManageState {
       localModels: [],
       downloadSource: DownloadSource.aiFastHub,
       downloadDir: '',
+      tags: [],
+      groups: const [],
+      backends: [],
     );
   }
 
@@ -43,6 +52,9 @@ class ModelManageState {
     Map<String, ModelDownloadState?>? modelStates,
     DownloadSource? downloadSource,
     String? downloadDir,
+    List<ModelTag>? tags,
+    List<ModelGroup>? groups,
+    List<ModelBackend>? backends,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
@@ -51,6 +63,9 @@ class ModelManageState {
       modelStates: modelStates ?? this.modelStates,
       downloadSource: downloadSource ?? this.downloadSource,
       downloadDir: downloadDir ?? this.downloadDir,
+      tags: tags ?? this.tags,
+      groups: groups ?? this.groups,
+      backends: backends ?? this.backends,
     );
   }
 }

@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
-
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/ui/model/_model_tag_badge.dart';
@@ -11,28 +10,24 @@ import 'package:url_launcher/url_launcher.dart';
 import '_model_actions.dart';
 
 class ModelDetail extends StatelessWidget {
-  final ModelInfo? model;
+  final ModelInfo model;
 
   const ModelDetail({super.key, required this.model});
 
   @override
   Widget build(BuildContext context) {
-    if (model == null) {
-      return Center(child: Text('未选择模型', style: AppTextStyle.bodySecondary));
-    }
-
     String fileSize = '';
-    if (model!.fileSize > 1024 * 1024 * 1024) {
+    if (model.fileSize > 1024 * 1024 * 1024) {
       fileSize =
-          '${(model!.fileSize / 1024 / 1024 / 1024).toStringAsFixed(2)}GB';
+          '${(model.fileSize / 1024 / 1024 / 1024).toStringAsFixed(2)}GB';
     } else {
-      fileSize = '${(model!.fileSize / 1024 / 1024).toStringAsFixed(2)}MB';
+      fileSize = '${(model.fileSize / 1024 / 1024).toStringAsFixed(2)}MB';
     }
 
     String datetime = '0000-00-00';
-    if (model!.updatedAt > 0) {
+    if (model.updatedAt > 0) {
       datetime = DateTime.fromMillisecondsSinceEpoch(
-        model!.updatedAt,
+        model.updatedAt,
       ).dateString;
     }
     return Container(
@@ -50,7 +45,7 @@ class ModelDetail extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () async {
                           final uri = Uri.parse(
-                            "https://huggingface.co/${model!.url.replaceFirst('resolve', 'blob')}",
+                            "https://huggingface.co/${model.url.replaceFirst('resolve', 'blob')}",
                           );
                           await launchUrl(uri);
                         },
@@ -59,7 +54,7 @@ class ModelDetail extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Text(
-                              model!.name,
+                              model.name,
                               style: AppTextStyle.headingL,
                             ),
                           ),
@@ -67,40 +62,45 @@ class ModelDetail extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    ModelSuggestBadge(model: model!),
+                    ModelSuggestBadge(model: model),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text("更新时间:  $datetime", style: AppTextStyle.caption),
-                const SizedBox(height: 8),
-                _buildLabel("模型ID: ${model!.id}"),
-                _buildLabel("参数大小: ${model!.modelSize}B"),
-                _buildLabel("量化方式: ${model!.quantization}"),
+                if (model.updatedAt > 0)
+                  Text("更新时间:  $datetime", style: AppTextStyle.caption),
+                if (model.updatedAt > 0) const SizedBox(height: 8),
+                _buildLabel("模型ID: ${model.id}"),
+                if (model.modelSize > 0)
+                  _buildLabel("参数大小: ${model.modelSize}B"),
+                if (model.quantization.isNotEmpty)
+                  _buildLabel("量化方式: ${model.quantization}"),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildLabel("推理后端: "),
-                    ModelBackendBadge(info: model!),
+                    ModelBackendBadge(info: model),
                     const SizedBox(width: 8),
-                    _buildLabel(model!.backend.name),
+                    _buildLabel(model.backend.name),
                   ],
                 ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildLabel("标签: "),
-                    for (final tag in model!.tags) ModelTagBadge(tag: tag),
-                  ],
-                ),
-                _buildLabel("分组: ${model!.groups.join(', ')}"),
-                _buildLabel("文件大小: $fileSize"),
-                if (model!.sha256.isNotEmpty)
-                  _buildLabel("SHA256: ${model!.sha256}"),
-                // _buildLabel("路径: ${model!.url}"),
-                if (model!.localPath.isNotEmpty)
-                  _buildLabel("本地路径: ${File(model!.localPath).absolute.path}"),
+                if (model.tags.isNotEmpty)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildLabel("标签: "),
+                      for (final tag in model.tags) ModelTagBadge(tag: tag),
+                    ],
+                  ),
+                if (model.groups.isNotEmpty)
+                  _buildLabel("分组: ${model.groups.join(', ')}"),
+                if (model.fileSize > 0) _buildLabel("文件大小: $fileSize"),
+                if (model.sha256.isNotEmpty)
+                  _buildLabel("SHA256: ${model.sha256}"),
+                // _buildLabel("路径: ${model.url}"),
+                if (model.localPath.isNotEmpty)
+                  _buildLabel("文件路径: ${model.localPath}"),
                 _buildLabel(
-                  "支持平台: ${model!.backend.platforms.map((e) => e.name).join(', ')}",
+                  "支持平台: ${model.backend.platforms.map((e) => e.name).join(', ')}",
                 ),
               ],
             ),
@@ -108,7 +108,8 @@ class ModelDetail extends StatelessWidget {
           Row(
             children: [
               Spacer(),
-              ModelItemActions(model: model!, compact: false),
+              if (model is! RemoteModelInfo)
+                ModelItemActions(model: model, compact: false),
             ],
           ),
         ],

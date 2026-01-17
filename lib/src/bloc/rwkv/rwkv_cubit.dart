@@ -18,8 +18,8 @@ extension Ext on BuildContext {
 class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   RwkvCubit() : super(RwkvState.initial());
 
-  void init() async {
-    //
+  Future init() async {
+    await RwkvServiceClient.init(url: 'http://127.0.0.1:8000', accessKey: '');
   }
 
   ModelInstanceState? getModelInstance(String? modelInstanceId) {
@@ -91,7 +91,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   @override
   Stream<ModelLoadState> loadModel(ModelInfo modelInfo) async* {
-    final rwkv = kIsWeb ? RWKV.create() : RWKV.isolated();
+    final rwkv = kIsWeb ? await RwkvServiceClient.create() : RWKV.isolated();
     await rwkv.init(InitParam(logLevel: RWKVLogLevel.verbose));
     yield ModelLoadState.loading(modelInfo.id);
     try {
