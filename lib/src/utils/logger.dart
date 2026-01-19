@@ -20,7 +20,7 @@ class Log {
 
   @override
   String toString() {
-    return '$tag/$level: $message';
+    return '$level/$tag: $message';
   }
 }
 
@@ -46,10 +46,11 @@ void _listenToLogs() {
 
   _loggerInitialized = true;
   Logger.root.clearListeners();
+  Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     final log = Log(
       tag: record.loggerName,
-      level: record.level.name,
+      level: record.level.name.replaceAll('CONFIG', 'DEBUG'),
       message: record.message,
       datetime: record.time,
     );
@@ -64,12 +65,12 @@ void logv(dynamic msg) {
 
 void logi(dynamic msg) {
   _listenToLogs();
-  _logger.config(msg);
+  _logger.info(msg);
 }
 
 void logd(dynamic msg) {
   _listenToLogs();
-  _logger.info(msg);
+  _logger.config(msg);
 }
 
 void logw(dynamic msg) {
@@ -77,9 +78,9 @@ void logw(dynamic msg) {
   _logger.warning(msg);
 }
 
-void loge(dynamic msg) {
+void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
   _listenToLogs();
-  _logger.severe(msg);
+  _logger.severe(msg, error, stackTrace);
 }
 
 void logwtf(dynamic msg) {

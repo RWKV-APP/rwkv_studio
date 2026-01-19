@@ -1,8 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -18,9 +16,7 @@ class ChatList extends StatelessWidget {
         return ListView.builder(
           itemCount: state.conversations.length,
           itemBuilder: (context, index) {
-            return PointerInterceptor(
-              child: _Item(conversation: state.conversations[index]),
-            );
+            return _Item(conversation: state.conversations[index]);
           },
         );
       },

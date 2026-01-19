@@ -1,9 +1,44 @@
 part of 'rwkv_cubit.dart';
 
-class ModelInstanceState {
+typedef InstanceId = String;
+
+class ModeBaseInfo {
   final String id;
+  final String name;
+  final String providerName;
+  final String serviceId;
+
+  bool get isRemote => providerName.isNotEmpty && serviceId.isNotEmpty;
+
+  ModeBaseInfo({
+    required this.id,
+    required this.name,
+    required this.providerName,
+    required this.serviceId,
+  });
+
+  factory ModeBaseInfo.fromModelInfo(ModelInfo info) {
+    if (info is RemoteModelInfo) {
+      return ModeBaseInfo(
+        id: info.id,
+        name: info.name,
+        providerName: info.providerName,
+        serviceId: info.serviceId,
+      );
+    }
+    return ModeBaseInfo(
+      id: info.id,
+      name: info.name,
+      providerName: '',
+      serviceId: '',
+    );
+  }
+}
+
+class ModelInstanceState {
+  final InstanceId id;
   final RWKV rwkv;
-  final ModelInfo info;
+  final ModeBaseInfo info;
   final GenerationState state;
   final GenerationConfig config;
   final DecodeParam decodeParam;
@@ -11,18 +46,17 @@ class ModelInstanceState {
   ModelInstanceState({
     required this.rwkv,
     required this.info,
-    String? id,
+    required this.id,
     GenerationState? state,
     GenerationConfig? config,
     DecodeParam? decodeParam,
-  }) : id = id ?? "${info.id}_${rwkv.hashCode}",
-       decodeParam = decodeParam ?? DecodeParam.initial(),
+  }) : decodeParam = decodeParam ?? DecodeParam.initial(),
        state = state ?? GenerationState.initial(),
        config = config ?? GenerationConfig.initial();
 
   ModelInstanceState copyWith({
     RWKV? rwkv,
-    ModelInfo? info,
+    ModeBaseInfo? info,
     GenerationState? state,
     GenerationConfig? config,
     DecodeParam? decodeParam,
@@ -33,20 +67,28 @@ class ModelInstanceState {
       state: state ?? this.state,
       config: config ?? this.config,
       decodeParam: decodeParam ?? this.decodeParam,
+      id: id,
     );
   }
 }
 
 class RwkvState {
-  final Map<String, ModelInstanceState> models;
+  final Map<InstanceId, ModelInstanceState> models;
+  final List<RwkvServiceClient> services;
 
-  RwkvState({required this.models});
+  RwkvState({required this.models, required this.services});
 
   factory RwkvState.initial() {
-    return RwkvState(models: {});
+    return RwkvState(models: {}, services: []);
   }
 
-  RwkvState copyWith({Map<String, ModelInstanceState>? models}) {
-    return RwkvState(models: models ?? this.models);
+  RwkvState copyWith({
+    Map<InstanceId, ModelInstanceState>? models,
+    List<RwkvServiceClient>? services,
+  }) {
+    return RwkvState(
+      models: models ?? this.models,
+      services: services ?? this.services,
+    );
   }
 }

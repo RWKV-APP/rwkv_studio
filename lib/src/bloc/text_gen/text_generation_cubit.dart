@@ -7,6 +7,10 @@ import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'text_generation_state.dart';
 
+extension Ext on BuildContext {
+  TextGenerationCubit get textGen => BlocProvider.of<TextGenerationCubit>(this);
+}
+
 class TextGenerationCubit extends Cubit<TextGenerationState>
     with SubscriptionManagerMixin {
   TextGenerationCubit() : super(TextGenerationState.initial()) {
@@ -16,6 +20,10 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
         state.controllerScroll.jumpTo(scrollOffset);
       }
     });
+  }
+
+  void onModelReleased() {
+    emit(state.copyWith(modelState: ModelLoadState.empty()));
   }
 
   void resetSettings() {

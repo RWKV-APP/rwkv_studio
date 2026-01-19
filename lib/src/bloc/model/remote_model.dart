@@ -1,6 +1,21 @@
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 
+class RemoteModelProviderInfo {
+  final String name;
+  final String url;
+  final String serviceId;
+
+  RemoteModelProviderInfo({
+    required this.name,
+    required this.url,
+    required this.serviceId,
+  });
+}
+
 class RemoteModelInfo extends ModelInfo {
+  String providerName = '';
+  String serviceId = '';
+
   RemoteModelInfo({
     required super.id,
     required super.name,
@@ -19,6 +34,7 @@ class RemoteModelInfo extends ModelInfo {
     required super.isDebug,
     required super.updatedAt,
     required super.description,
+    required super.localPath,
   });
 
   RemoteModelInfo.base({
@@ -41,4 +57,27 @@ class RemoteModelInfo extends ModelInfo {
     super.description = '',
     super.localPath = '',
   });
+
+  factory RemoteModelInfo.fromMap(dynamic map) {
+    return RemoteModelInfo(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      url: map['url'] as String,
+      vocabUrl: map['vocabUrl'] ?? '',
+      vocabId: map['vocabId'] ?? '',
+      modelSize: map['modelSize'] ?? -1,
+      fileSize: map['fileSize'] ?? -1,
+      quantization: map['quantization'] ?? '',
+      backend: ModelBackend.fromString(map['backend']),
+      tags: List<String>.from(map['tags'] ?? []),
+      groups: List<String>.from(map['groups'] ?? []),
+      decodeParams: List<String>.from(map['decodeParams'] ?? []),
+      isDebug: map['isDebug'] ?? false,
+      sha256: map['sha256'] ?? '',
+      md5: map['md5'] ?? '',
+      updatedAt: map['updatedAt'] ?? 0,
+      description: map['description'] ?? '',
+      localPath: map['path'] ?? '',
+    );
+  }
 }

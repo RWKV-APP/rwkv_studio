@@ -1,8 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -19,7 +19,43 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   RwkvCubit() : super(RwkvState.initial());
 
   Future init() async {
-    await RwkvServiceClient.init(url: 'http://127.0.0.1:8000', accessKey: '');
+    //
+  }
+
+  void setRemoteServiceList(Map<String, String> id2url) {
+    final serviceIds = id2url.keys;
+    final expiredInstanceIds = <String>[];
+    for (final instance in state.models.values) {
+      final info = instance.info;
+      if (info.isRemote) {
+        if (!serviceIds.contains(info.serviceId)) {
+          expiredInstanceIds.add(instance.id);
+        }
+      }
+    }
+
+    if (expiredInstanceIds.isNotEmpty) {
+      final models = {...state.models};
+      models.removeWhere((k, v) => expiredInstanceIds.contains(k));
+      emit(state.copyWith(models: models));
+      logi('remove ${expiredInstanceIds.length} expired instances');
+    }
+
+    final added = serviceIds
+        .where((id) => !state.services.any((e) => e.id == id))
+        .toList();
+
+    final services = <RwkvServiceClient>[];
+    for (final id in serviceIds) {
+      final cli = RwkvServiceClient(id: id, name: id, url: id2url[id]!);
+      services.add(cli);
+    }
+    emit(state.copyWith(services: services));
+
+    if (added.isNotEmpty) {
+      logi('${added.length} new services');
+      _syncServiceStatus(added);
+    }
   }
 
   ModelInstanceState? getModelInstance(String? modelInstanceId) {
@@ -91,7 +127,26 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   @override
   Stream<ModelLoadState> loadModel(ModelInfo modelInfo) async* {
-    final rwkv = kIsWeb ? await RwkvServiceClient.create() : RWKV.isolated();
+    RWKV rwkv;
+    String? instanceId;
+    if (modelInfo is RemoteModelInfo) {
+      final service = state.services
+          .where((e) => e.id == modelInfo.serviceId)
+          .firstOrNull;
+      if (service == null) {
+        yield ModelLoadState.error(
+          modelInfo.id,
+          "no service found for ${modelInfo.providerName}",
+        );
+        return;
+      }
+      final res = await service.create(modelInfo.id);
+      rwkv = res.rwkv;
+      instanceId = res.info.instanceId;
+    } else {
+      rwkv = RWKV.isolated();
+    }
+
     await rwkv.init(InitParam(logLevel: RWKVLogLevel.verbose));
     yield ModelLoadState.loading(modelInfo.id);
     try {
@@ -105,7 +160,11 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
       yield ModelLoadState.error(modelInfo.id, e);
       return;
     }
-    final instance = ModelInstanceState(rwkv: rwkv, info: modelInfo);
+    final instance = ModelInstanceState(
+      rwkv: rwkv,
+      id: instanceId ?? "local_${modelInfo.id}",
+      info: ModeBaseInfo.fromModelInfo(modelInfo),
+    );
     emit(state.copyWith(models: {...state.models, instance.id: instance}));
     yield ModelLoadState.loaded(modelInfo.id, modelInfo.name, instance.id);
     rwkv.generationStateStream().listen((e) {
@@ -136,10 +195,38 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     }
   }
 
+  Future _syncServiceStatus(List<String> serviceIds) async {
+    final services = state.services.where((e) => serviceIds.contains(e.id));
+
+    final instances = {};
+    for (final service in services) {
+      final resp = await service.status();
+      for (final model in resp.loadedModels) {
+        if (!instances.containsKey(model.instanceId)) {
+          final res = await service.connect(model.instanceId);
+          instances[model.instanceId] = ModelInstanceState(
+            rwkv: res.rwkv,
+            id: model.instanceId,
+            info: ModeBaseInfo(
+              id: model.modelId,
+              name: model.name,
+              providerName: service.name,
+              serviceId: service.id,
+            ),
+          );
+        }
+      }
+    }
+    if (instances.isNotEmpty) {
+      logd('connected ${instances.length} instances from remote service');
+      emit(state.copyWith(models: {...instances, ...state.models}));
+    }
+  }
+
   @override
   Future<String> getModelName(String instanceId) async {
     final model = state.models[instanceId];
-    if (model == null) return throw "Model not found";
+    if (model == null) return throw "Model not found, instanceId: $instanceId";
     return model.info.name;
   }
 }

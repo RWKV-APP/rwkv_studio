@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/model/_model_detail.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -68,13 +69,13 @@ class _ModelListPageState extends State<ModelListPage> {
   }
 
   void filterByKeywords(String keywords) {
-    logd('search: $keywords');
     _filters = [];
     if (keywords.isEmpty) {
       _showModels = _allModels;
       sortModel();
       return;
     }
+    logd('search: $keywords');
 
     final m = _allModels.where(
       (e) =>
@@ -113,29 +114,30 @@ class _ModelListPageState extends State<ModelListPage> {
 
   void sortModel() {
     _showModels.sort((a, b) {
-      if (a.localPath.isNotEmpty && b.localPath.isNotEmpty) {
-        return 0;
-      }
-      if (a.localPath.isNotEmpty) {
+      int av = a.localPath.isNotEmpty ? 1 : 0;
+      int bv = b.localPath.isNotEmpty ? 1 : 0;
+      if (a is RemoteModelInfo) {
         return -1;
       }
-      if (b.localPath.isNotEmpty) {
-        return 1;
-      }
-      return 0;
+      return bv - av;
     });
     if (_sortType != _SortType.download) {
       _showModels.sort((a, b) {
+        int s = 0;
         switch (_sortType) {
           case _SortType.modelSize:
-            return -a.modelSize.compareTo(b.modelSize);
+            s = -a.modelSize.compareTo(b.modelSize);
           case _SortType.updateAt:
-            return -a.updatedAt.compareTo(b.updatedAt);
+            s = -a.updatedAt.compareTo(b.updatedAt);
           case _SortType.fileSize:
-            return -a.fileSize.compareTo(b.fileSize);
+            s = -a.fileSize.compareTo(b.fileSize);
           case _SortType.download:
-            return 0;
+            s = 0;
         }
+        if (s == 0) {
+          return -a.name.compareTo(b.name);
+        }
+        return s;
       });
     }
     setState(() {});
@@ -180,7 +182,7 @@ class _ModelListPageState extends State<ModelListPage> {
         const SizedBox(width: 16),
         IconButton(
           onPressed: () {
-            context.modelManage.updateConfig().withToast(context);
+            context.modelManage.updateModelList().withToast(context);
           },
           icon: Row(
             children: [
@@ -196,11 +198,12 @@ class _ModelListPageState extends State<ModelListPage> {
     return Column(
       children: [
         BlocListener<ModelManageCubit, ModelManageState>(
-          listenWhen: (previous, current) => previous.models != current.models,
+          listenWhen: (p, c) => p.models != c.models,
           listener: (context, state) {
-            setState(() {
-              _allModels = state.models;
-            });
+            _allModels = state.models;
+            _controllerSearch.text = '';
+            _showModels = _allModels;
+            sortModel();
           },
           child: SizedBox(),
         ),
@@ -284,6 +287,17 @@ class _ModelList extends StatelessWidget {
       itemBuilder: (context, index) {
         final model = models[index];
         final selected = selectedModelId == model.id;
+
+        Widget? trailing;
+        if (model is RemoteModelInfo) {
+          trailing = Tooltip(
+            message: '远程模型: ${model.providerName}',
+            child: Icon(FluentIcons.remote),
+          );
+        } else if (model.localPath.isNotEmpty) {
+          trailing = Icon(FluentIcons.status_circle_checkmark);
+        }
+
         return ListTile.selectable(
           selected: selected,
           onSelectionChange: (value) {
@@ -291,9 +305,7 @@ class _ModelList extends StatelessWidget {
               onModelSelected(model);
             }
           },
-          trailing: model.localPath.isNotEmpty
-              ? Icon(FluentIcons.status_circle_checkmark)
-              : null,
+          trailing: trailing,
           contentPadding: .only(right: 24),
           title: Text(
             model.name,

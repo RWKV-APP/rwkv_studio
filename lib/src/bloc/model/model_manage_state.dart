@@ -11,24 +11,27 @@ class ModelManageState {
   final bool initialized;
 
   final List<ModelInfo> models;
-  final List<ModelInfo> localModels;
   final Map<String, ModelDownloadState?> modelStates;
   final DownloadSource downloadSource;
   final String downloadDir;
   final List<ModelTag> tags;
   final List<ModelGroup> groups;
   final List<ModelBackend> backends;
+  final List<RemoteModelProviderInfo> remoteModelProviders;
+
+  Iterable<ModelInfo> get availableModels =>
+      models.where((e) => e.localPath.isNotEmpty || e is RemoteModelInfo);
 
   ModelManageState._({
     required this.initialized,
     required this.models,
-    required this.localModels,
     required this.modelStates,
     required this.downloadSource,
     required this.downloadDir,
     required this.tags,
     required this.groups,
     required this.backends,
+    required this.remoteModelProviders,
   });
 
   factory ModelManageState.initial() {
@@ -36,12 +39,12 @@ class ModelManageState {
       initialized: false,
       models: [],
       modelStates: {},
-      localModels: [],
       downloadSource: DownloadSource.aiFastHub,
       downloadDir: '',
       tags: [],
       groups: const [],
       backends: [],
+      remoteModelProviders: [],
     );
   }
 
@@ -55,17 +58,18 @@ class ModelManageState {
     List<ModelTag>? tags,
     List<ModelGroup>? groups,
     List<ModelBackend>? backends,
+    List<RemoteModelProviderInfo>? remoteModelProviders,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
       models: models ?? this.models,
-      localModels: localModels ?? this.localModels,
       modelStates: modelStates ?? this.modelStates,
       downloadSource: downloadSource ?? this.downloadSource,
       downloadDir: downloadDir ?? this.downloadDir,
       tags: tags ?? this.tags,
       groups: groups ?? this.groups,
       backends: backends ?? this.backends,
+      remoteModelProviders: remoteModelProviders ?? this.remoteModelProviders,
     );
   }
 }

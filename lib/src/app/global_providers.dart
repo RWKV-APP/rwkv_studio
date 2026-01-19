@@ -4,6 +4,7 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 
 Widget withGlobalBlocProviders(Widget child) {
@@ -14,6 +15,7 @@ Widget withGlobalBlocProviders(Widget child) {
       BlocProvider(create: (_) => AppCubit()),
       BlocProvider(create: (_) => RwkvCubit()),
       BlocProvider(create: (_) => TextGenerationCubit()),
+      BlocProvider(create: (_) => SettingCubit()),
     ],
     child: child,
   );

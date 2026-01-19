@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/global_providers.dart';
 import 'package:rwkv_studio/src/app/router.dart';
-import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
+import 'package:rwkv_studio/src/app/state_sync_listeners.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/widget/colorful_background.dart';
 
 class RWKVApp extends StatelessWidget {
@@ -12,9 +13,10 @@ class RWKVApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return withGlobalBlocProviders(
-      BlocSelector<AppCubit, AppState, FluentThemeData>(
-        selector: (state) => state.theme,
-        builder: (context, theme) {
+      BlocSelector<SettingCubit, SettingState, AppearanceSettingState>(
+        selector: (state) => state.appearance,
+        builder: (context, appearance) {
+          final theme = appearance.theme;
           final app = FluentApp(
             title: 'RWKV Studio',
             theme: theme.copyWith(
@@ -23,7 +25,7 @@ class RWKVApp extends StatelessWidget {
               ),
               typography: Typography.fromBrightness(
                 brightness: theme.brightness,
-              ).apply(fontFamily: 'Microsoft YaHei'),
+              ).apply(fontFamily: appearance.fontFamily),
               buttonTheme: ButtonThemeData(
                 defaultButtonStyle: ButtonStyle(
                   padding: WidgetStateProperty.all(
@@ -61,7 +63,14 @@ class RWKVApp extends StatelessWidget {
               return child ?? SizedBox();
             },
           );
-          return app;
+          return Column(
+            crossAxisAlignment: .stretch,
+            mainAxisSize: .max,
+            children: [
+              Expanded(child: app),
+              buildStateSyncListeners(),
+            ],
+          );
         },
       ),
     );

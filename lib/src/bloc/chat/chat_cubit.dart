@@ -14,6 +14,10 @@ extension Ext on BuildContext {
 class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   ChatCubit() : super(ChatState.empty());
 
+  void onModelReleased() {
+    emit(state.copyWith(modelState: ModelLoadState.empty()));
+  }
+
   Future loadModel(RwkvInterface rwkv, ModelInfo model) async {
     final sp = rwkv
         .loadOrGetModelInstance(model)

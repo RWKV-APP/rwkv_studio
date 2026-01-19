@@ -8,9 +8,8 @@ class CacheSettingsCard extends StatelessWidget {
     final theme = context.fluent;
 
     return Column(
+      crossAxisAlignment: .stretch,
       children: [
-        Text('缓存', style: theme.typography.subtitle),
-        const SizedBox(height: 16),
         Row(
           children: [
             Text('模型下载目录'),
