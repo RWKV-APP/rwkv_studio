@@ -12,54 +12,76 @@ class SettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('设置', style: theme.typography.title),
-          const SizedBox(height: 24),
-          Text('外观', style: theme.typography.subtitle),
-          const SizedBox(height: 16),
-          BlocBuilder<SettingCubit, SettingState>(
-            buildWhen: (p, c) => p.appearance != c.appearance,
-            builder: (context, state) {
-              return AppearanceSettings(
-                appearance: state.appearance,
-                onChanged: (v) {
-                  context.settings.setAppearance(v);
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 24),
-          Text('缓存', style: theme.typography.subtitle),
-          const SizedBox(height: 16),
-          CacheSettingsCard(),
-          const SizedBox(height: 24),
-          Text('服务', style: theme.typography.subtitle),
-          const SizedBox(height: 16),
-          BlocBuilder<SettingCubit, SettingState>(
-            buildWhen: (p, c) => p.remoteServices != c.remoteServices,
-            builder: (context, state) {
-              return ServiceSettingCard(
-                services: state.remoteServices,
-                onChanged: (v) {
-                  context.settings.setRemoteServiceList(v);
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-
-          Container(
-            alignment: .bottomCenter,
-            height: 100,
-            child: Text('RWKV-Studio', style: theme.typography.caption),
-          ),
-        ],
+    return SizedBox(
+      height: .infinity,
+      width: .infinity,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: .start,
+          crossAxisAlignment: .start,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 1200),
+              child: _SettingBody(),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _SettingBody extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: .start,
+      children: [
+        Text('设置', style: theme.typography.title),
+        const SizedBox(height: 24),
+        Text('外观', style: theme.typography.subtitle),
+        const SizedBox(height: 16),
+        BlocBuilder<SettingCubit, SettingState>(
+          buildWhen: (p, c) => p.appearance != c.appearance,
+          builder: (context, state) {
+            return AppearanceSettings(
+              appearance: state.appearance,
+              onChanged: (v) {
+                context.settings.setAppearance(v);
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        Text('缓存', style: theme.typography.subtitle),
+        const SizedBox(height: 16),
+        CacheSettingsCard(),
+        const SizedBox(height: 24),
+        Text('服务', style: theme.typography.subtitle),
+        const SizedBox(height: 16),
+        BlocBuilder<SettingCubit, SettingState>(
+          buildWhen: (p, c) => p.remoteServices != c.remoteServices,
+          builder: (context, state) {
+            return ServiceSettingCard(
+              services: state.remoteServices,
+              onChanged: (v) {
+                context.settings.setRemoteServiceList(v);
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+
+        Container(
+          alignment: .bottomCenter,
+          height: 600,
+          child: Text('RWKV-Studio', style: theme.typography.caption),
+        ),
+      ],
     );
   }
 }

@@ -18,7 +18,7 @@ class ModeBaseInfo {
   });
 
   factory ModeBaseInfo.fromModelInfo(ModelInfo info) {
-    if (info is RemoteModelInfo) {
+    if (info.isRemote) {
       return ModeBaseInfo(
         id: info.id,
         name: info.name,

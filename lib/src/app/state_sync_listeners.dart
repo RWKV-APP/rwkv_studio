@@ -2,9 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
-import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
-import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_provider.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -14,21 +14,16 @@ Widget buildStateSyncListeners() {
     children: [
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.remoteServices != c.remoteServices,
-        listener: (context, state) {
+        listener: (context, state) async {
           final services = state.remoteServices.where((e) => e.enabled);
-          final providers = services
-              .map(
-                (e) => RemoteModelProviderInfo(
-                  name: e.name,
-                  url: "${e.url}/status",
-                  serviceId: e.id,
-                ),
-              )
-              .toList();
-          context.modelManage.setModelProviders(providers);
-          context.rwkv.setRemoteServiceList({
+          final rwkvCubit = context.rwkv;
+          await rwkvCubit.setRemoteServiceList({
             for (final service in services) service.id: service.url,
           });
+          final providers = rwkvCubit.state.services
+              .map(ModelListProvider.fromService)
+              .toList();
+          if (context.mounted) context.modelManage.setModelProviders(providers);
         },
         child: SizedBox(),
       ),

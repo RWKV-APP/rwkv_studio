@@ -1,5 +1,13 @@
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 
+extension Ext on ModelInfo {
+  bool get isRemote => this is RemoteModelInfo;
+
+  String get providerName => (this as RemoteModelInfo).providerName;
+
+  String get serviceId => (this as RemoteModelInfo).serviceId;
+}
+
 class RemoteModelProviderInfo {
   final String name;
   final String url;

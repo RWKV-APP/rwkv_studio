@@ -17,10 +17,10 @@ class ModelManageState {
   final List<ModelTag> tags;
   final List<ModelGroup> groups;
   final List<ModelBackend> backends;
-  final List<RemoteModelProviderInfo> remoteModelProviders;
+  final List<ModelListProvider> remoteModelProviders;
 
   Iterable<ModelInfo> get availableModels =>
-      models.where((e) => e.localPath.isNotEmpty || e is RemoteModelInfo);
+      models.where((e) => e.localPath.isNotEmpty || e.isRemote);
 
   ModelManageState._({
     required this.initialized,
@@ -58,7 +58,7 @@ class ModelManageState {
     List<ModelTag>? tags,
     List<ModelGroup>? groups,
     List<ModelBackend>? backends,
-    List<RemoteModelProviderInfo>? remoteModelProviders,
+    List<ModelListProvider>? remoteModelProviders,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,

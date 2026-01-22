@@ -49,10 +49,10 @@ class ModelListFlyout extends StatelessWidget {
   }) {
     Widget? trailing;
     String name = model.name;
-    bool isRemote = model is RemoteModelInfo;
+    bool isRemote = model.isRemote;
     String tooltips = '';
 
-    if (instanceId != null) {
+    if (instanceId != null && model.localPath.isNotEmpty) {
       trailing = Button(
         onPressed: selectedInstance?.info.id == model.id
             ? null

@@ -78,7 +78,6 @@ class _MainPageState extends State<MainPage> {
         selected: selected,
         displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
-          logd('selected: $i');
           if ({12, 7, 1}.contains(i)) {
             return;
           }

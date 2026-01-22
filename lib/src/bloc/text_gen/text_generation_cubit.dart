@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'text_generation_state.dart';
@@ -65,7 +66,8 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
             result += e.text;
             state.controllerText.text = result.substring(prompt.length);
           },
-          onError: (e) {
+          onError: (e, s) {
+            loge(e, s);
             emit(state.copyWith(generating: false));
           },
           onDone: () {

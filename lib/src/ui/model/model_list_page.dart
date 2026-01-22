@@ -116,7 +116,7 @@ class _ModelListPageState extends State<ModelListPage> {
     _showModels.sort((a, b) {
       int av = a.localPath.isNotEmpty ? 1 : 0;
       int bv = b.localPath.isNotEmpty ? 1 : 0;
-      if (a is RemoteModelInfo) {
+      if (a.isRemote) {
         return -1;
       }
       return bv - av;
@@ -289,7 +289,7 @@ class _ModelList extends StatelessWidget {
         final selected = selectedModelId == model.id;
 
         Widget? trailing;
-        if (model is RemoteModelInfo) {
+        if (model.isRemote) {
           trailing = Tooltip(
             message: '远程模型: ${model.providerName}',
             child: Icon(FluentIcons.remote),

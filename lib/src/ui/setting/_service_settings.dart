@@ -132,7 +132,7 @@ class _AddButton extends StatefulWidget {
 class _AddButtonState extends State<_AddButton> {
   bool _isAdding = false;
   final _nameController = TextEditingController();
-  final _urlController = TextEditingController();
+  final _urlController = TextEditingController(text: 'http://127.0.0.1:8000');
 
   bool _enabled = true;
 
@@ -163,7 +163,10 @@ class _AddButtonState extends State<_AddButton> {
       return Row(
         crossAxisAlignment: .center,
         children: [
-          SizedBox(width: 50),
+          SizedBox(
+            width: 50,
+            child: Center(child: Icon(WindowsIcons.edit, size: 14)),
+          ),
           const SizedBox(width: 12),
           Expanded(
             flex: 2,
@@ -177,7 +180,13 @@ class _AddButtonState extends State<_AddButton> {
           ),
           Expanded(
             flex: 2,
-            child: TextBox(controller: _urlController, placeholder: '请输入服务地址'),
+            child: TextBox(
+              controller: _urlController,
+              placeholder: '请输入服务地址',
+              onSubmitted: (v) {
+                onTapAddService();
+              },
+            ),
           ),
           const SizedBox(width: 12),
           Row(
@@ -243,6 +252,7 @@ class _AddButtonState extends State<_AddButton> {
 class _ServiceStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return Icon(WindowsIcons.status_circle_question_mark);
     return Icon(WindowsIcons.network_connected_checkmark, color: Colors.green);
   }
 }

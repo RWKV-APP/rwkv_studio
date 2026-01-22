@@ -5,9 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
-import 'package:rwkv_studio/src/network/http.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+
+import 'model_provider.dart';
 
 part 'model_manage_state.dart';
 
@@ -16,14 +17,14 @@ extension Ext on BuildContext {
 }
 
 class ModelManageCubit extends Cubit<ModelManageState> {
-  late final ModelManager manager;
+  late final ModelManager _manager;
 
   ModelManageCubit() : super(ModelManageState.initial());
 
   Iterable<ModelInfo> get availableModels =>
-      state.models.where((e) => e.localPath.isNotEmpty);
+      state.models.where((e) => e.localPath.isNotEmpty || e.isRemote);
 
-  void setModelProviders(List<RemoteModelProviderInfo> providers) {
+  void setModelProviders(List<ModelListProvider> providers) {
     emit(state.copyWith(remoteModelProviders: providers));
     updateModelList(local: false);
   }
@@ -39,14 +40,14 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       return;
     }
 
-    manager = ModelManager(
+    _manager = ModelManager(
       downloadSource: DownloadSource.aiFastHub,
       configProviderUrl: 'http://localhost:8080/model_config.json',
       modelDownloadDir: 'models',
     );
-    final tasks = await manager.init();
+    final tasks = await _manager.init();
 
-    manager.downloadUpdateEvents().listen((event) {
+    _manager.downloadUpdateEvents().listen((event) {
       _emitTaskUpdate(
         modelId: event.model.id,
         update: event.update,
@@ -54,14 +55,14 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       );
     });
 
-    final models = manager.models;
+    final models = _manager.models;
     emit(
       state.copyWith(
         initialized: true,
         models: models,
-        tags: manager.modelConfig.tags,
-        groups: manager.modelConfig.groups,
-        downloadSource: manager.downloadSource,
+        tags: _manager.modelConfig.tags,
+        groups: _manager.modelConfig.groups,
+        downloadSource: _manager.downloadSource,
         modelStates: {
           for (final entry in tasks.entries)
             entry.key: ModelDownloadState(
@@ -77,7 +78,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   void download(String id) async {
     try {
-      await manager.download(id);
+      await _manager.download(id);
     } catch (e) {
       _emitTaskUpdate(
         modelId: id,
@@ -88,62 +89,53 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   void resume(String id) {
-    manager.download(id);
+    _manager.download(id);
   }
 
   Future delete(String id) async {
-    await manager.deleteLocalModelFiles(id);
-    emit(state.copyWith(models: manager.models));
+    await _manager.deleteLocalModelFiles(id);
+    emit(state.copyWith(models: _manager.models));
   }
 
   Future cancel(String id) async {
-    await manager.cancelTask(id);
+    await _manager.cancelTask(id);
     emit(state.copyWith(modelStates: {...state.modelStates, id: null}));
   }
 
   Future pause(String id) async {
-    await manager.pauseTask(id);
+    await _manager.pauseTask(id);
   }
 
   Future updateModelList({bool local = true, bool remote = true}) async {
     List<ModelInfo> models = state.models.toList();
     if (remote) {
-      models.removeWhere((e) => e is RemoteModelInfo);
+      models.removeWhere((e) => e.isRemote);
       final providers = state.remoteModelProviders;
       for (final provider in providers) {
-        try {
-          final resp = await HTTP.get(provider.url);
-          final list = (resp.data['models'] as Iterable).map((e) {
-            return RemoteModelInfo.fromMap(e)
-              ..providerName = provider.name
-              ..serviceId = provider.serviceId;
-          });
-          models = [...list, ...models];
-          logd(
-            'synced ${list.length} models from ${provider.name} (${provider.url})',
-          );
-        } catch (e, s) {
-          loge('failed to fetch models from ${provider.name}', e, s);
-        }
+        final list = await provider.getModelList();
+        models = [...list, ...models];
       }
     }
 
-    if (local) {
-      models.removeWhere((e) => e is! RemoteModelInfo);
-      await manager.updateConfig();
-      models = [...models, ...manager.models];
+    List<ModelTag> tags = [];
+    List<ModelGroup> groups = [];
+
+    if (local && !kIsWeb) {
+      models.removeWhere((e) => !e.isRemote);
+      await _manager.updateConfig();
+      models = [...models, ..._manager.models];
     }
-    emit(
-      state.copyWith(
-        models: models,
-        tags: manager.modelConfig.tags,
-        groups: manager.modelConfig.groups,
-      ),
-    );
+
+    if (!kIsWeb) {
+      tags = _manager.modelConfig.tags;
+      groups = _manager.modelConfig.groups;
+    }
+
+    emit(state.copyWith(models: models, tags: tags, groups: groups));
   }
 
   void setDownloadSource(DownloadSource source) {
-    manager.downloadSource = source;
+    _manager.downloadSource = source;
     emit(state.copyWith(downloadSource: source));
   }
 
@@ -164,7 +156,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       localPath: path,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    emit(state.copyWith(models: [model, ...manager.models]));
+    emit(state.copyWith(models: [model, ..._manager.models]));
   }
 
   void _emitTaskUpdate({
@@ -175,7 +167,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     logd(
       'download update: ${update.state}, ${update.progress.toStringAsFixed(2)}',
     );
-    final m = update.isCompleted ? manager.models : null;
+    final m = update.isCompleted ? _manager.models : null;
     emit(
       state.copyWith(
         models: m,

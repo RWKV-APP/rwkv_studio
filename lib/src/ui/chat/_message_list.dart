@@ -41,12 +41,11 @@ class _MessageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget content;
     if (message.error.isNotEmpty) {
-      final error = Text(
-        message.error,
+      final error = SelectableText(
+        message.error.trim(),
         style: TextStyle(
           color: Colors.errorPrimaryColor,
           fontSize: 12,
-          fontStyle: .italic,
         ),
       );
       if (message.text.isEmpty) {
@@ -79,7 +78,7 @@ class _MessageItem extends StatelessWidget {
     }
 
     return _MessageBox(
-      alignmentEnd: message.isUser,
+      alignmentRight: message.isUser,
       footer: message.isUser
           ? null
           : _MessageItemFooter(message: message, isLast: isLast),
@@ -89,12 +88,12 @@ class _MessageItem extends StatelessWidget {
 }
 
 class _MessageBox extends StatelessWidget {
-  final bool alignmentEnd;
+  final bool alignmentRight;
   final Widget child;
   final Widget? footer;
 
   const _MessageBox({
-    required this.alignmentEnd,
+    required this.alignmentRight,
     required this.child,
     this.footer,
   });
@@ -106,7 +105,7 @@ class _MessageBox extends StatelessWidget {
       margin: .only(top: 16),
       child: Column(
         mainAxisSize: .min,
-        crossAxisAlignment: alignmentEnd ? .end : .start,
+        crossAxisAlignment: alignmentRight ? .end : .start,
         children: [
           Container(
             decoration: BoxDecoration(
@@ -122,8 +121,8 @@ class _MessageBox extends StatelessWidget {
             ),
             padding: .symmetric(horizontal: 12, vertical: 12),
             margin: .only(
-              right: alignmentEnd ? 0 : 100,
-              left: alignmentEnd ? 100 : 0,
+              right: alignmentRight ? 0 : 100,
+              left: alignmentRight ? 100 : 0,
             ),
             child: child,
           ),

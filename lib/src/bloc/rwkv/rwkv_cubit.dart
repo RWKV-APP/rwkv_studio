@@ -22,23 +22,23 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     //
   }
 
-  void setRemoteServiceList(Map<String, String> id2url) {
+  Future setRemoteServiceList(Map<String, String> id2url) async {
     final serviceIds = id2url.keys;
-    final expiredInstanceIds = <String>[];
+    final removed = <String>[];
     for (final instance in state.models.values) {
       final info = instance.info;
       if (info.isRemote) {
         if (!serviceIds.contains(info.serviceId)) {
-          expiredInstanceIds.add(instance.id);
+          removed.add(instance.id);
         }
       }
     }
 
-    if (expiredInstanceIds.isNotEmpty) {
+    if (removed.isNotEmpty) {
       final models = {...state.models};
-      models.removeWhere((k, v) => expiredInstanceIds.contains(k));
+      models.removeWhere((k, v) => removed.contains(k));
       emit(state.copyWith(models: models));
-      logi('remove ${expiredInstanceIds.length} expired instances');
+      logi('remove ${removed.length} expired instances');
     }
 
     final added = serviceIds
@@ -54,7 +54,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
     if (added.isNotEmpty) {
       logi('${added.length} new services');
-      _syncServiceStatus(added);
+      await _syncServiceStatus(added);
     }
   }
 
@@ -91,7 +91,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     if (instance == null) throw "Model not found";
     await _syncModelConfig(instanceId, param);
     try {
-      yield* instance.rwkv.chat(message);
+      yield* instance.rwkv.chat(
+        ChatParam(messages: message, model: instanceId),
+      );
     } catch (e, s) {
       loge(e);
       loge(s);
@@ -110,7 +112,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     await _syncModelConfig(instanceId, decodeParam);
     await instance.rwkv.clearState();
     try {
-      yield* instance.rwkv.generate(prompt);
+      yield* instance.rwkv.generate(
+        GenerationParam(prompt: prompt, model: instanceId),
+      );
     } catch (e, s) {
       loge(e);
       loge(s);
@@ -129,7 +133,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   Stream<ModelLoadState> loadModel(ModelInfo modelInfo) async* {
     RWKV rwkv;
     String? instanceId;
-    if (modelInfo is RemoteModelInfo) {
+    if (modelInfo.isRemote) {
       final service = state.services
           .where((e) => e.id == modelInfo.serviceId)
           .firstOrNull;
@@ -198,25 +202,24 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   Future _syncServiceStatus(List<String> serviceIds) async {
     final services = state.services.where((e) => serviceIds.contains(e.id));
 
-    final instances = {};
+    Map<String, ModelInstanceState> instances = {};
     for (final service in services) {
-      final resp = await service.status();
-      for (final model in resp.loadedModels) {
-        if (!instances.containsKey(model.instanceId)) {
-          final res = await service.connect(model.instanceId);
-          instances[model.instanceId] = ModelInstanceState(
-            rwkv: res.rwkv,
-            id: model.instanceId,
-            info: ModeBaseInfo(
-              id: model.modelId,
-              name: model.name,
-              providerName: service.name,
-              serviceId: service.id,
-            ),
-          );
-        }
+      await service.status();
+      final ms = await service.getLoadedModels();
+      for (final m in ms) {
+        instances[m.info.instanceId] = ModelInstanceState(
+          rwkv: m.rwkv,
+          id: m.info.modelId,
+          info: ModeBaseInfo(
+            id: m.info.modelId,
+            name: m.info.name,
+            providerName: service.name,
+            serviceId: service.id,
+          ),
+        );
       }
     }
+
     if (instances.isNotEmpty) {
       logd('connected ${instances.length} instances from remote service');
       emit(state.copyWith(models: {...instances, ...state.models}));
