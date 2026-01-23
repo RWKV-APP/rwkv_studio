@@ -173,6 +173,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     yield ModelLoadState.loaded(modelInfo.id, modelInfo.name, instance.id);
     rwkv.generationStateStream().listen((e) {
       final inst = state.models[instance.id];
+      if (inst?.state == e) {
+        return;
+      }
       emit(
         state.copyWith(
           models: {

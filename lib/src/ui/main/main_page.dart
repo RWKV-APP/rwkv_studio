@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/app/router.dart';
-import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/logcat_panel.dart';
@@ -9,9 +8,6 @@ import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
 import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
-import 'package:rwkv_studio/src/utils/assets.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
-import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part 'navigation_panel_items.dart';
 
@@ -25,16 +21,11 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final pageController = PageController();
 
-  int selected = 0;
+  int selected = 2;
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.modelManage.init();
-      AppAssets.init().withToast(context);
-    });
   }
 
   @override
@@ -76,7 +67,7 @@ class _MainPageState extends State<MainPage> {
         // header: const Text('RWKV Studio'),
         size: const NavigationPaneSize(openWidth: 220, openMinWidth: 120),
         selected: selected,
-        displayMode: PaneDisplayMode.compact,
+        displayMode: PaneDisplayMode.open,
         onItemPressed: (i) {
           if ({12, 7, 1}.contains(i)) {
             return;

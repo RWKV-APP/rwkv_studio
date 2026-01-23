@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/global_providers.dart';
 import 'package:rwkv_studio/src/app/router.dart';
-import 'package:rwkv_studio/src/app/state_sync_listeners.dart';
+import 'package:rwkv_studio/src/app/state_sync.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/theme/fluent.dart';
 import 'package:rwkv_studio/src/widget/colorful_background.dart';
 
 class RWKVApp extends StatelessWidget {
@@ -12,39 +13,18 @@ class RWKVApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return withGlobalBlocProviders(
-      BlocSelector<SettingCubit, SettingState, AppearanceSettingState>(
-        selector: (state) => state.appearance,
-        builder: (context, appearance) {
-          final theme = appearance.theme;
+    return WithGlobalProviders(
+      child: BlocBuilder<SettingCubit, SettingState>(
+        buildWhen: (p, c) =>
+            p.appearance != c.appearance || p.initialized != c.initialized,
+        builder: (context, state) {
+          final appearance = state.appearance;
+          final theme = appearance.theme.custom(
+            fontFamily: appearance.fontFamily,
+          );
           final app = FluentApp(
             title: 'RWKV Studio',
-            theme: theme.copyWith(
-              navigationPaneTheme: NavigationPaneThemeData(
-                backgroundColor: Colors.transparent,
-              ),
-              typography: Typography.fromBrightness(
-                brightness: theme.brightness,
-              ).apply(fontFamily: appearance.fontFamily),
-              buttonTheme: ButtonThemeData(
-                defaultButtonStyle: ButtonStyle(
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                  textStyle: theme.buttonTheme.defaultButtonStyle?.textStyle,
-                ),
-                iconButtonStyle: ButtonStyle(
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  ),
-                ),
-                filledButtonStyle: ButtonStyle(
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                ),
-              ),
-            ),
+            theme: theme,
             debugShowCheckedModeBanner: false,
             initialRoute: AppRouter.initialRoute,
             routes: AppRouter.routes,
@@ -63,14 +43,7 @@ class RWKVApp extends StatelessWidget {
               return child ?? SizedBox();
             },
           );
-          return Column(
-            crossAxisAlignment: .stretch,
-            mainAxisSize: .max,
-            children: [
-              Expanded(child: app),
-              buildStateSyncListeners(),
-            ],
-          );
+          return WithGlobalStateSync(child: app);
         },
       ),
     );

@@ -29,12 +29,17 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     updateModelList(local: false);
   }
 
-  Future init() async {
+  Future setModelDownloadDir(String path, {bool migration = false}) async {
+    await _manager.setModelDownloadDir(path, migration: migration);
+    await _manager.init();
+  }
+
+  Future init({required String modelDir, required String configUrl}) async {
     if (state.initialized) {
       logw('ModelManageCubit already initialized');
       return;
     }
-    logi('ModelManageCubit init');
+    logi('ModelManageCubit init, modelDir: $modelDir, configUrl: $configUrl');
 
     if (kIsWeb) {
       return;
@@ -42,8 +47,8 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
     _manager = ModelManager(
       downloadSource: DownloadSource.aiFastHub,
-      configProviderUrl: 'http://localhost:8080/model_config.json',
-      modelDownloadDir: 'models',
+      configProviderUrl: configUrl,
+      modelDownloadDir: modelDir,
     );
     final tasks = await _manager.init();
 

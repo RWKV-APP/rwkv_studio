@@ -1,9 +1,14 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/setting/_appearance_settings.dart';
-import 'package:rwkv_studio/src/ui/setting/_service_settings.dart';
+import 'package:rwkv_studio/src/ui/setting/service/_service_settings.dart';
+import 'package:rwkv_studio/src/utils/file_util.dart';
 
 part '_cache_settings.dart';
 
@@ -59,17 +64,22 @@ class _SettingBody extends StatelessWidget {
         const SizedBox(height: 24),
         Text('缓存', style: theme.typography.subtitle),
         const SizedBox(height: 16),
-        CacheSettingsCard(),
+        BlocBuilder<SettingCubit, SettingState>(
+          buildWhen: (p, c) => p.cache != c.cache,
+          builder: (context, state) {
+            return CacheSettingsCard(cache: state.cache);
+          },
+        ),
         const SizedBox(height: 24),
         Text('服务', style: theme.typography.subtitle),
         const SizedBox(height: 16),
         BlocBuilder<SettingCubit, SettingState>(
-          buildWhen: (p, c) => p.remoteServices != c.remoteServices,
+          buildWhen: (p, c) => p.service != c.service,
           builder: (context, state) {
             return ServiceSettingCard(
-              services: state.remoteServices,
+              setting: state.service,
               onChanged: (v) {
-                context.settings.setRemoteServiceList(v);
+                context.settings.setServiceSetting(v);
               },
             );
           },
@@ -80,6 +90,14 @@ class _SettingBody extends StatelessWidget {
           alignment: .bottomCenter,
           height: 600,
           child: Text('RWKV-Studio', style: theme.typography.caption),
+        ),
+        Center(
+          child: HyperlinkButton(
+            onPressed: () {
+              context.settings.reset();
+            },
+            child: Text('重置设置'),
+          ),
         ),
       ],
     );

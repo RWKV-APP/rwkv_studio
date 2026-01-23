@@ -1,8 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter_acrylic/window.dart';
-import 'package:flutter_acrylic/window_effect.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
-import 'package:window_manager/window_manager.dart';
 
 class AppearanceSettings extends StatelessWidget {
   final AppearanceSettingState appearance;
@@ -41,13 +38,6 @@ class AppearanceSettings extends StatelessWidget {
                     : 'Light',
               ),
               onChanged: (value) {
-                final isLight = value == AppearanceSettingState.lightTheme;
-                if (isLight) {
-                  WindowManager.instance.setBrightness(Brightness.light);
-                } else {
-                  WindowManager.instance.setBrightness(Brightness.dark);
-                }
-                Window.setEffect(effect: WindowEffect.mica, dark: !isLight);
                 onChanged?.call(appearance.copyWith(theme: value!));
               },
             ),
@@ -64,11 +54,13 @@ class AppearanceSettings extends StatelessWidget {
                 onChanged?.call(appearance.copyWith(fontFamily: v));
               },
               items: [
+                ComboBoxItem(value: '', child: Text('默认')),
                 ComboBoxItem(
                   value: 'Microsoft YaHei',
                   child: Text('Microsoft YaHei'),
                 ),
                 ComboBoxItem(value: '微软雅黑', child: Text('微软雅黑')),
+                ComboBoxItem(value: '仿宋', child: Text('仿宋')),
               ],
             ),
             const SizedBox(width: 24),

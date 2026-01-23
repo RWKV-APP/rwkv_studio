@@ -39,3 +39,39 @@ extension Ext on File {
     }
   }
 }
+
+class DirFileInfo {
+  int size;
+  int count;
+
+  DirFileInfo({required this.size, required this.count});
+
+  DirFileInfo operator +(DirFileInfo other) {
+    return DirFileInfo(size: size + other.size, count: count + other.count);
+  }
+}
+
+class FileUtils {
+  FileUtils._();
+
+  static Future<DirFileInfo> getDirectoryFileInfo(
+    String path, {
+    bool recursive = false,
+    Set<String> excludeExts = const {},
+  }) async {
+    final dir = Directory(path);
+    if (!await dir.exists()) {
+      return DirFileInfo(size: 0, count: 0);
+    }
+    DirFileInfo info = DirFileInfo(size: 0, count: 0);
+    await for (final file in dir.list()) {
+      if (recursive && file is Directory) {
+        info += await getDirectoryFileInfo(file.path, recursive: true);
+      }
+      if (file is! File || excludeExts.contains(file.extension)) continue;
+      info.size += await file.length();
+      info.count += 1;
+    }
+    return info;
+  }
+}
