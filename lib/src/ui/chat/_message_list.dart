@@ -13,7 +13,7 @@ class ChatMessageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatCubit, ChatState>(
-      buildWhen: (p, c) => p.messages[p.selected] != c.messages[c.selected],
+      buildWhen: (p, c) => p.currentChat != c.currentChat,
       builder: (context, state) {
         final list = state.messages[state.selected] ?? [];
         return ListView.builder(
@@ -43,10 +43,7 @@ class _MessageItem extends StatelessWidget {
     if (message.error.isNotEmpty) {
       final error = SelectableText(
         message.error.trim(),
-        style: TextStyle(
-          color: Colors.errorPrimaryColor,
-          fontSize: 12,
-        ),
+        style: TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
       );
       if (message.text.isEmpty) {
         content = error;

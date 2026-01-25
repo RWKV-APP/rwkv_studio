@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'chat_state.dart';
@@ -85,17 +86,28 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
   }
 
-  Future pause(RwkvInterface rwkv) async {
+  Future mayPause(RwkvInterface rwkv) async {
+    if (state.generating) {
+      pause(rwkv, conversationId: state.selected);
+    }
+  }
+
+  Future pause(RwkvInterface rwkv, {String? conversationId}) async {
+    final convId = conversationId ?? state.selected;
     await rwkv.stop(state.modelInstanceId);
     emit(state.copyWith(generating: false));
     await Future.delayed(Duration(milliseconds: 100));
-    final history = state.messages[state.selected] ?? [];
-    final last = history.last;
+    final history = state.messages[convId] ?? [];
+    final last = history.lastOrNull;
+    if (last == null) {
+      logw('pause message cannot be found');
+      return;
+    }
     emit(
       state.copyWith(
         messages: {
           ...state.messages,
-          state.selected: [
+          convId: [
             ...history.take(history.length - 1),
             last.copyWith(stopReason: StopReason.canceled),
           ],
@@ -105,20 +117,20 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future resume(RwkvInterface rwkv) async {
+    final convId = state.selected;
     final history = state.messages[state.selected]!;
     final generated = history.removeLast();
-    await _sendInternal(rwkv, history, generated);
+    await _sendInternal(rwkv, history, generated, convId);
   }
 
   Future regenerate(RwkvInterface rwkv) async {
-    final history = state.messages[state.selected]!;
+    final convId = state.selected;
+
+    final history = state.messages[convId]!;
     history.removeAt(history.length - 1);
 
-    MessageState generated = MessageState(
-      id: DateTime.now().toString(),
-      text: '',
-      datetime: DateTime.now(),
-      role: 'assistant',
+    MessageState generated = MessageState.create(
+      role: rwkv.roleAssistant,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
@@ -126,12 +138,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       state.copyWith(
         messages: {
           ...state.messages,
-          state.selected: [...history, generated],
+          convId: [...history, generated],
         },
       ),
     );
 
-    await _sendInternal(rwkv, history, generated);
+    await _sendInternal(rwkv, history, generated, convId);
   }
 
   Future send(RwkvInterface rwkv) async {
@@ -139,46 +151,41 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     if (text.isEmpty) {
       return;
     }
-    final message = MessageState(
-      id: DateTime.now().toString(),
+    final message = MessageState.create(
+      role: rwkv.roleUser,
       text: text,
-      datetime: DateTime.now(),
-      role: 'user',
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
+
+    String convId = state.selected;
     state.inputController.clear();
-    final history = <MessageState>[
-      ...(state.messages[state.selected] ?? []),
-      message,
-    ];
+    final history = <MessageState>[...(state.messages[convId] ?? []), message];
 
     List<ConversationState>? conversations = history.length > 1
         ? null
         : state.conversations.map((e) {
-            return e.id == state.selected ? e.copyWith(title: text) : e;
+            return e.id == convId ? e.copyWith(title: text) : e;
           }).toList();
     emit(
       state.copyWith(
         conversations: conversations,
-        messages: {...state.messages, state.selected: history},
+        messages: {...state.messages, convId: history},
       ),
     );
 
-    MessageState assistant = MessageState(
-      id: DateTime.now().toString(),
-      text: '',
-      datetime: DateTime.now(),
-      role: 'assistant',
+    MessageState assistant = MessageState.create(
+      role: rwkv.roleAssistant,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
-    await _sendInternal(rwkv, history, assistant);
+    await _sendInternal(rwkv, history, assistant, convId);
   }
 
   Future _sendInternal(
     RwkvInterface rwkv,
     List<MessageState> history,
     MessageState assistant,
+    String conversationId,
   ) async {
     final messages = history.map((e) => e.text).toList();
     if (assistant.text.isNotEmpty) {
@@ -197,7 +204,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
               state.copyWith(
                 messages: {
                   ...state.messages,
-                  state.selected: [...history, assistant],
+                  conversationId: [...history, assistant],
                 },
               ),
             );
@@ -212,7 +219,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
                 generating: false,
                 messages: {
                   ...state.messages,
-                  state.selected: [...history, assistant],
+                  conversationId: [...history, assistant],
                 },
               ),
             );

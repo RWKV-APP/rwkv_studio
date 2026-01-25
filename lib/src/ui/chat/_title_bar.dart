@@ -37,13 +37,15 @@ class ChatTitleBar extends StatelessWidget {
                 ),
               ),
               BlocBuilder<ChatCubit, ChatState>(
-                buildWhen: (p, c) => p.modelState != c.modelState,
+                buildWhen: (p, c) =>
+                    p.modelState != c.modelState ||
+                    p.generating != c.generating,
                 builder: (context, state) {
                   return ModelSelector(
                     modelState: state.modelState,
-                    onModelSelected: (s) {
-                      context.chat.loadModel(context.rwkv, s);
-                    },
+                    onModelSelected: state.generating
+                        ? null
+                        : (s) => context.chat.loadModel(context.rwkv, s),
                   );
                 },
               ),

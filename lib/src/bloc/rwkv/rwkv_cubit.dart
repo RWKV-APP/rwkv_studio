@@ -54,7 +54,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
     if (added.isNotEmpty) {
       logi('${added.length} new services');
-      await _syncServiceStatus(added);
+      await _syncServiceStatus(added) //
+          .timeout(Duration(seconds: 2))
+          .catchError((e, s) => loge(e));
     }
   }
 
@@ -72,7 +74,11 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   @override
   Future stop(String instanceId) async {
+    logd('stop $instanceId');
     final instance = state.models[instanceId]!;
+    if (!instance.state.isGenerating) {
+      logw('not generating');
+    }
     await instance.rwkv.stopGenerate();
   }
 
@@ -91,9 +97,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     if (instance == null) throw "Model not found";
     await _syncModelConfig(instanceId, param);
     try {
-      yield* instance.rwkv.chat(
-        ChatParam(messages: message, model: instanceId),
-      );
+      yield* instance.rwkv
+          .chat(ChatParam(messages: message, model: instanceId))
+          .timeout(Duration(seconds: 10));
     } catch (e, s) {
       loge(e);
       loge(s);
@@ -126,6 +132,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     final instance = state.models[modelInstanceId];
     if (instance == null) throw "Model not found";
     await instance.rwkv.release();
+    logd('model released $modelInstanceId');
     emit(state.copyWith(models: {...state.models}..remove(modelInstanceId)));
   }
 

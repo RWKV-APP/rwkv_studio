@@ -8,10 +8,11 @@ class MessageState {
   final String error;
   final String modelName;
   final StopReason stopReason;
+  final Map<String, dynamic> extra;
 
   bool get isUser => role == 'user';
 
-  MessageState({
+  MessageState._({
     required this.id,
     required this.text,
     required this.datetime,
@@ -19,7 +20,30 @@ class MessageState {
     required this.modelName,
     this.stopReason = StopReason.none,
     this.error = '',
+    this.extra = const {},
   });
+
+  static String _newId() {
+    return DateTime.now().millisecondsSinceEpoch.toString();
+  }
+
+  factory MessageState.create({
+    required final String role,
+    String? text,
+    String? modelName,
+  }) {
+    final id = _newId();
+    return MessageState._(
+      id: id,
+      text: text ?? '',
+      datetime: DateTime.now(),
+      role: role,
+      stopReason: StopReason.none,
+      error: '',
+      extra: const {},
+      modelName: modelName ?? '',
+    );
+  }
 
   MessageState copyWith({
     String? id,
@@ -29,8 +53,9 @@ class MessageState {
     String? error,
     String? modelName,
     StopReason? stopReason,
+    Map<String, dynamic>? extra,
   }) {
-    return MessageState(
+    return MessageState._(
       id: id ?? this.id,
       text: text ?? this.text,
       datetime: datetime ?? this.datetime,
@@ -38,6 +63,7 @@ class MessageState {
       error: error ?? this.error,
       modelName: modelName ?? this.modelName,
       stopReason: stopReason ?? this.stopReason,
+      extra: extra ?? this.extra,
     );
   }
 }
@@ -75,6 +101,9 @@ class ChatState {
   final ModelLoadState modelState;
 
   String get modelInstanceId => modelState.instanceId;
+
+  List<MessageState> get currentChat => messages[selected] ?? [];
+  bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;
 
   ChatState({
     required this.showSettingPanel,

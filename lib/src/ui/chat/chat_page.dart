@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/chat/_chat_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_input.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
@@ -16,6 +17,12 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  @override
+  void deactivate() {
+    context.chat.mayPause(context.rwkv);
+    super.deactivate();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -44,33 +51,37 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         Divider(direction: .vertical),
-        Expanded(
-          flex: 3,
-          child: BlocBuilder<ChatCubit, ChatState>(
-            buildWhen: (p, c) => p.showSettingPanel != c.showSettingPanel,
-            builder: (context, state) {
-              return CollapsibleSidebarLayout(
-                open: state.showSettingPanel,
-                divider: Divider(direction: .vertical),
-                sidebar: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  child: _SettingPanel(),
-                ),
-                content: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ChatTitleBar(),
-                    Divider(),
-                    Expanded(child: ChatMessageList()),
-                    Divider(),
-                    ChatMessageInput(),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+        Expanded(flex: 3, child: _Chat()),
       ],
+    );
+  }
+}
+
+class _Chat extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ChatCubit, ChatState>(
+      buildWhen: (p, c) => p.showSettingPanel != c.showSettingPanel,
+      builder: (context, state) {
+        return CollapsibleSidebarLayout(
+          open: state.showSettingPanel,
+          divider: Divider(direction: .vertical),
+          sidebar: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: _SettingPanel(),
+          ),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ChatTitleBar(),
+              Divider(),
+              Expanded(child: ChatMessageList()),
+              Divider(),
+              ChatMessageInput(),
+            ],
+          ),
+        );
+      },
     );
   }
 }

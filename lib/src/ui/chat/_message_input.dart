@@ -77,6 +77,7 @@ class _SendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatCubit, ChatState>(
+      buildWhen: (p, c) => p.sendButtonEnabled != c.sendButtonEnabled,
       builder: (context, state) {
         if (state.generating) {
           return Button(
@@ -91,7 +92,12 @@ class _SendButton extends StatelessWidget {
           );
         }
 
-        return Button(child: Text('发送'), onPressed: () => _onTapSend(context));
+        return Button(
+          onPressed: !state.sendButtonEnabled
+              ? null
+              : () => _onTapSend(context),
+          child: Text('发送'),
+        );
       },
     );
   }

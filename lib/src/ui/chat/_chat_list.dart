@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -28,6 +29,11 @@ class _Item extends StatelessWidget {
   final ConversationState conversation;
 
   const _Item({required this.conversation});
+
+  void _onSelect(BuildContext context, ConversationState conversation) async {
+    await context.chat.mayPause(context.rwkv);
+    if (context.mounted) context.chat.selectConversation(conversation.id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +75,7 @@ class _Item extends StatelessWidget {
               ),
               onSelectionChange: (selected) {
                 if (selected) {
-                  context.chat.selectConversation(conversation.id);
+                  _onSelect(context, conversation);
                 }
               },
             ),
@@ -104,9 +110,10 @@ void _showMenu(
               color: Colors.errorPrimaryColor,
             ),
             text: Text('删除', style: TextStyle(color: Colors.errorPrimaryColor)),
-            onPressed: () {
+            onPressed: () async {
+              await context.chat.mayPause(context.rwkv);
+              if (!context.mounted) return;
               context.chat.deleteConversation(conversation.id).withToast(ctx);
-              Flyout.of(context).close();
             },
           ),
           MenuFlyoutItem(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/network/http.dart';
@@ -20,16 +22,23 @@ class _ServiceModelListProvider extends ModelListProvider {
 
   @override
   Future<List<RemoteModelInfo>> getModelList() async {
-    final list = await service.getModels();
-    final r = list
-        .map(
-          (e) => RemoteModelInfo.fromMap(e.toJson())
-            ..serviceId = service.id
-            ..providerName = service.name,
-        )
-        .toList();
-    logd('synced ${r.length} models from ${service.name} (${service.url})');
-    return r;
+    try {
+      final list = await service.getModels();
+      final r = list
+          .map(
+            (e) => RemoteModelInfo.fromMap(e.toJson())
+              ..serviceId = service.id
+              ..providerName = service.name,
+          )
+          .toList();
+      logd('synced ${r.length} models from ${service.name} (${service.url})');
+      return r;
+    } on TimeoutException {
+      logw('timeout fetching models from ${service.name} (${service.url})');
+      return [];
+    } catch (_) {
+      rethrow;
+    }
   }
 }
 
