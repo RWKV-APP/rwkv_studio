@@ -3,6 +3,7 @@ part of 'chat_cubit.dart';
 class MessageState {
   final String id;
   final String text;
+  final int thinkEndAt;
   final DateTime datetime;
   final String role;
   final String error;
@@ -18,6 +19,7 @@ class MessageState {
     required this.datetime,
     required this.role,
     required this.modelName,
+    this.thinkEndAt = 0,
     this.stopReason = StopReason.none,
     this.error = '',
     this.extra = const {},
@@ -54,6 +56,7 @@ class MessageState {
     String? modelName,
     StopReason? stopReason,
     Map<String, dynamic>? extra,
+    int? thinkEndAt,
   }) {
     return MessageState._(
       id: id ?? this.id,
@@ -64,6 +67,7 @@ class MessageState {
       modelName: modelName ?? this.modelName,
       stopReason: stopReason ?? this.stopReason,
       extra: extra ?? this.extra,
+      thinkEndAt: thinkEndAt ?? this.thinkEndAt,
     );
   }
 }

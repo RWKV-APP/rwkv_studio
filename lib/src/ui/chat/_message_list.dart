@@ -4,6 +4,7 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/ui/chat/text_message_content.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/measure_size.dart';
 
@@ -51,14 +52,14 @@ class _MessageItem extends StatelessWidget {
         content = Column(
           mainAxisSize: .min,
           crossAxisAlignment: .start,
-          children: [Text(message.text), error],
+          children: [
+            TextMessageContent(content: message.text),
+            error,
+          ],
         );
       }
     } else {
-      content = SelectableText(
-        message.text,
-        style: TextStyle(height: 1.4, letterSpacing: 1),
-      );
+      content = TextMessageContent(content: message.text);
     }
 
     if (isLast) {

@@ -213,9 +213,11 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         .chat(messages, state.modelInstanceId, state.decodeParam)
         .listen(
           (resp) {
+            int? thinkEndAt;
             assistant = assistant.copyWith(
               text: assistant.text + resp.text,
               stopReason: resp.stopReason,
+              thinkEndAt: thinkEndAt,
             );
             emit(
               state.copyWith(
