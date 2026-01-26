@@ -7,6 +7,7 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/setting/_appearance_settings.dart';
+import 'package:rwkv_studio/src/ui/setting/_behavior_setting.dart';
 import 'package:rwkv_studio/src/ui/setting/service/_service_settings.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
 
@@ -46,9 +47,7 @@ class _SettingBody extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: .start,
       children: [
-        Text('设置', style: theme.typography.title),
-        const SizedBox(height: 24),
-        Text('外观', style: theme.typography.subtitle),
+        Text('设置', style: theme.typography.subtitle),
         const SizedBox(height: 16),
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.appearance != c.appearance,
@@ -61,18 +60,16 @@ class _SettingBody extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(height: 24),
-        Text('缓存', style: theme.typography.subtitle),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        BehaviorSetting(),
+        const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.cache != c.cache,
           builder: (context, state) {
             return CacheSettingsCard(cache: state.cache);
           },
         ),
-        const SizedBox(height: 24),
-        Text('服务', style: theme.typography.subtitle),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.service != c.service,
           builder: (context, state) {
@@ -85,7 +82,6 @@ class _SettingBody extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-
         Container(
           alignment: .bottomCenter,
           height: 600,

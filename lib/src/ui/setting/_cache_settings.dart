@@ -33,49 +33,54 @@ class CacheSettingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            Text('模型下载目录'),
-            const SizedBox(width: 12, height: 12),
-            SizedBox(
-              width: 300,
-              child: TextBox(
-                controller: TextEditingController(text: cache.modelDownloadDir),
-                readOnly: true,
-                suffix: IconButton(
-                  icon: const Icon(WindowsIcons.folder),
-                  onPressed: () => _onTapChangeModelDir(context),
+    return Expander(
+      header: Text('缓存设置'),
+      content: Column(
+        crossAxisAlignment: .stretch,
+        children: [
+          Column(
+            crossAxisAlignment: .stretch,
+            children: [
+              Text('模型下载目录'),
+              const SizedBox(width: 12, height: 12),
+              SizedBox(
+                width: 300,
+                child: TextBox(
+                  controller: TextEditingController(
+                    text: cache.modelDownloadDir,
+                  ),
+                  readOnly: true,
+                  suffix: IconButton(
+                    icon: const Icon(WindowsIcons.folder),
+                    onPressed: () => _onTapChangeModelDir(context),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        _ModelCacheInfo(dir: cache.modelDownloadDir),
-        const SizedBox(height: 16),
-        Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            Text('缓存目录'),
-            const SizedBox(width: 12, height: 12),
-            SizedBox(
-              width: 300,
-              child: TextBox(
-                controller: TextEditingController(text: cache.appCacheDir),
-                readOnly: true,
-                suffix: IconButton(
-                  icon: const Icon(WindowsIcons.folder),
-                  onPressed: () => _onTapChangeAppCacheDir(context),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _ModelCacheInfo(dir: cache.modelDownloadDir),
+          const SizedBox(height: 16),
+          Column(
+            crossAxisAlignment: .stretch,
+            children: [
+              Text('缓存目录'),
+              const SizedBox(width: 12, height: 12),
+              SizedBox(
+                width: 300,
+                child: TextBox(
+                  controller: TextEditingController(text: cache.appCacheDir),
+                  readOnly: true,
+                  suffix: IconButton(
+                    icon: const Icon(WindowsIcons.folder),
+                    onPressed: () => _onTapChangeAppCacheDir(context),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -98,10 +103,7 @@ class _ModelCacheInfoState extends State<_ModelCacheInfo> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final dir = widget.dir;
-      _info = await FileUtils.getDirectoryFileInfo(
-        dir,
-        excludeExts: {'json'},
-      );
+      _info = await FileUtils.getDirectoryFileInfo(dir, excludeExts: {'json'});
       setState(() {
         _loading = false;
       });

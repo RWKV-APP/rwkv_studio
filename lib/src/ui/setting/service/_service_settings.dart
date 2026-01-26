@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_add_service_button.dart';
 
@@ -26,18 +27,28 @@ class ServiceSettingCard extends StatelessWidget {
             onChanged?.call(setting.copyWith(modelListUrl: v));
           },
         ),
-        const SizedBox(height: 18),
-        Text('API 服务', style: theme.typography.subtitle),
-        const SizedBox(height: 6),
-        Text('支持 OpenAI API 风格接口的模型服务', style: theme.typography.caption),
         const SizedBox(height: 12),
-        Card(
-          child: Column(
+        Expander(
+          contentBackgroundColor: context.fluent.cardColor,
+          header: Text('API 模型服务'),
+          contentPadding: .only(top: 16, bottom: 12),
+          trailing: Text(
+            '${services.where((e) => e.enabled).length}/${services.length} 已启用',
+            style: theme.typography.caption,
+          ),
+          content: Column(
             crossAxisAlignment: .stretch,
             children: [
+              Padding(
+                padding: .only(right: 12, bottom: 16, left: 12),
+                child: Text(
+                  '支持 OpenAI API 风格接口的模型服务, 添加并启用后, 选择模型列表会出现以 🔗 标记的模型',
+                  style: theme.typography.caption,
+                ),
+              ),
+              const SizedBox(height: 6),
               _TableHeader(),
               const SizedBox(height: 12),
-              Divider(),
               if (services.isEmpty)
                 Container(
                   height: 100,
@@ -57,15 +68,71 @@ class ServiceSettingCard extends StatelessWidget {
                   onChanged: onChanged,
                 ),
               if (services.isNotEmpty)
-                _AddButton(
-                  onAdd: (v) => onChanged?.call(
-                    setting.copyWith(remoteServices: [v, ...services]),
+                Center(
+                  child: _AddButton(
+                    onAdd: (v) => onChanged?.call(
+                      setting.copyWith(remoteServices: [v, ...services]),
+                    ),
                   ),
                 ),
             ],
           ),
         ),
+
+        const SizedBox(height: 12),
+        _WebUI(),
       ],
+    );
+  }
+}
+
+class _WebUI extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Expander(
+      contentBackgroundColor: context.fluent.cardColor,
+      header: Text('WebUI'),
+      content: Column(
+        crossAxisAlignment: .start,
+        children: [
+          Row(
+            children: [
+              Text('Host:'),
+              const SizedBox(width: 5),
+              SizedBox(
+                width: 150,
+                child: TextBox(
+                  enabled: false,
+                  controller: TextEditingController(text: '0.0.0.0'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text('Port:'),
+              const SizedBox(width: 5),
+              SizedBox(
+                width: 100,
+                child: TextBox(
+                  enabled: false,
+                  controller: TextEditingController(text: '8080'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '开启后, RWKV Studio 将提供 WebUI 界面',
+            style: context.fluent.typography.caption,
+          ),
+        ],
+      ),
+      trailing: ToggleSwitch(
+        checked: false,
+        onChanged: (v) {
+          context.toast('敬请期待');
+        },
+        leadingContent: true,
+        content: Text('未启用'),
+      ),
     );
   }
 }
@@ -130,11 +197,9 @@ class _ServiceItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: service == setting.remoteServices.lastOrNull
-          ? null
-          : BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey[30])),
-            ),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.grey[30])),
+      ),
       padding: .symmetric(vertical: 12),
       child: Row(
         children: [
