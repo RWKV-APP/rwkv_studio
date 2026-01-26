@@ -58,23 +58,23 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     emit(
       state.copyWith(
         conversations: [conv, ...state.conversations],
-        selected: conv.id,
+        selected: conv,
       ),
     );
   }
 
-  void selectConversation(String id) {
-    emit(state.copyWith(selected: id));
+  void selectConversation(ConversationState conv) {
+    emit(state.copyWith(selected: conv));
   }
 
   Future deleteConversation(String id) async {
-    String selected = state.selected;
+    ConversationState selected = state.selected;
     List<ConversationState> conversations = state.conversations
         .where((e) => e.id != id)
         .toList();
     Map<String, List<MessageState>> messages = state.messages;
-    if (selected == id) {
-      selected = conversations.firstOrNull?.id ?? '';
+    if (selected.id == id) {
+      selected = conversations.firstOrNull ?? ConversationState.empty;
     }
     messages.remove(id);
     emit(
@@ -88,12 +88,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
   Future mayPause(RwkvInterface rwkv) async {
     if (state.generating) {
-      pause(rwkv, conversationId: state.selected);
+      pause(rwkv, conversationId: state.selected.id);
     }
   }
 
   Future pause(RwkvInterface rwkv, {String? conversationId}) async {
-    final convId = conversationId ?? state.selected;
+    final convId = conversationId ?? state.selected.id;
     await rwkv.stop(state.modelInstanceId);
     emit(state.copyWith(generating: false));
     await Future.delayed(Duration(milliseconds: 100));
@@ -117,14 +117,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future resume(RwkvInterface rwkv) async {
-    final convId = state.selected;
-    final history = state.messages[state.selected]!;
+    final convId = state.selected.id;
+    final history = state.messages[convId]!;
     final generated = history.removeLast();
     await _sendInternal(rwkv, history, generated, convId);
   }
 
   Future regenerate(RwkvInterface rwkv) async {
-    final convId = state.selected;
+    final convId = state.selected.id;
 
     final history = state.messages[convId]!;
     history.removeAt(history.length - 1);
@@ -146,6 +146,27 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     await _sendInternal(rwkv, history, generated, convId);
   }
 
+  void updateConversation(
+    String id,
+    ConversationState Function(ConversationState) update,
+  ) {
+    ConversationState? updated;
+    final c = state.conversations.map((e) {
+      if (e.id == id) {
+        updated = update(e);
+        return updated!;
+      }
+      return e;
+    }).toList();
+    c.sort((a, b) => b.updateAt.compareTo(a.updateAt));
+    emit(
+      state.copyWith(
+        conversations: c,
+        selected: state.selected.id == updated?.id ? updated : state.selected,
+      ),
+    );
+  }
+
   Future send(RwkvInterface rwkv) async {
     final text = state.inputController.text.trim();
     if (text.isEmpty) {
@@ -157,21 +178,17 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
-    String convId = state.selected;
+    String convId = state.selected.id;
     state.inputController.clear();
     final history = <MessageState>[...(state.messages[convId] ?? []), message];
 
-    List<ConversationState>? conversations = history.length > 1
-        ? null
-        : state.conversations.map((e) {
-            return e.id == convId ? e.copyWith(title: text) : e;
-          }).toList();
-    emit(
-      state.copyWith(
-        conversations: conversations,
-        messages: {...state.messages, convId: history},
-      ),
-    );
+    if (history.length == 1) {
+      updateConversation(
+        convId,
+        (c) => c.copyWith(title: text, updateAt: DateTime.now()),
+      );
+    }
+    emit(state.copyWith(messages: {...state.messages, convId: history}));
 
     MessageState assistant = MessageState.create(
       role: rwkv.roleAssistant,
@@ -210,10 +227,18 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             );
           },
           onDone: () {
+            updateConversation(
+              conversationId,
+              (c) => c.copyWith(updateAt: DateTime.now()),
+            );
             emit(state.copyWith(generating: false));
           },
           onError: (e, s) {
             assistant = assistant.copyWith(error: e.toString());
+            updateConversation(
+              conversationId,
+              (c) => c.copyWith(updateAt: DateTime.now()),
+            );
             emit(
               state.copyWith(
                 generating: false,

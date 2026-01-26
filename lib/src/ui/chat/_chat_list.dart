@@ -32,7 +32,7 @@ class _Item extends StatelessWidget {
 
   void _onSelect(BuildContext context, ConversationState conversation) async {
     await context.chat.mayPause(context.rwkv);
-    if (context.mounted) context.chat.selectConversation(conversation.id);
+    if (context.mounted) context.chat.selectConversation(conversation);
   }
 
   @override
@@ -47,7 +47,7 @@ class _Item extends StatelessWidget {
           child: FlyoutTarget(
             controller: _contextController,
             child: ListTile.selectable(
-              selected: conversation.id == state.selected,
+              selected: conversation.id == state.selected.id,
               leading: Container(
                 decoration: BoxDecoration(
                   color: context.fluent.accentColor.lightest,

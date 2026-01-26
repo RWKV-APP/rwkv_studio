@@ -73,6 +73,12 @@ class ConversationState {
   final String title;
   final DateTime updateAt;
 
+  static ConversationState empty = ConversationState(
+    id: '',
+    title: '',
+    updateAt: DateTime(0, 0),
+  );
+
   ConversationState({
     required this.id,
     required this.title,
@@ -91,7 +97,7 @@ class ConversationState {
 class ChatState {
   final List<ConversationState> conversations;
   final Map<String, List<MessageState>> messages;
-  final String selected;
+  final ConversationState selected;
   final TextEditingController inputController;
   final DecodeParam decodeParam;
   final GenerationConfig generationConfig;
@@ -102,7 +108,8 @@ class ChatState {
 
   String get modelInstanceId => modelState.instanceId;
 
-  List<MessageState> get currentChat => messages[selected] ?? [];
+  List<MessageState> get currentChat => messages[selected.id] ?? [];
+
   bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;
 
   ChatState({
@@ -121,7 +128,7 @@ class ChatState {
     : this(
         showSettingPanel: false,
         conversations: [],
-        selected: '',
+        selected: ConversationState.empty,
         messages: {},
         inputController: TextEditingController(),
         decodeParam: DecodeParam.initial(),
@@ -133,7 +140,7 @@ class ChatState {
   ChatState copyWith({
     List<ConversationState>? conversations,
     Map<String, List<MessageState>>? messages,
-    String? selected,
+    ConversationState? selected,
     TextEditingController? inputController,
     DecodeParam? decodeParam,
     bool? generating,

@@ -13,10 +13,8 @@ class ChatTitleBar extends StatelessWidget {
     return BlocBuilder<ChatCubit, ChatState>(
       buildWhen: (p, c) => p.selected != c.selected,
       builder: (context, state) {
-        final conv = state.conversations
-            .where((c) => c.id == state.selected)
-            .firstOrNull;
-        if (conv == null) {
+        final conv = state.selected;
+        if (conv == ConversationState.empty) {
           return SizedBox();
         }
         return Container(

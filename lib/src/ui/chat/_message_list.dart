@@ -15,7 +15,7 @@ class ChatMessageList extends StatelessWidget {
     return BlocBuilder<ChatCubit, ChatState>(
       buildWhen: (p, c) => p.currentChat != c.currentChat,
       builder: (context, state) {
-        final list = state.messages[state.selected] ?? [];
+        final list = state.messages[state.selected.id] ?? [];
         return ListView.builder(
           itemCount: list.length,
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
