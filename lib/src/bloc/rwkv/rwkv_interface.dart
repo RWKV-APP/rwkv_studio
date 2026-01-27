@@ -28,6 +28,7 @@ mixin class RwkvInterface {
     List<String> message,
     String instanceId,
     DecodeParam param,
+    GenerationConfig config,
   ) async* {
     throw UnimplementedError();
   }

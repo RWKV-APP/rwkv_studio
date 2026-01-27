@@ -46,7 +46,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   void toggleThinkMode() {
-    emit(state.copyWith());
+    emit(
+      state.copyWith(
+        generationConfig: state.generationConfig.copyWith(
+          chatReasoning: !state.generationConfig.chatReasoning,
+        ),
+      ),
+    );
   }
 
   Future newChat() async {
@@ -209,13 +215,39 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       messages.add(assistant.text);
     }
     emit(state.copyWith(generating: true));
+    bool thinkResolved = assistant.thinkEndAt < assistant.text.length;
+    if (assistant.text.isNotEmpty && !assistant.text.startsWith('<')) {
+      thinkResolved = true;
+      assistant = assistant.copyWith(thinkEndAt: assistant.text.length);
+    }
     rwkv
-        .chat(messages, state.modelInstanceId, state.decodeParam)
+        .chat(
+          messages,
+          state.modelInstanceId,
+          state.decodeParam,
+          state.generationConfig,
+        )
         .listen(
           (resp) {
             int? thinkEndAt;
+            final content = (assistant.text + resp.text).trimLeft();
+            if (!thinkResolved) {
+              if (!content.startsWith('<')) {
+                thinkEndAt = 0;
+                thinkResolved = true;
+                logd('think resolved, no think tag');
+              } else {
+                final index = content.indexOf('</think>');
+                thinkEndAt = content.length;
+                if (index != -1) {
+                  thinkEndAt = index;
+                  thinkResolved = true;
+                  logd('think resolved: $thinkEndAt');
+                }
+              }
+            }
             assistant = assistant.copyWith(
-              text: assistant.text + resp.text,
+              text: content,
               stopReason: resp.stopReason,
               thinkEndAt: thinkEndAt,
             );

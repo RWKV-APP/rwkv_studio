@@ -13,6 +13,16 @@ class MessageState {
 
   bool get isUser => role == 'user';
 
+  bool get hasThinkContent => thinkEndAt > 8;
+
+  String get thinkContent {
+    return text.substring(0, thinkEndAt).replaceAll('<think>', '').trim();
+  }
+
+  String get bodyContent {
+    return text.substring(thinkEndAt).replaceAll('</think>', '').trim();
+  }
+
   MessageState._({
     required this.id,
     required this.text,

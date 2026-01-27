@@ -33,7 +33,7 @@ class ChatMessageInput extends StatelessWidget {
                   placeholder: '请输入内容',
                   onSubmitted: (String text) =>
                       context.chat.send(context.rwkv).withToast(context),
-                  maxLines: 1,
+                  maxLines: 10000,
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 );
               },
@@ -106,33 +106,40 @@ class _SendButton extends StatelessWidget {
 class _ThinkModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return SplitButton.toggle(
-      checked: false,
-      onInvoked: () {
-        context.chat.newChat();
+    return BlocBuilder<ChatCubit, ChatState>(
+      buildWhen: (p, c) => p.generationConfig != c.generationConfig,
+      builder: (context, state) {
+        return SplitButton.toggle(
+          checked: state.generationConfig.chatReasoning,
+          onInvoked: () {
+            context.chat.toggleThinkMode();
+          },
+          flyout: FlyoutContent(
+            constraints: BoxConstraints(maxWidth: 200.0),
+            child: Wrap(
+              runSpacing: 10.0,
+              spacing: 8.0,
+              children: Colors.accentColors.map((color) {
+                return Button(
+                  style: ButtonStyle(
+                    padding: WidgetStatePropertyAll(
+                      EdgeInsetsDirectional.all(4.0),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop(color);
+                  },
+                  child: Container(height: 32, width: 32, color: color),
+                );
+              }).toList(),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsetsGeometry.symmetric(horizontal: 8, vertical: 4),
+            child: Text('思考'),
+          ),
+        );
       },
-      flyout: FlyoutContent(
-        constraints: BoxConstraints(maxWidth: 200.0),
-        child: Wrap(
-          runSpacing: 10.0,
-          spacing: 8.0,
-          children: Colors.accentColors.map((color) {
-            return Button(
-              style: ButtonStyle(
-                padding: WidgetStatePropertyAll(EdgeInsetsDirectional.all(4.0)),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(color);
-              },
-              child: Container(height: 32, width: 32, color: color),
-            );
-          }).toList(),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsetsGeometry.symmetric(horizontal: 8, vertical: 4),
-        child: Text('思考'),
-      ),
     );
   }
 }

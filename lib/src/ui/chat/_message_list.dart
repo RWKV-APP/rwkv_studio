@@ -41,6 +41,12 @@ class _MessageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget content;
+    Widget think = Text(
+      message.thinkContent,
+      style: TextStyle(color: Colors.grey[80], fontSize: 12),
+    );
+
+    final response = message.bodyContent;
     if (message.error.isNotEmpty) {
       final error = SelectableText(
         message.error.trim(),
@@ -53,17 +59,34 @@ class _MessageItem extends StatelessWidget {
           mainAxisSize: .min,
           crossAxisAlignment: .start,
           children: [
-            TextMessageContent(content: message.text),
+            TextMessageContent(content: response),
             error,
           ],
         );
       }
     } else {
-      content = TextMessageContent(content: message.text);
+      content = TextMessageContent(content: response);
     }
 
+    final box = _MessageBox(
+      alignmentRight: message.isUser,
+      footer: message.isUser
+          ? null
+          : _MessageItemFooter(message: message, isLast: isLast),
+      child: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
+        children: [
+          if (message.hasThinkContent) think,
+          if (message.hasThinkContent && response.isNotEmpty)
+            const SizedBox(height: 6),
+          if (response.isNotEmpty) content,
+        ],
+      ),
+    );
+
     if (isLast) {
-      content = MeasureSize(
+      return MeasureSize(
         onChange: (s) {
           Scrollable.ensureVisible(
             context,
@@ -71,17 +94,10 @@ class _MessageItem extends StatelessWidget {
             alignmentPolicy: .keepVisibleAtEnd,
           );
         },
-        child: content,
+        child: box,
       );
     }
-
-    return _MessageBox(
-      alignmentRight: message.isUser,
-      footer: message.isUser
-          ? null
-          : _MessageItemFooter(message: message, isLast: isLast),
-      child: content,
-    );
+    return box;
   }
 }
 

@@ -92,14 +92,17 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     List<String> message,
     String instanceId,
     DecodeParam param,
+    GenerationConfig config,
   ) async* {
     final instance = state.models[instanceId];
     if (instance == null) throw "Model not found";
-    await _syncModelConfig(instanceId, param);
+    await _syncModelConfig(instanceId, param, config);
     try {
       yield* instance.rwkv
-          .chat(ChatParam(messages: message, model: instanceId))
-          .timeout(Duration(seconds: 10));
+          .chat(
+            ChatParam(messages: message, model: instanceId, reasoning: 'high'),
+          )
+          .timeout(Duration(seconds: 30));
     } catch (e, s) {
       loge(e);
       loge(s);
@@ -115,7 +118,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   ) async* {
     final instance = state.models[instanceId];
     if (instance == null) throw "Model not found";
-    await _syncModelConfig(instanceId, decodeParam);
+    await _syncModelConfig(instanceId, decodeParam, null);
     await instance.rwkv.clearState();
     try {
       yield* instance.rwkv.generate(
@@ -194,18 +197,25 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     });
   }
 
-  Future _syncModelConfig(String instanceId, DecodeParam param) async {
-    final instance = state.models[instanceId]!;
+  Future _syncModelConfig(
+    String instanceId,
+    DecodeParam param, [
+    GenerationConfig? config,
+  ]) async {
+    ModelInstanceState instance = state.models[instanceId]!;
+    bool updated = false;
+    if (instance.config != config) {
+      await instance.rwkv.setGenerationConfig(config!);
+      instance = instance.copyWith(config: config);
+      updated = true;
+    }
     if (instance.decodeParam != param) {
       await instance.rwkv.setDecodeParam(param);
-      emit(
-        state.copyWith(
-          models: {
-            ...state.models,
-            instanceId: instance.copyWith(decodeParam: param),
-          },
-        ),
-      );
+      instance = instance.copyWith(decodeParam: param);
+      updated = true;
+    }
+    if (updated) {
+      emit(state.copyWith(models: {...state.models, instanceId: instance}));
     }
   }
 
