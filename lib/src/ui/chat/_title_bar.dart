@@ -10,18 +10,18 @@ class ChatTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ChatCubit, ChatState>(
-      buildWhen: (p, c) => p.selected != c.selected,
-      builder: (context, state) {
-        final conv = state.selected;
-        if (conv == ConversationState.empty) {
-          return SizedBox();
-        }
-        return Container(
-          height: 60,
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          alignment: Alignment.centerLeft,
-          child: Row(
+    return Container(
+      height: 60,
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      alignment: Alignment.centerLeft,
+      child: BlocBuilder<ChatCubit, ChatState>(
+        buildWhen: (p, c) => p.selected != c.selected,
+        builder: (context, state) {
+          final conv = state.selected;
+          if (conv == ConversationState.empty) {
+            return SizedBox();
+          }
+          return Row(
             children: [
               Expanded(
                 child: ConstrainedBox(
@@ -55,9 +55,9 @@ class ChatTitleBar extends StatelessWidget {
                 },
               ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

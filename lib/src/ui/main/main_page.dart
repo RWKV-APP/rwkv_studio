@@ -67,7 +67,7 @@ class _MainPageState extends State<MainPage> {
         // header: const Text('RWKV Studio'),
         size: const NavigationPaneSize(openWidth: 220, openMinWidth: 120),
         selected: selected,
-        displayMode: PaneDisplayMode.auto,
+        displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
           if ({12, 7, 1}.contains(i)) {
             return;

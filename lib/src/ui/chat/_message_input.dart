@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
@@ -10,57 +11,39 @@ class ChatMessageInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 100,
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: .stretch,
-        mainAxisSize: .max,
-        children: [
-          Expanded(
-            child: BlocBuilder<ChatCubit, ChatState>(
-              buildWhen: (p, c) => p.inputController != c.inputController,
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        Expanded(
+          child: BlocBuilder<ChatCubit, ChatState>(
+            buildWhen: (p, c) => p.inputController != c.inputController,
+            builder: (context, state) {
+              return _LineBreakEventListener(
+                focusNode: state.inputFocusNode,
+                controller: state.inputController,
+              );
+            },
+          ),
+        ),
+        Row(
+          mainAxisSize: .max,
+          children: [
+            const SizedBox(width: 12),
+            _ThinkModeButton(),
+            Spacer(),
+            BlocBuilder<ChatCubit, ChatState>(
+              buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
               builder: (context, state) {
-                return TextBox(
-                  autofocus: true,
-                  controller: state.inputController,
-                  foregroundDecoration: WidgetStatePropertyAll(
-                    BoxDecoration(border: Border(), color: Colors.transparent),
-                  ),
-                  decoration: WidgetStatePropertyAll(
-                    BoxDecoration(border: Border(), color: Colors.transparent),
-                  ),
-                  placeholder: '请输入内容',
-                  onSubmitted: (String text) =>
-                      context.chat.send(context.rwkv).withToast(context),
-                  maxLines: 10000,
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                );
+                return DecodeSpeedInfo(modelInstanceId: state.modelInstanceId);
               },
             ),
-          ),
-          Row(
-            mainAxisSize: .max,
-            children: [
-              const SizedBox(width: 12),
-              _ThinkModeButton(),
-              Spacer(),
-              BlocBuilder<ChatCubit, ChatState>(
-                buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
-                builder: (context, state) {
-                  return DecodeSpeedInfo(
-                    modelInstanceId: state.modelInstanceId,
-                  );
-                },
-              ),
-              const SizedBox(width: 12),
-              _SendButton(),
-              const SizedBox(width: 16),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
+            const SizedBox(width: 12),
+            _SendButton(),
+            const SizedBox(width: 16),
+          ],
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }
@@ -96,7 +79,13 @@ class _SendButton extends StatelessWidget {
           onPressed: !state.sendButtonEnabled
               ? null
               : () => _onTapSend(context),
-          child: Text('发送'),
+          child: Row(
+            children: [
+              Text('发送'),
+              const SizedBox(width: 8),
+              Icon(WindowsIcons.send),
+            ],
+          ),
         );
       },
     );
@@ -140,6 +129,56 @@ class _ThinkModeButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _LineBreakEventListener extends StatefulWidget {
+  final FocusNode focusNode;
+  final TextEditingController controller;
+
+  const _LineBreakEventListener({
+    required this.focusNode,
+    required this.controller,
+  });
+
+  @override
+  State<_LineBreakEventListener> createState() =>
+      _LineBreakEventListenerState();
+}
+
+class _LineBreakEventListenerState extends State<_LineBreakEventListener> {
+  final focusNode = FocusNode();
+  bool shiftDown = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyboardListener(
+      focusNode: focusNode,
+      onKeyEvent: (e) {
+        if (e.physicalKey == PhysicalKeyboardKey.shiftLeft) {
+          shiftDown = e is KeyDownEvent;
+        }
+        if (e.physicalKey == PhysicalKeyboardKey.enter && e is KeyDownEvent) {
+          if (!shiftDown) {
+            context.chat.send(context.rwkv).withToast(context);
+          }
+        }
+      },
+      child: TextBox(
+        focusNode: widget.focusNode,
+        autofocus: true,
+        controller: widget.controller,
+        foregroundDecoration: WidgetStatePropertyAll(
+          BoxDecoration(border: Border(), color: Colors.transparent),
+        ),
+        decoration: WidgetStatePropertyAll(
+          BoxDecoration(border: Border(), color: Colors.transparent),
+        ),
+        placeholder: '请输入内容',
+        maxLines: 1000000,
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
     );
   }
 }

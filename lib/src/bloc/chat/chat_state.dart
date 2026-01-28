@@ -112,11 +112,13 @@ class ChatState {
   final List<ConversationState> conversations;
   final Map<String, List<MessageState>> messages;
   final ConversationState selected;
-  final TextEditingController inputController;
   final DecodeParam decodeParam;
   final GenerationConfig generationConfig;
   final bool generating;
   final bool showSettingPanel;
+
+  final TextEditingController inputController;
+  final FocusNode inputFocusNode;
 
   final ModelLoadState modelState;
 
@@ -136,6 +138,7 @@ class ChatState {
     required this.generationConfig,
     required this.generating,
     required this.modelState,
+    required this.inputFocusNode,
   });
 
   ChatState.empty()
@@ -149,6 +152,7 @@ class ChatState {
         generating: false,
         generationConfig: GenerationConfig.initial(),
         modelState: ModelLoadState.empty(),
+        inputFocusNode: FocusNode(),
       );
 
   ChatState copyWith({
@@ -161,6 +165,7 @@ class ChatState {
     GenerationConfig? generationConfig,
     bool? showSettingPanel,
     ModelLoadState? modelState,
+    FocusNode? inputFocusNode,
   }) {
     return ChatState(
       conversations: conversations ?? this.conversations,
@@ -171,6 +176,7 @@ class ChatState {
       generating: generating ?? this.generating,
       generationConfig: generationConfig ?? this.generationConfig,
       showSettingPanel: showSettingPanel ?? this.showSettingPanel,
+      inputFocusNode: inputFocusNode ?? this.inputFocusNode,
       modelState: modelState ?? this.modelState,
     );
   }

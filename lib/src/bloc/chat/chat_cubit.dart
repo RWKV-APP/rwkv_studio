@@ -185,7 +185,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
 
     String convId = state.selected.id;
-    state.inputController.clear();
+
+    // Send event is triggered by keyboard event,
+    // so we need to clear input after sending
+    Future.delayed(Duration(milliseconds: 50), () {
+      state.inputController.clear();
+    });
     final history = <MessageState>[...(state.messages[convId] ?? []), message];
 
     if (history.length == 1) {

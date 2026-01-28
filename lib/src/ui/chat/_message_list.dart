@@ -1,10 +1,12 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/text_message_content.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/measure_size.dart';
 
@@ -41,10 +43,6 @@ class _MessageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget content;
-    Widget think = Text(
-      message.thinkContent,
-      style: TextStyle(color: Colors.grey[80], fontSize: 12),
-    );
 
     final response = message.bodyContent;
     if (message.error.isNotEmpty) {
@@ -68,7 +66,7 @@ class _MessageItem extends StatelessWidget {
       content = TextMessageContent(content: response);
     }
 
-    final box = _MessageBox(
+    Widget box = _MessageBox(
       alignmentRight: message.isUser,
       footer: message.isUser
           ? null
@@ -77,13 +75,16 @@ class _MessageItem extends StatelessWidget {
         mainAxisSize: .min,
         crossAxisAlignment: .start,
         children: [
-          if (message.hasThinkContent) think,
+          if (message.hasThinkContent)
+            MessageThink(content: message.thinkContent),
           if (message.hasThinkContent && response.isNotEmpty)
             const SizedBox(height: 6),
           if (response.isNotEmpty) content,
         ],
       ),
     );
+
+    box = _ContextMenu(message: message, child: box);
 
     if (isLast) {
       return MeasureSize(
@@ -187,6 +188,63 @@ class _MessageItemFooter extends StatelessWidget {
         if (eos)
           Text('EOS', style: TextStyle(fontSize: 10, color: Colors.grey[80])),
       ],
+    );
+  }
+}
+
+class _ContextMenu extends StatelessWidget {
+  final Widget child;
+  final MessageState message;
+  final _contextController = FlyoutController();
+
+  _ContextMenu({required this.child, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onSecondaryTapUp: (details) {
+        _showMenu(context, details, message);
+      },
+      child: FlyoutTarget(controller: _contextController, child: child),
+    );
+  }
+
+  void _showMenu(BuildContext ctx, TapUpDetails d, MessageState message) {
+    final box = ctx.findRenderObject() as RenderBox;
+    final position = box.localToGlobal(
+      d.localPosition,
+      ancestor: Navigator.of(ctx).context.findRenderObject(),
+    );
+    _contextController.showFlyout<void>(
+      barrierColor: Colors.black.withValues(alpha: 0.1),
+      position: position,
+      builder: (context) {
+        return MenuFlyout(
+          items: [
+            MenuFlyoutItem(
+              leading: WindowsIcon(WindowsIcons.copy),
+              text: Text('复制'),
+              onPressed: () async {
+                logd(message.text);
+                Clipboard.setData(ClipboardData(text: message.text));
+              },
+            ),
+            MenuFlyoutItem(
+              leading: WindowsIcon(
+                WindowsIcons.delete,
+                color: Colors.errorPrimaryColor,
+              ),
+              text: Text(
+                '删除',
+                style: TextStyle(color: Colors.errorPrimaryColor),
+              ),
+              onPressed: () async {
+                //
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

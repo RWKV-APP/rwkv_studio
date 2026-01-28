@@ -7,6 +7,7 @@ import 'package:rwkv_studio/src/ui/chat/_message_input.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_title_bar.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
+import 'package:rwkv_studio/src/widget/drag_edit_recognizer.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
 class ChatPage extends StatefulWidget {
@@ -57,7 +58,18 @@ class _ChatPageState extends State<ChatPage> {
   }
 }
 
-class _Chat extends StatelessWidget {
+class _Chat extends StatefulWidget {
+  @override
+  State<_Chat> createState() => _ChatState();
+}
+
+class _ChatState extends State<_Chat> {
+  Offset down = Offset.zero;
+
+  static double inputHeight = 150;
+  double downHeight = 150;
+  double maxHeight = 400;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatCubit, ChatState>(
@@ -71,13 +83,37 @@ class _Chat extends StatelessWidget {
             child: _SettingPanel(),
           ),
           content: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: .stretch,
+            mainAxisSize: .max,
             children: [
               ChatTitleBar(),
               Divider(),
               Expanded(child: ChatMessageList()),
-              Divider(),
-              ChatMessageInput(),
+              MouseRegion(
+                cursor: SystemMouseCursors.resizeUpDown,
+                child: DragEditable(
+                  handleRadius: 0,
+                  onStartUpdatePosition: (detail) {
+                    down = detail.globalPosition;
+                    downHeight = inputHeight;
+                    final renderBox = context.findRenderObject() as RenderBox;
+                    maxHeight = renderBox.size.height - 150;
+                  },
+                  onUpdate: (detail) {
+                    final pos = detail.globalPosition - down;
+                    inputHeight = (downHeight - pos.dy).clamp(100, maxHeight);
+                    setState(() {});
+                  },
+                  onUpdateEnd: (d) {
+                    //
+                  },
+                  child: Padding(
+                    padding: .symmetric(vertical: 4),
+                    child: Divider(),
+                  ),
+                ),
+              ),
+              SizedBox(height: inputHeight, child: ChatMessageInput()),
             ],
           ),
         );
