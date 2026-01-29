@@ -43,7 +43,7 @@ class SettingCubit extends Cubit<SettingState> {
         final ns = SettingState.fromMap(map);
 
         /// avoid theme apply not work
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 500));
         emit(ns);
       }
       _checkCacheDirAvailable(state.cache);

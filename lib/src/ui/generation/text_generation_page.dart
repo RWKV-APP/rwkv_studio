@@ -28,17 +28,17 @@ class TextGenerationPage extends StatelessWidget {
               return CollapsibleSidebarLayout(
                 open: state.showSettingPane,
                 sidebar: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   child: _SettingPanel(),
                 ),
-                divider: Divider(direction: .vertical),
+                divider: const Divider(direction: .vertical),
                 content: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
                       child: _TitleBar(),
                     ),
-                    Divider(),
+                    const Divider(),
                     const SizedBox(height: 12),
                     Expanded(child: _TextBox()),
                   ],
@@ -47,7 +47,7 @@ class TextGenerationPage extends StatelessWidget {
             },
           ),
         ),
-        Divider(),
+        const Divider(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           child: BlocBuilder<TextGenerationCubit, TextGenerationState>(
@@ -72,7 +72,7 @@ class _TitleBar extends StatelessWidget {
         return Row(
           children: [
             Text('文本生成', style: context.fluent.typography.subtitle),
-            Spacer(),
+            const Spacer(),
             ModelSelector(
               modelState: state.modelState,
               onModelSelected: state.generating
@@ -106,7 +106,7 @@ class _TitleBar extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
-              icon: Icon(FluentIcons.settings),
+              icon: const Icon(FluentIcons.settings),
               onPressed: () {
                 context.cubit.toggleSettingPane();
               },
@@ -131,13 +131,13 @@ class _TextBox extends StatelessWidget {
           controller: state.controllerText,
           readOnly: state.generating,
           scrollController: state.controllerScroll,
-          padding: EdgeInsetsGeometry.symmetric(horizontal: 12),
+          padding: const EdgeInsetsGeometry.symmetric(horizontal: 12),
           maxLines: 100000000,
           placeholder: '请输入文本',
-          foregroundDecoration: WidgetStatePropertyAll(
+          foregroundDecoration: const WidgetStatePropertyAll(
             BoxDecoration(border: Border(), color: Colors.transparent),
           ),
-          decoration: WidgetStatePropertyAll(
+          decoration: const WidgetStatePropertyAll(
             BoxDecoration(border: Border(), color: Colors.transparent),
           ),
         );
@@ -156,9 +156,9 @@ class _SettingPanel extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
+            const Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
             IconButton(
-              icon: Icon(FluentIcons.chrome_close),
+              icon: const Icon(FluentIcons.chrome_close),
               onPressed: () {
                 context.cubit.toggleSettingPane();
               },
@@ -167,7 +167,7 @@ class _SettingPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Button(
-          child: Text('重置'),
+          child: const Text('重置'),
           onPressed: () {
             context.cubit.resetSettings();
           },

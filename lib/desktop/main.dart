@@ -11,7 +11,7 @@ void main() async {
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();
     await Window.initialize();
-    WindowOptions windowOptions = WindowOptions(
+    WindowOptions windowOptions = const WindowOptions(
       center: true,
       size: Size(1000, 800),
       title: 'RWKV Studio',

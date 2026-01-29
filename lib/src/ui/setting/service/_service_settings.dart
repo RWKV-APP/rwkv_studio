@@ -30,8 +30,8 @@ class ServiceSettingCard extends StatelessWidget {
         const SizedBox(height: 12),
         Expander(
           contentBackgroundColor: context.fluent.cardColor,
-          header: Text('API 模型服务'),
-          contentPadding: .only(top: 16, bottom: 12),
+          header: const Text('API 模型服务'),
+          contentPadding: const .only(top: 16, bottom: 12),
           trailing: Text(
             '${services.where((e) => e.enabled).length}/${services.length} 已启用',
             style: theme.typography.caption,
@@ -40,7 +40,7 @@ class ServiceSettingCard extends StatelessWidget {
             crossAxisAlignment: .stretch,
             children: [
               Padding(
-                padding: .only(right: 12, bottom: 16, left: 12),
+                padding: const .only(right: 12, bottom: 16, left: 12),
                 child: Text(
                   '支持 OpenAI API 风格接口的模型服务, 添加并启用后, 选择模型列表会出现以 🔗 标记的模型',
                   style: theme.typography.caption,
@@ -91,13 +91,13 @@ class _WebUI extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expander(
       contentBackgroundColor: context.fluent.cardColor,
-      header: Text('WebUI'),
+      header: const Text('WebUI'),
       content: Column(
         crossAxisAlignment: .start,
         children: [
           Row(
             children: [
-              Text('Host:'),
+              const Text('Host:'),
               const SizedBox(width: 5),
               SizedBox(
                 width: 150,
@@ -107,7 +107,7 @@ class _WebUI extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text('Port:'),
+              const Text('Port:'),
               const SizedBox(width: 5),
               SizedBox(
                 width: 100,
@@ -131,7 +131,7 @@ class _WebUI extends StatelessWidget {
           context.toast('敬请期待');
         },
         leadingContent: true,
-        content: Text('未启用'),
+        content: const Text('未启用'),
       ),
     );
   }
@@ -140,13 +140,13 @@ class _WebUI extends StatelessWidget {
 class _TableHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
         SizedBox(width: 50, child: Text('状态', textAlign: .center)),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(flex: 2, child: Text('服务名称')),
         Expanded(flex: 2, child: Text('地址', textAlign: .start)),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Row(
           mainAxisSize: .min,
           children: [
@@ -154,7 +154,7 @@ class _TableHeader extends StatelessWidget {
             SizedBox(width: 100, child: Text('操作', textAlign: .center)),
           ],
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
       ],
     );
   }
@@ -200,7 +200,7 @@ class _ServiceItem extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: Colors.grey[30])),
       ),
-      padding: .symmetric(vertical: 12),
+      padding: const .symmetric(vertical: 12),
       child: Row(
         children: [
           Container(width: 50, alignment: .center, child: _ServiceStatus()),
@@ -223,11 +223,11 @@ class _ServiceItem extends StatelessWidget {
                 width: 100,
                 alignment: .center,
                 child: IconButton(
-                  icon: Row(
+                  icon: const Row(
                     mainAxisSize: .min,
                     children: [
                       Icon(FluentIcons.delete),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text('删除'),
                     ],
                   ),

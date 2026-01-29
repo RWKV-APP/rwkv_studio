@@ -30,13 +30,13 @@ class ModelSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (modelState.loading) {
-      return Button(
+      return const Button(
         onPressed: null,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(width: 16, height: 16, child: ProgressRing()),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text('加载中...'),
           ],
         ),
@@ -54,19 +54,19 @@ class ModelSelector extends StatelessWidget {
               preferBelow: true,
               waitDuration: Duration.zero,
             ),
-            child: Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
+            child: const Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
           ),
           const SizedBox(width: 8),
-          Text('加载失败'),
+          const Text('加载失败'),
         ],
       );
     } else {
       final name = modelState.displayName;
       content = Row(
         children: [
-          Icon(WindowsIcons.task_view, size: 14),
+          const Icon(WindowsIcons.task_view, size: 14),
           const SizedBox(width: 6),
-          Text(name.isNotEmpty ? name : '选择模型', style: TextStyle(fontSize: 13)),
+          Text(name.isNotEmpty ? name : '选择模型', style: const TextStyle(fontSize: 13)),
         ],
       );
     }
@@ -74,7 +74,7 @@ class ModelSelector extends StatelessWidget {
       controller: _itemsController,
       child: Button(
         onPressed: onModelSelected == null ? null : _showMenu,
-        child: Padding(padding: .symmetric(vertical: 1), child: content),
+        child: Padding(padding: const .symmetric(vertical: 1), child: content),
       ),
     );
   }

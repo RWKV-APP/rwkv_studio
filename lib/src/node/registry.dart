@@ -32,7 +32,7 @@ void test() {
   final context = NodeContext();
 
   final startDef = NodePrototype(
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
     name: 'Start',
     description: 'Start node',
     inputs: [
@@ -50,7 +50,7 @@ void test() {
   final testDef = NodePrototype(
     name: 'Math.add',
     description: 'Add two numbers',
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
     inputs: [
       SocketPrototype(
         name: 'a',

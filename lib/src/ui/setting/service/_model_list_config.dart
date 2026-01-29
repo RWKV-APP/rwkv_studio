@@ -16,15 +16,15 @@ class _ModelListProviderState extends State<_ModelListProvider> {
   @override
   Widget build(BuildContext context) {
     return Expander(
-      header: Text('模型配置'),
+      header: const Text('模型配置'),
       contentBackgroundColor: context.fluent.cardColor,
       content: Column(
         crossAxisAlignment: .stretch,
         children: [
-          Text('配置文件 URL (回车保存)'),
+          const Text('配置文件 URL (回车保存)'),
           const SizedBox(height: 8, width: 12),
           Container(
-            constraints: BoxConstraints(maxWidth: 1200),
+            constraints: const BoxConstraints(maxWidth: 1200),
             child: TextBox(
               controller: _controller,
               onSubmitted: (v) {

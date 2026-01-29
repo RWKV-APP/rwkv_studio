@@ -5,7 +5,7 @@ class BehaviorSetting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expander(
+    return const Expander(
       header: Text('应用行为'),
       content: Column(
         children: [
@@ -16,9 +16,9 @@ class BehaviorSetting extends StatelessWidget {
               ToggleSwitch(checked: true, onChanged: null),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Divider(),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             children: [
               Text('记住页面/对话选择的模型'),
@@ -26,9 +26,9 @@ class BehaviorSetting extends StatelessWidget {
               ToggleSwitch(checked: false, onChanged: null),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Divider(),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Row(
             children: [
               Text('不同对话使用不同解码参数'),

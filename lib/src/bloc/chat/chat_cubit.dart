@@ -15,6 +15,17 @@ extension Ext on BuildContext {
 class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   ChatCubit() : super(ChatState.empty());
 
+  Future init() async {
+    if (state.initialized) {
+      return;
+    }
+
+    if (state.messages.isEmpty) {
+      await newChat();
+    }
+    emit(state.copyWith(initialized: true));
+  }
+
   void onModelReleased() {
     emit(state.copyWith(modelState: ModelLoadState.empty()));
   }
@@ -102,7 +113,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final convId = conversationId ?? state.selected.id;
     await rwkv.stop(state.modelInstanceId);
     emit(state.copyWith(generating: false));
-    await Future.delayed(Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 100));
     final history = state.messages[convId] ?? [];
     final last = history.lastOrNull;
     if (last == null) {
@@ -188,7 +199,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     // Send event is triggered by keyboard event,
     // so we need to clear input after sending
-    Future.delayed(Duration(milliseconds: 50), () {
+    Future.delayed(const Duration(milliseconds: 50), () {
       state.inputController.clear();
     });
     final history = <MessageState>[...(state.messages[convId] ?? []), message];

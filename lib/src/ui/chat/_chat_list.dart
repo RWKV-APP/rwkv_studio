@@ -53,7 +53,7 @@ class _Item extends StatelessWidget {
                   color: context.fluent.accentColor.lightest,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: EdgeInsets.all(6),
+                padding: const EdgeInsets.all(6),
                 child: Icon(
                   WindowsIcons.message,
                   color: context.fluent.activeColor,
@@ -61,12 +61,12 @@ class _Item extends StatelessWidget {
                 ),
               ),
               title: Padding(
-                padding: .only(top: 8, bottom: 8, right: 12),
+                padding: const .only(top: 8, bottom: 8, right: 12),
                 child: Text(
                   conversation.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
               trailing: Text(
@@ -105,11 +105,11 @@ void _showMenu(
       return MenuFlyout(
         items: [
           MenuFlyoutItem(
-            leading: WindowsIcon(
+            leading: const WindowsIcon(
               WindowsIcons.delete,
               color: Colors.errorPrimaryColor,
             ),
-            text: Text('删除', style: TextStyle(color: Colors.errorPrimaryColor)),
+            text: const Text('删除', style: TextStyle(color: Colors.errorPrimaryColor)),
             onPressed: () async {
               await context.chat.mayPause(context.rwkv);
               if (!context.mounted) return;

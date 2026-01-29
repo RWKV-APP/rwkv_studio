@@ -109,6 +109,8 @@ class ConversationState {
 }
 
 class ChatState {
+  final bool initialized;
+
   final List<ConversationState> conversations;
   final Map<String, List<MessageState>> messages;
   final ConversationState selected;
@@ -129,6 +131,7 @@ class ChatState {
   bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;
 
   ChatState({
+    required this.initialized,
     required this.showSettingPanel,
     required this.conversations,
     required this.selected,
@@ -143,6 +146,7 @@ class ChatState {
 
   ChatState.empty()
     : this(
+        initialized: false,
         showSettingPanel: false,
         conversations: [],
         selected: ConversationState.empty,
@@ -156,6 +160,7 @@ class ChatState {
       );
 
   ChatState copyWith({
+    bool? initialized,
     List<ConversationState>? conversations,
     Map<String, List<MessageState>>? messages,
     ConversationState? selected,
@@ -168,6 +173,7 @@ class ChatState {
     FocusNode? inputFocusNode,
   }) {
     return ChatState(
+      initialized: initialized ?? this.initialized,
       conversations: conversations ?? this.conversations,
       messages: messages ?? this.messages,
       selected: selected ?? this.selected,

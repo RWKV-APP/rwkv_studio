@@ -34,14 +34,14 @@ class CacheSettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expander(
-      header: Text('缓存设置'),
+      header: const Text('缓存设置'),
       content: Column(
         crossAxisAlignment: .stretch,
         children: [
           Column(
             crossAxisAlignment: .stretch,
             children: [
-              Text('模型下载目录'),
+              const Text('模型下载目录'),
               const SizedBox(width: 12, height: 12),
               SizedBox(
                 width: 300,
@@ -64,7 +64,7 @@ class CacheSettingsCard extends StatelessWidget {
           Column(
             crossAxisAlignment: .stretch,
             children: [
-              Text('缓存目录'),
+              const Text('缓存目录'),
               const SizedBox(width: 12, height: 12),
               SizedBox(
                 width: 300,
@@ -88,7 +88,7 @@ class CacheSettingsCard extends StatelessWidget {
 class _ModelCacheInfo extends StatefulWidget {
   final String dir;
 
-  const _ModelCacheInfo({super.key, required this.dir});
+  const _ModelCacheInfo({required this.dir});
 
   @override
   State<_ModelCacheInfo> createState() => _ModelCacheInfoState();
@@ -130,7 +130,7 @@ Future<bool?> _askMigrationModels(
   final r = await showDialog<bool?>(
     context: context,
     builder: (ctx) => ContentDialog(
-      title: Text('迁移模型'),
+      title: const Text('迁移模型'),
       content: Text(
         '是否需要迁移模型文件到新目录？\n\n'
         '旧目录$old\n'

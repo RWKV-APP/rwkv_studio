@@ -10,7 +10,7 @@ class TextMessageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return GptMarkdown(
       content,
-      style: TextStyle(height: 1.6, letterSpacing: 0.6),
+      style: const TextStyle(height: 1.6, letterSpacing: 0.6),
     );
   }
 }
@@ -32,7 +32,7 @@ class _MessageThinkState extends State<MessageThink> {
     return Column(
       children: [
         Container(
-          padding: .only(left: 10),
+          padding: const .only(left: 10),
           decoration: BoxDecoration(
             border: Border(left: BorderSide(color: Colors.grey[50], width: 1)),
           ),

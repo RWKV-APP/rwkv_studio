@@ -43,7 +43,7 @@ class _ModelListPageState extends State<ModelListPage> {
   void initState() {
     _controllerSearchChange.stream
         .map((event) => true)
-        .timeout(Duration(milliseconds: 500))
+        .timeout(const Duration(milliseconds: 500))
         .onErrorReturn(false)
         .distinct((p, n) => p == n)
         .where((typing) => !typing)
@@ -146,14 +146,14 @@ class _ModelListPageState extends State<ModelListPage> {
   @override
   Widget build(BuildContext context) {
     final searchBar = ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: 240),
+      constraints: const BoxConstraints(maxWidth: 240),
       child: TextBox(
         controller: _controllerSearch,
         placeholder: 'name, tag, backend...',
         onChanged: (v) {
           _controllerSearchChange.add(v);
         },
-        suffix: Padding(
+        suffix: const Padding(
           padding: .only(right: 12),
           child: Icon(FluentIcons.search, size: 16),
         ),
@@ -184,10 +184,10 @@ class _ModelListPageState extends State<ModelListPage> {
           onPressed: () {
             context.modelManage.updateModelList().withToast(context);
           },
-          icon: Row(
+          icon: const Row(
             children: [
               Icon(FluentIcons.refresh),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text('更新列表'),
             ],
           ),
@@ -205,23 +205,23 @@ class _ModelListPageState extends State<ModelListPage> {
             _showModels = _allModels;
             sortModel();
           },
-          child: SizedBox(),
+          child: const SizedBox(),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
               Text('浏览模型', style: AppTextStyle.heading),
-              Spacer(),
+              const Spacer(),
               searchBar,
               const SizedBox(width: 16),
-              Divider(direction: .vertical, size: 24),
+              const Divider(direction: .vertical, size: 24),
               const SizedBox(width: 16),
-              _SourceSelector(),
+              const _SourceSelector(),
             ],
           ),
         ),
-        Divider(),
+        const Divider(),
         Expanded(
           child: Row(
             children: [
@@ -230,10 +230,10 @@ class _ModelListPageState extends State<ModelListPage> {
                 child: Column(
                   children: [
                     Padding(
-                      padding: .symmetric(horizontal: 8, vertical: 4),
+                      padding: const .symmetric(horizontal: 8, vertical: 4),
                       child: bar,
                     ),
-                    Divider(),
+                    const Divider(),
                     Expanded(
                       child: _ModelList(
                         models: _showModels,
@@ -248,7 +248,7 @@ class _ModelListPageState extends State<ModelListPage> {
                   ],
                 ),
               ),
-              Divider(direction: .vertical),
+              const Divider(direction: .vertical),
               Expanded(
                 flex: 5,
                 child: _selectedModel == null
@@ -292,10 +292,10 @@ class _ModelList extends StatelessWidget {
         if (model.isRemote) {
           trailing = Tooltip(
             message: '远程模型: ${model.providerName}',
-            child: Icon(FluentIcons.remote),
+            child: const Icon(FluentIcons.remote),
           );
         } else if (model.localPath.isNotEmpty) {
-          trailing = Icon(FluentIcons.status_circle_checkmark);
+          trailing = const Icon(FluentIcons.status_circle_checkmark);
         }
 
         return ListTile.selectable(
@@ -306,7 +306,7 @@ class _ModelList extends StatelessWidget {
             }
           },
           trailing: trailing,
-          contentPadding: .only(right: 24),
+          contentPadding: const .only(right: 24),
           title: Text(
             model.name,
             style: AppTextStyle.bodyBold,
@@ -334,8 +334,8 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
       return MenuFlyout(
         items: [
           MenuFlyoutItem(
-            leading: Text('下载源'),
-            text: SizedBox(),
+            leading: const Text('下载源'),
+            text: const SizedBox(),
             onPressed: null,
           ),
           for (final s in [
@@ -402,7 +402,7 @@ class _SortButton extends StatelessWidget {
       child: IconButton(
         icon: Row(
           children: [
-            Icon(FluentIcons.sort),
+            const Icon(FluentIcons.sort),
             const SizedBox(width: 8),
             Text(sortType.name),
           ],
@@ -454,7 +454,7 @@ class _FilterButton extends StatelessWidget {
       child: IconButton(
         icon: Row(
           children: [
-            Icon(FluentIcons.filter),
+            const Icon(FluentIcons.filter),
             const SizedBox(width: 8),
             Text(filter.isEmpty ? '无过滤' : '${filter.length} 个过滤'),
           ],
@@ -479,7 +479,7 @@ class _FilterButton extends StatelessWidget {
       builder: (context) {
         final filters = filter.toList();
         return FlyoutContent(
-          constraints: BoxConstraints(maxWidth: 300),
+          constraints: const BoxConstraints(maxWidth: 300),
           child: StatefulBuilder(
             builder: (ctx, cs) {
               return Column(
@@ -538,9 +538,9 @@ class _FilterButton extends StatelessWidget {
                   const SizedBox(height: 12.0),
                   Row(
                     children: [
-                      Spacer(),
+                      const Spacer(),
                       Button(
-                        child: Text('清空'),
+                        child: const Text('清空'),
                         onPressed: () {
                           filters.clear();
                           cs(() {});

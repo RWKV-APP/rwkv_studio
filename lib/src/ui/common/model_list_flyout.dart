@@ -36,7 +36,7 @@ class ModelListFlyout extends StatelessWidget {
                 selectedInstance: selectedInstance,
                 instanceId: loadedModels[model.id]?.id,
               ),
-            MenuFlyoutSeparator(),
+            const MenuFlyoutSeparator(),
             MenuFlyoutItem(text: const Text('模型管理'), onPressed: () {}),
             MenuFlyoutItem(text: const Text('导入本地模型'), onPressed: () {}),
           ],
@@ -63,7 +63,7 @@ class ModelListFlyout extends StatelessWidget {
             : () {
                 context.rwkv.release(instanceId).withToast(context);
               },
-        child: Text('释放', style: TextStyle(fontSize: 13, height: 1.1)),
+        child: const Text('释放', style: TextStyle(fontSize: 13, height: 1.1)),
       );
     }
 

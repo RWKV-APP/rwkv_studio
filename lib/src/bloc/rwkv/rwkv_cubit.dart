@@ -55,7 +55,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     if (added.isNotEmpty) {
       logi('${added.length} new services');
       await _syncServiceStatus(added) //
-          .timeout(Duration(seconds: 2))
+          .timeout(const Duration(seconds: 2))
           .catchError((e, s) => loge(e));
     }
   }
@@ -102,7 +102,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
           .chat(
             ChatParam(messages: message, model: instanceId, reasoning: 'high'),
           )
-          .timeout(Duration(seconds: 30));
+          .timeout(const Duration(seconds: 30));
     } catch (e, s) {
       loge(e);
       loge(s);

@@ -19,6 +19,15 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.chat.init();
+    });
+  }
+
+  @override
   void deactivate() {
     context.chat.mayPause(context.rwkv);
     super.deactivate();
@@ -34,10 +43,10 @@ class _ChatPageState extends State<ChatPage> {
             crossAxisAlignment: .stretch,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   children: [
-                    Expanded(child: Text('对话')),
+                    const Expanded(child: Text('对话')),
                     IconButton(
                       icon: const Icon(FluentIcons.add),
                       onPressed: () {
@@ -47,11 +56,11 @@ class _ChatPageState extends State<ChatPage> {
                   ],
                 ),
               ),
-              Expanded(child: ChatList()),
+              const Expanded(child: ChatList()),
             ],
           ),
         ),
-        Divider(direction: .vertical),
+        const Divider(direction: .vertical),
         Expanded(flex: 3, child: _Chat()),
       ],
     );
@@ -77,18 +86,18 @@ class _ChatState extends State<_Chat> {
       builder: (context, state) {
         return CollapsibleSidebarLayout(
           open: state.showSettingPanel,
-          divider: Divider(direction: .vertical),
+          divider: const Divider(direction: .vertical),
           sidebar: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: _SettingPanel(),
           ),
           content: Column(
             crossAxisAlignment: .stretch,
             mainAxisSize: .max,
             children: [
-              ChatTitleBar(),
-              Divider(),
-              Expanded(child: ChatMessageList()),
+              const ChatTitleBar(),
+              const Divider(),
+              const Expanded(child: ChatMessageList()),
               MouseRegion(
                 cursor: SystemMouseCursors.resizeUpDown,
                 child: DragEditable(
@@ -107,13 +116,13 @@ class _ChatState extends State<_Chat> {
                   onUpdateEnd: (d) {
                     //
                   },
-                  child: Padding(
+                  child: const Padding(
                     padding: .symmetric(vertical: 4),
                     child: Divider(),
                   ),
                 ),
               ),
-              SizedBox(height: inputHeight, child: ChatMessageInput()),
+              SizedBox(height: inputHeight, child: const ChatMessageInput()),
             ],
           ),
         );
@@ -132,9 +141,9 @@ class _SettingPanel extends StatelessWidget {
         const SizedBox(height: 6),
         Row(
           children: [
-            Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
+            const Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
             IconButton(
-              icon: Icon(FluentIcons.chrome_close),
+              icon: const Icon(FluentIcons.chrome_close),
               onPressed: () {
                 context.chat.toggleSettingPanelVisible();
               },
@@ -143,7 +152,7 @@ class _SettingPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Button(
-          child: Text('重置'),
+          child: const Text('重置'),
           onPressed: () {
             context.chat.resetSettings();
           },

@@ -21,13 +21,13 @@ class DarkTheme {
 
   static ThemeData get themeData {
     final base = BaseTheme.themeData;
-    final scheme = ColorScheme(
+    final scheme = const ColorScheme(
       brightness: Brightness.dark,
       primary: NebulaColors.primary,
       onPrimary: NebulaColors.depth,
       secondary: NebulaColors.secondary,
       onSecondary: NebulaColors.depth,
-      error: const Color(0xFFEF7F7F),
+      error: Color(0xFFEF7F7F),
       onError: NebulaColors.depth,
       surface: NebulaColors.surface,
       onSurface: NebulaColors.textStrong,
@@ -56,14 +56,14 @@ class DarkTheme {
         surfaceTintColor: Colors.transparent,
         shape: _mergeRoundedShape(
           base.cardTheme.shape,
-          side: BorderSide(color: NebulaColors.border),
+          side: const BorderSide(color: NebulaColors.border),
         ),
       ),
       navigationRailTheme: base.navigationRailTheme.copyWith(
         backgroundColor: Colors.transparent,
         indicatorColor: NebulaColors.primary.withAlpha((255 * 0.15).round()),
-        selectedIconTheme: IconThemeData(color: NebulaColors.primary, size: 22),
-        unselectedIconTheme: IconThemeData(
+        selectedIconTheme: const IconThemeData(color: NebulaColors.primary, size: 22),
+        unselectedIconTheme: const IconThemeData(
           color: NebulaColors.textMuted,
           size: 22,
         ),
@@ -108,7 +108,7 @@ class DarkTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: base.outlinedButtonTheme.style?.copyWith(
           foregroundColor: WidgetStateProperty.all(NebulaColors.textStrong),
-          side: WidgetStateProperty.all(BorderSide(color: NebulaColors.border)),
+          side: WidgetStateProperty.all(const BorderSide(color: NebulaColors.border)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -130,15 +130,15 @@ class DarkTheme {
         ),
         border: _outlineWith(
           base.inputDecorationTheme.border,
-          side: BorderSide(color: NebulaColors.border),
+          side: const BorderSide(color: NebulaColors.border),
         ),
         enabledBorder: _outlineWith(
           base.inputDecorationTheme.enabledBorder,
-          side: BorderSide(color: NebulaColors.border),
+          side: const BorderSide(color: NebulaColors.border),
         ),
         focusedBorder: _outlineWith(
           base.inputDecorationTheme.focusedBorder,
-          side: BorderSide(color: NebulaColors.primary, width: 1.4),
+          side: const BorderSide(color: NebulaColors.primary, width: 1.4),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -146,7 +146,7 @@ class DarkTheme {
         labelStyle: textTheme.bodySmall,
         shape: _mergeRoundedShape(
           base.chipTheme.shape,
-          side: BorderSide(color: NebulaColors.border),
+          side: const BorderSide(color: NebulaColors.border),
         ),
         selectedColor: NebulaColors.primary.withAlpha((255 * 0.15).round()),
         secondarySelectedColor: NebulaColors.secondary.withAlpha(
@@ -159,7 +159,7 @@ class DarkTheme {
         surfaceTintColor: Colors.transparent,
         shape: _mergeRoundedShape(
           base.dialogTheme.shape,
-          side: BorderSide(color: NebulaColors.border),
+          side: const BorderSide(color: NebulaColors.border),
         ),
         titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w600,

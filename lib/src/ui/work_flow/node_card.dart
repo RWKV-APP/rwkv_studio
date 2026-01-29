@@ -60,7 +60,7 @@ class _NodeCardViewState extends State<NodeCardView> {
           fit: StackFit.expand,
           children: [
             Container(
-              margin: EdgeInsets.symmetric(horizontal: nodeSocketSize / 2),
+              margin: const EdgeInsets.symmetric(horizontal: nodeSocketSize / 2),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(5),
                 color: Colors.grey.shade800,
@@ -70,8 +70,8 @@ class _NodeCardViewState extends State<NodeCardView> {
                 children: [
                   Container(
                     height: nodeHeaderHeight,
-                    padding: EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: const BoxDecoration(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(5),
                         topRight: Radius.circular(5),
@@ -81,7 +81,7 @@ class _NodeCardViewState extends State<NodeCardView> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       widget.card.node.prototype.name,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -97,7 +97,7 @@ class _NodeCardViewState extends State<NodeCardView> {
                 const SizedBox(height: nodeHeaderHeight),
                 for (final r in rows)
                   Container(
-                    margin: EdgeInsets.only(top: nodeSocketSpacing),
+                    margin: const EdgeInsets.only(top: nodeSocketSpacing),
                     height: nodeSocketSize,
                     child: Row(
                       mainAxisSize: MainAxisSize.max,

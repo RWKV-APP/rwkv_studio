@@ -21,7 +21,7 @@ class ChatMessageList extends StatelessWidget {
         final list = state.messages[state.selected.id] ?? [];
         return ListView.builder(
           itemCount: list.length,
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           itemBuilder: (context, index) {
             return _MessageItem(
               message: list[index],
@@ -48,7 +48,7 @@ class _MessageItem extends StatelessWidget {
     if (message.error.isNotEmpty) {
       final error = SelectableText(
         message.error.trim(),
-        style: TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
+        style: const TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
       );
       if (message.text.isEmpty) {
         content = error;
@@ -91,7 +91,7 @@ class _MessageItem extends StatelessWidget {
         onChange: (s) {
           Scrollable.ensureVisible(
             context,
-            duration: Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 200),
             alignmentPolicy: .keepVisibleAtEnd,
           );
         },
@@ -117,7 +117,7 @@ class _MessageBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: .only(top: 16),
+      margin: const .only(top: 16),
       child: Column(
         mainAxisSize: .min,
         crossAxisAlignment: alignmentRight ? .end : .start,
@@ -129,12 +129,12 @@ class _MessageBox extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withAlpha(10),
-                  offset: Offset(1, 2),
+                  offset: const Offset(1, 2),
                   blurRadius: 4,
                 ),
               ],
             ),
-            padding: .symmetric(horizontal: 12, vertical: 12),
+            padding: const .symmetric(horizontal: 12, vertical: 12),
             margin: .only(
               right: alignmentRight ? 0 : 100,
               left: alignmentRight ? 100 : 0,
@@ -143,7 +143,7 @@ class _MessageBox extends StatelessWidget {
           ),
           if (footer != null)
             Padding(
-              padding: .symmetric(horizontal: 4, vertical: 4),
+              padding: const .symmetric(horizontal: 4, vertical: 4),
               child: footer,
             ),
         ],
@@ -167,14 +167,14 @@ class _MessageItemFooter extends StatelessWidget {
       children: [
         if (isLast && paused)
           IconButton(
-            icon: Icon(WindowsIcons.play),
+            icon: const Icon(WindowsIcons.play),
             onPressed: () {
               context.chat.resume(context.rwkv).withToast(context);
             },
           ),
         if (isLast)
           IconButton(
-            icon: Icon(WindowsIcons.refresh),
+            icon: const Icon(WindowsIcons.refresh),
             onPressed: () {
               context.chat.regenerate(context.rwkv).withToast(context);
             },
@@ -222,19 +222,19 @@ class _ContextMenu extends StatelessWidget {
         return MenuFlyout(
           items: [
             MenuFlyoutItem(
-              leading: WindowsIcon(WindowsIcons.copy),
-              text: Text('复制'),
+              leading: const WindowsIcon(WindowsIcons.copy),
+              text: const Text('复制'),
               onPressed: () async {
                 logd(message.text);
                 Clipboard.setData(ClipboardData(text: message.text));
               },
             ),
             MenuFlyoutItem(
-              leading: WindowsIcon(
+              leading: const WindowsIcon(
                 WindowsIcons.delete,
                 color: Colors.errorPrimaryColor,
               ),
-              text: Text(
+              text: const Text(
                 '删除',
                 style: TextStyle(color: Colors.errorPrimaryColor),
               ),

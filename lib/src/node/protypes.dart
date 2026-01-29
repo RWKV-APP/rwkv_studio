@@ -12,7 +12,7 @@ class StartNodePrototype extends NodePrototype {
   static StartNodePrototype instance = StartNodePrototype._(
     inputs: [],
     outputs: [ControlPrototype(name: 'entry')],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 }
 
@@ -28,7 +28,7 @@ class LoopNodePrototype extends NodePrototype {
   static LoopNodePrototype instance = LoopNodePrototype._(
     inputs: [],
     outputs: [],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 }
 
@@ -53,6 +53,6 @@ class BranchNodePrototype extends NodePrototype {
       SocketPrototype(name: 'true', description: '', type: NodeDataType.any),
       SocketPrototype(name: 'false', description: '', type: NodeDataType.any),
     ],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 }

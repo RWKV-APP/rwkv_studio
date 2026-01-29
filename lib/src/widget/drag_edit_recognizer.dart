@@ -141,7 +141,7 @@ class DragEditable extends StatelessWidget {
   }
 
   Widget _buildHandle() {
-    return SizedBox();
+    return const SizedBox();
     return Visibility(
       child: DecoratedBox(
         decoration: BoxDecoration(

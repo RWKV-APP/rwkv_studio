@@ -1,7 +1,7 @@
 import 'package:rwkv_studio/src/node/export.dart';
 
 class NodePrototypes {
-  static get list => [
+  static List<NodePrototype> get list => [
     toStringNodeProto,
     addNodeProto, //
     multiplyNodeProto,
@@ -23,19 +23,27 @@ class NodePrototypes {
         type: NodeDataType.string,
       ),
     ],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 
   static final decodeParam = NodePrototype(
     name: 'DecodeParam',
     description: 'description',
     inputs: [
-      SocketPrototype(name: 'input', description: '', type: NodeDataType.string),
+      SocketPrototype(
+        name: 'input',
+        description: '',
+        type: NodeDataType.string,
+      ),
     ],
     outputs: [
-      SocketPrototype(name: 'output', description: '', type: NodeDataType.string),
+      SocketPrototype(
+        name: 'output',
+        description: '',
+        type: NodeDataType.string,
+      ),
     ],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 
   static final llamaCppLoad = NodePrototype(
@@ -59,13 +67,9 @@ class NodePrototypes {
       ),
     ],
     outputs: [
-      SocketPrototype(
-        name: 'model',
-        description: '',
-        type: NodeDataType.any,
-      ),
+      SocketPrototype(name: 'model', description: '', type: NodeDataType.any),
     ],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 
   static final addNodeProto = NodePrototype(
@@ -78,7 +82,7 @@ class NodePrototypes {
     outputs: [
       SocketPrototype(name: 'result', description: '', type: NodeDataType.int),
     ],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 
   static final multiplyNodeProto = NodePrototype(
@@ -91,6 +95,6 @@ class NodePrototypes {
     outputs: [
       SocketPrototype(name: 'result', description: '', type: NodeDataType.int),
     ],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 }

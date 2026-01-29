@@ -20,16 +20,14 @@ class BlackTheme {
 
   static ThemeData get themeData {
     final base = BaseTheme.themeData;
-    final scheme = ColorScheme(
+    final scheme = const ColorScheme(
       brightness: Brightness.dark,
       primary: VoidColors.primary,
       onPrimary: VoidColors.abyss,
       secondary: VoidColors.secondary,
       onSecondary: VoidColors.abyss,
-      error: const Color(0xFFFF6A6A),
+      error: Color(0xFFFF6A6A),
       onError: VoidColors.abyss,
-      background: VoidColors.abyss,
-      onBackground: VoidColors.textStrong,
       surface: VoidColors.depth,
       onSurface: VoidColors.textStrong,
     );
@@ -54,14 +52,14 @@ class BlackTheme {
         surfaceTintColor: Colors.transparent,
         shape: _mergeRoundedShape(
           base.cardTheme.shape,
-          side: BorderSide(color: VoidColors.outline),
+          side: const BorderSide(color: VoidColors.outline),
         ),
       ),
       navigationRailTheme: base.navigationRailTheme.copyWith(
         backgroundColor: Colors.transparent,
         indicatorColor: VoidColors.primary.withAlpha((255 * 0.2).round()),
-        selectedIconTheme: IconThemeData(color: VoidColors.primary, size: 22),
-        unselectedIconTheme: IconThemeData(
+        selectedIconTheme: const IconThemeData(color: VoidColors.primary, size: 22),
+        unselectedIconTheme: const IconThemeData(
           color: VoidColors.textMuted,
           size: 22,
         ),
@@ -105,7 +103,7 @@ class BlackTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: base.outlinedButtonTheme.style?.copyWith(
           foregroundColor: WidgetStateProperty.all(VoidColors.textStrong),
-          side: WidgetStateProperty.all(BorderSide(color: VoidColors.outline)),
+          side: WidgetStateProperty.all(const BorderSide(color: VoidColors.outline)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -125,15 +123,15 @@ class BlackTheme {
         ),
         border: _outlineWith(
           base.inputDecorationTheme.border,
-          side: BorderSide(color: VoidColors.outline),
+          side: const BorderSide(color: VoidColors.outline),
         ),
         enabledBorder: _outlineWith(
           base.inputDecorationTheme.enabledBorder,
-          side: BorderSide(color: VoidColors.outline),
+          side: const BorderSide(color: VoidColors.outline),
         ),
         focusedBorder: _outlineWith(
           base.inputDecorationTheme.focusedBorder,
-          side: BorderSide(color: VoidColors.primary, width: 1.4),
+          side: const BorderSide(color: VoidColors.primary, width: 1.4),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -141,7 +139,7 @@ class BlackTheme {
         labelStyle: textTheme.bodySmall,
         shape: _mergeRoundedShape(
           base.chipTheme.shape,
-          side: BorderSide(color: VoidColors.outline),
+          side: const BorderSide(color: VoidColors.outline),
         ),
         selectedColor: VoidColors.primary.withAlpha((255 * 0.2).round()),
         secondarySelectedColor: VoidColors.secondary.withAlpha(
@@ -154,7 +152,7 @@ class BlackTheme {
         surfaceTintColor: Colors.transparent,
         shape: _mergeRoundedShape(
           base.dialogTheme.shape,
-          side: BorderSide(color: VoidColors.outline),
+          side: const BorderSide(color: VoidColors.outline),
         ),
       ),
       listTileTheme: base.listTileTheme.copyWith(

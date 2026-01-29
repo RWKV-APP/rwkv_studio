@@ -40,7 +40,7 @@ class RWKVApp extends StatelessWidget {
                   child: child,
                 );
               }
-              return child ?? SizedBox();
+              return child ?? const SizedBox();
             },
           );
           return WithGlobalStateSync(child: app);

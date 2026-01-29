@@ -22,10 +22,10 @@ class AppScaffold extends StatelessWidget {
         children: [
           Container(
             color: theme.colorScheme.surface,
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: navigationBar!,
           ),
-          VerticalDivider(width: .5, thickness: .5),
+          const VerticalDivider(width: .5, thickness: .5),
           Expanded(child: body),
         ],
       );
@@ -85,7 +85,7 @@ class _AppNavigationBarState extends State<AppNavigationBar> {
       children: [
         for (final (index, entry) in widget.navigationBarItems.indexed)
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: _NavigationBarItem(
               icon: entry.icon,
               label: entry.label,

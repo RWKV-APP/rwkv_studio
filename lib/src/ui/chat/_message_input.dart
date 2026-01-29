@@ -5,6 +5,7 @@ import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
+import 'package:rwkv_studio/src/widget/app_split_button.dart';
 
 class ChatMessageInput extends StatelessWidget {
   const ChatMessageInput({super.key});
@@ -30,7 +31,7 @@ class ChatMessageInput extends StatelessWidget {
           children: [
             const SizedBox(width: 12),
             _ThinkModeButton(),
-            Spacer(),
+            const Spacer(),
             BlocBuilder<ChatCubit, ChatState>(
               buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
               builder: (context, state) {
@@ -64,10 +65,10 @@ class _SendButton extends StatelessWidget {
       builder: (context, state) {
         if (state.generating) {
           return Button(
-            child: Row(
+            child: const Row(
               children: [
                 SizedBox(width: 14, height: 14, child: ProgressRing()),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text('暂停'),
               ],
             ),
@@ -79,10 +80,10 @@ class _SendButton extends StatelessWidget {
           onPressed: !state.sendButtonEnabled
               ? null
               : () => _onTapSend(context),
-          child: Row(
+          child: const Row(
             children: [
               Text('发送'),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Icon(WindowsIcons.send),
             ],
           ),
@@ -98,34 +99,21 @@ class _ThinkModeButton extends StatelessWidget {
     return BlocBuilder<ChatCubit, ChatState>(
       buildWhen: (p, c) => p.generationConfig != c.generationConfig,
       builder: (context, state) {
-        return SplitButton.toggle(
-          checked: state.generationConfig.chatReasoning,
+        final checked = state.generationConfig.chatReasoning;
+        return AppSplitButton.toggle(
+          checked: checked,
           onInvoked: () {
             context.chat.toggleThinkMode();
           },
-          flyout: FlyoutContent(
-            constraints: BoxConstraints(maxWidth: 200.0),
-            child: Wrap(
-              runSpacing: 10.0,
-              spacing: 8.0,
-              children: Colors.accentColors.map((color) {
-                return Button(
-                  style: ButtonStyle(
-                    padding: WidgetStatePropertyAll(
-                      EdgeInsetsDirectional.all(4.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop(color);
-                  },
-                  child: Container(height: 32, width: 32, color: color),
-                );
-              }).toList(),
-            ),
+          flyout: MenuFlyout(
+            items: [
+              MenuFlyoutItem(text: const Text('推理-中'), onPressed: () {}),
+              MenuFlyoutItem(text: const Text('推理-高'), onPressed: () {}),
+            ],
           ),
-          child: Padding(
+          child: const Padding(
             padding: EdgeInsetsGeometry.symmetric(horizontal: 8, vertical: 4),
-            child: Text('思考'),
+            child: Text('推理'),
           ),
         );
       },
@@ -169,15 +157,15 @@ class _LineBreakEventListenerState extends State<_LineBreakEventListener> {
         focusNode: widget.focusNode,
         autofocus: true,
         controller: widget.controller,
-        foregroundDecoration: WidgetStatePropertyAll(
+        foregroundDecoration: const WidgetStatePropertyAll(
           BoxDecoration(border: Border(), color: Colors.transparent),
         ),
-        decoration: WidgetStatePropertyAll(
+        decoration: const WidgetStatePropertyAll(
           BoxDecoration(border: Border(), color: Colors.transparent),
         ),
         placeholder: '请输入内容',
         maxLines: 1000000,
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
     );
   }

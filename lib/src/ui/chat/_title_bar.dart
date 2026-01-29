@@ -12,20 +12,20 @@ class ChatTitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       alignment: Alignment.centerLeft,
       child: BlocBuilder<ChatCubit, ChatState>(
         buildWhen: (p, c) => p.selected != c.selected,
         builder: (context, state) {
           final conv = state.selected;
           if (conv == ConversationState.empty) {
-            return SizedBox();
+            return const SizedBox();
           }
           return Row(
             children: [
               Expanded(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 100),
+                  constraints: const BoxConstraints(maxWidth: 100),
                   child: Text(
                     conv.title,
                     maxLines: 1,
@@ -49,7 +49,7 @@ class ChatTitleBar extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               IconButton(
-                icon: Icon(FluentIcons.settings),
+                icon: const Icon(FluentIcons.settings),
                 onPressed: () {
                   context.chat.toggleSettingPanelVisible();
                 },

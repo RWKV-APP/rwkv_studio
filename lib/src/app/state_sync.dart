@@ -97,7 +97,7 @@ Widget _buildStateSyncListeners(Widget child) {
         listener: (context, state) async {
           _syncRemoteServiceList(context, state.service.remoteServices);
         },
-        child: SizedBox(),
+        child: const SizedBox(),
       ),
       BlocListener<ModelManageCubit, ModelManageState>(
         listenWhen: (p, c) => p.models != c.models,
@@ -107,7 +107,7 @@ Widget _buildStateSyncListeners(Widget child) {
             '${state.availableModels.length} available',
           );
         },
-        child: SizedBox(),
+        child: const SizedBox(),
       ),
 
       BlocListener<RwkvCubit, RwkvState>(
@@ -123,7 +123,7 @@ Widget _buildStateSyncListeners(Widget child) {
             context.textGen.onModelReleased();
           }
         },
-        child: SizedBox(),
+        child: const SizedBox(),
       ),
     ],
   );

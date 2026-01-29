@@ -4,78 +4,68 @@ List<NavigationPaneItem> buildNavItems(BuildContext context) => [
   PaneItem(
     icon: const WindowsIcon(WindowsIcons.home),
     title: const Text('欢迎'),
-    body: ThemePreviewPage(),
+    body: const ThemePreviewPage(),
   ),
   PaneItemExpander(
     icon: const WindowsIcon(WindowsIcons.pen_workspace),
     title: const Text('任务'),
-    body: ChatPage(),
+    body: const SizedBox(),
     initiallyExpanded: true,
     items: [
       PaneItem(
         icon: const WindowsIcon(WindowsIcons.chat_bubbles),
         title: const Text('对话'),
-        body: ChatPage(),
-      ),
-      PaneItem(
-        icon: const WindowsIcon(FluentIcons.file_image),
-        title: const Text('视觉问答'),
-        body: ChatPage(),
+        body: const ChatPage(),
       ),
       PaneItem(
         icon: const WindowsIcon(FluentIcons.text_document_edit),
         title: const Text('文本生成'),
-        body: TextGenerationPage(),
-      ),
-      PaneItem(
-        icon: const WindowsIcon(FluentIcons.text_document_edit),
-        title: const Text('文本转语音'),
-        body: ChatPage(),
+        body: const TextGenerationPage(),
       ),
       PaneItem(
         icon: const WindowsIcon(WindowsIcons.music_info),
         title: const Text('音乐生成'),
-        body: ChatPage(),
+        body: const SizedBox(),
       ),
     ],
   ),
   PaneItemExpander(
     icon: const WindowsIcon(WindowsIcons.flow),
     title: const Text('工作流'),
-    body: SizedBox(),
+    body: const SizedBox(),
     items: [
       PaneItem(
         icon: const WindowsIcon(WindowsIcons.search_and_apps),
         title: const Text('深度研究'),
-        body: WorkFlowPage(),
+        body: const WorkFlowPage(),
       ),
       PaneItem(
         icon: const WindowsIcon(FluentIcons.search_data),
         title: const Text('知识库'),
-        body: SizedBox(),
+        body: const SizedBox(),
       ),
     ],
   ),
   PaneItem(
     icon: const WindowsIcon(WindowsIcons.apps),
     title: const Text('模型管理'),
-    body: ModelListPage(),
+    body: const ModelListPage(),
   ),
   PaneItemExpander(
     icon: const WindowsIcon(FluentIcons.machine_learning),
     title: const Text('训练/微调'),
-    body: SizedBox(),
+    body: const SizedBox(),
     items: [],
   ),
   PaneItemExpander(
     icon: const WindowsIcon(WindowsIcons.developer_tools),
     title: const Text('工具'),
-    body: ModelListPage(),
+    body: const ModelListPage(),
     items: [
       PaneItem(
         icon: const WindowsIcon(FluentIcons.charticulator_linking_data),
         title: const Text('模型转换'),
-        body: ModelListPage(),
+        body: const ModelListPage(),
       ),
     ],
   ),
@@ -90,11 +80,11 @@ List<NavigationPaneItem> buildNavFooterItems(BuildContext context) => [
     onTap: () {
       Navigator.pushNamed(context, AppRouter.demo);
     },
-    body: SizedBox(),
+    body: const SizedBox(),
   ),
   PaneItem(
     icon: const WindowsIcon(WindowsIcons.settings),
     title: const Text('设置'),
-    body: SettingPage(),
+    body: const SettingPage(),
   ),
 ];

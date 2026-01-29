@@ -1,5 +1,4 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/widget/drag_edit_recognizer.dart';
 
@@ -18,7 +17,7 @@ class LogcatPanel extends StatefulWidget {
     }
     _entry = OverlayEntry(
       builder: (ctx) {
-        return Positioned.fill(child: LogcatPanel());
+        return const Positioned.fill(child: LogcatPanel());
       },
     );
     rootOverlay.insert(_entry!);
@@ -31,7 +30,7 @@ class LogcatPanel extends StatefulWidget {
 class _LogcatPanelState extends State<LogcatPanel> {
   static Offset? _offset;
 
-  Offset _downOffset = Offset(0, 0);
+  Offset _downOffset = const Offset(0, 0);
 
   @override
   void initState() {
@@ -73,7 +72,7 @@ class _LogcatPanelState extends State<LogcatPanel> {
             },
             handleRadius: 0,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.grey,
                 borderRadius: BorderRadius.all(Radius.circular(8)),
               ),
@@ -85,23 +84,23 @@ class _LogcatPanelState extends State<LogcatPanel> {
                     color: Colors.teal,
                     child: Row(
                       children: [
-                        Text('Logcat'),
-                        Spacer(),
+                        const Text('Logcat'),
+                        const Spacer(),
                         IconButton(
-                          style: ButtonStyle(
+                          style: const ButtonStyle(
                             padding: WidgetStatePropertyAll(EdgeInsets.zero),
                           ),
-                          icon: Icon(FluentIcons.delete, size: 14),
+                          icon: const Icon(FluentIcons.delete, size: 14),
                           onPressed: () {
                             AppLog.instance.history.clear();
                             setState(() {});
                           },
                         ),
                         IconButton(
-                          style: ButtonStyle(
+                          style: const ButtonStyle(
                             padding: WidgetStatePropertyAll(EdgeInsets.zero),
                           ),
-                          icon: Icon(FluentIcons.cancel, size: 14),
+                          icon: const Icon(FluentIcons.cancel, size: 14),
                           onPressed: () {
                             LogcatPanel.attachToRootOverlay(context);
                           },
@@ -117,12 +116,12 @@ class _LogcatPanelState extends State<LogcatPanel> {
                         child: ListView.builder(
                           shrinkWrap: true,
                           itemCount: logs.length,
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           reverse: true,
                           itemBuilder: (ctx, index) {
                             return Text(
                               logs[logs.length - index - 1].toString(),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 height: 1,
                                 color: Colors.white,

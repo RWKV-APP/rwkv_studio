@@ -86,10 +86,10 @@ class _TTSPageState extends State<TTSPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FilledButton(onPressed: load, child: Text('Load')),
+          FilledButton(onPressed: load, child: const Text('Load')),
           TextField(controller: controller),
-          FilledButton(onPressed: submit, child: Text('Submit')),
-          Spacer(),
+          FilledButton(onPressed: submit, child: const Text('Submit')),
+          const Spacer(),
         ],
       ),
     );

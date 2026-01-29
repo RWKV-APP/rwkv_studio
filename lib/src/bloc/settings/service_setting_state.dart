@@ -1,8 +1,11 @@
 part of 'setting_cubit.dart';
 
-class ServiceSettingState {
+class ServiceSettingState extends Equatable {
   final List<RemoteService> remoteServices;
   final String modelListUrl;
+
+  @override
+  List<Object?> get props => [remoteServices, modelListUrl];
 
   ServiceSettingState({
     required this.remoteServices,
@@ -47,11 +50,14 @@ class ServiceSettingState {
   }
 }
 
-class RemoteService {
+class RemoteService extends Equatable {
   final String id;
   final String name;
   final String url;
   final bool enabled;
+
+  @override
+  List<Object?> get props => [id, name, url, enabled];
 
   RemoteService({
     required this.url,

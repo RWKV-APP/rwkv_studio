@@ -25,10 +25,10 @@ class EdgeState {
   }) {
     return EdgeState(
       from: from ?? this.from,
-      targetNode: to ?? this.targetNode,
+      targetNode: to ?? targetNode,
       color: color ?? this.color,
       fromSocket: fromSocket ?? this.fromSocket,
-      targetSocket: toSocket ?? this.targetSocket,
+      targetSocket: toSocket ?? targetSocket,
     );
   }
 }

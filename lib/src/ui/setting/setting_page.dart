@@ -28,7 +28,7 @@ class SettingPage extends StatelessWidget {
           crossAxisAlignment: .start,
           children: [
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 1200),
+              constraints: const BoxConstraints(maxWidth: 1200),
               child: _SettingBody(),
             ),
           ],
@@ -61,7 +61,7 @@ class _SettingBody extends StatelessWidget {
           },
         ),
         const SizedBox(height: 12),
-        BehaviorSetting(),
+        const BehaviorSetting(),
         const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.cache != c.cache,
@@ -92,7 +92,7 @@ class _SettingBody extends StatelessWidget {
             onPressed: () {
               context.settings.reset();
             },
-            child: Text('重置设置'),
+            child: const Text('重置设置'),
           ),
         ),
       ],

@@ -43,7 +43,7 @@ class _MainPageState extends State<MainPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Spacer(),
+              const Spacer(),
               IconButton(
                 icon: const Icon(FluentIcons.print),
                 onPressed: () {
@@ -60,7 +60,7 @@ class _MainPageState extends State<MainPage> {
           color: dark
               ? Colors.black.withAlpha(100)
               : Colors.white.withAlpha(100),
-          child: child ?? SizedBox(),
+          child: child ?? const SizedBox(),
         );
       },
       pane: NavigationPane(

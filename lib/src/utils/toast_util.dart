@@ -107,9 +107,9 @@ class _LoadingOverlay {
       return;
     }
     _overlayEntry = OverlayEntry(
-      builder: (context) => Material(
+      builder: (context) => const Material(
         color: Colors.black26,
-        child: const Center(
+        child: Center(
           child: Material(
             elevation: 3.0,
             color: Colors.white,

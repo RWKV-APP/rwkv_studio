@@ -20,16 +20,16 @@ class LightTheme {
 
   static ThemeData get themeData {
     final base = BaseTheme.themeData;
-    final scheme = ColorScheme(
+    final scheme = const ColorScheme(
       brightness: Brightness.light,
       primary: OrbitColors.primary,
       onPrimary: Colors.white,
       secondary: OrbitColors.secondary,
       onSecondary: OrbitColors.canvas,
       onPrimaryContainer: OrbitColors.canvas,
-      error: const Color(0xFFD76A6A),
-      errorContainer: const Color(0xFFF9C1C1),
-      onErrorContainer: const Color(0xFF9C4D4D),
+      error: Color(0xFFD76A6A),
+      errorContainer: Color(0xFFF9C1C1),
+      onErrorContainer: Color(0xFF9C4D4D),
       onError: Colors.white,
       surface: OrbitColors.panel,
       onSurface: OrbitColors.anchor,
@@ -57,7 +57,7 @@ class LightTheme {
         surfaceTintColor: Colors.transparent,
         shape: _mergeRoundedShape(
           base.cardTheme.shape,
-          side: BorderSide(color: OrbitColors.border),
+          side: const BorderSide(color: OrbitColors.border),
         ),
       ),
       navigationRailTheme: base.navigationRailTheme.copyWith(
@@ -111,7 +111,7 @@ class LightTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: base.outlinedButtonTheme.style?.copyWith(
           foregroundColor: WidgetStateProperty.all(OrbitColors.anchor),
-          side: WidgetStateProperty.all(BorderSide(color: OrbitColors.border)),
+          side: WidgetStateProperty.all(const BorderSide(color: OrbitColors.border)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -132,15 +132,15 @@ class LightTheme {
         ),
         border: _outlineWith(
           base.inputDecorationTheme.border,
-          side: BorderSide(color: OrbitColors.border),
+          side: const BorderSide(color: OrbitColors.border),
         ),
         enabledBorder: _outlineWith(
           base.inputDecorationTheme.enabledBorder,
-          side: BorderSide(color: OrbitColors.border),
+          side: const BorderSide(color: OrbitColors.border),
         ),
         focusedBorder: _outlineWith(
           base.inputDecorationTheme.focusedBorder,
-          side: BorderSide(color: OrbitColors.primary, width: 1.4),
+          side: const BorderSide(color: OrbitColors.primary, width: 1.4),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -148,7 +148,7 @@ class LightTheme {
         labelStyle: textTheme.bodySmall,
         shape: _mergeRoundedShape(
           base.chipTheme.shape,
-          side: BorderSide(color: OrbitColors.border),
+          side: const BorderSide(color: OrbitColors.border),
         ),
         selectedColor: OrbitColors.primary.withAlpha((255 * 0.1).round()),
         secondarySelectedColor: OrbitColors.secondary.withAlpha(
@@ -161,7 +161,7 @@ class LightTheme {
         surfaceTintColor: Colors.transparent,
         shape: _mergeRoundedShape(
           base.dialogTheme.shape,
-          side: BorderSide(color: OrbitColors.border),
+          side: const BorderSide(color: OrbitColors.border),
         ),
       ),
       listTileTheme: base.listTileTheme.copyWith(

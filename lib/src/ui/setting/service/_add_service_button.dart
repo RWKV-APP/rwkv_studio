@@ -43,7 +43,7 @@ class _AddButtonState extends State<_AddButton> {
       return Row(
         crossAxisAlignment: .center,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 50,
             child: Center(child: Icon(WindowsIcons.edit, size: 14)),
           ),
@@ -51,7 +51,7 @@ class _AddButtonState extends State<_AddButton> {
           Expanded(
             flex: 2,
             child: Padding(
-              padding: .only(right: 16),
+              padding: const .only(right: 16),
               child: TextBox(
                 controller: _nameController,
                 placeholder: '请输入服务名称',
@@ -96,11 +96,11 @@ class _AddButtonState extends State<_AddButton> {
                         _isAdding = false;
                         setState(() {});
                       },
-                      icon: Icon(FluentIcons.cancel),
+                      icon: const Icon(FluentIcons.cancel),
                     ),
                     IconButton(
                       onPressed: onTapAddService,
-                      icon: Icon(FluentIcons.check_mark),
+                      icon: const Icon(FluentIcons.check_mark),
                     ),
                   ],
                 ),
@@ -112,11 +112,11 @@ class _AddButtonState extends State<_AddButton> {
       );
     }
     return IconButton(
-      icon: Row(
+      icon: const Row(
         mainAxisSize: .min,
         children: [
           Icon(FluentIcons.add),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text('添加服务'),
         ],
       ),
@@ -132,7 +132,7 @@ class _AddButtonState extends State<_AddButton> {
 class _ServiceStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Icon(WindowsIcons.status_circle_question_mark);
+    return const Icon(WindowsIcons.status_circle_question_mark);
     return Icon(WindowsIcons.network_connected_checkmark, color: Colors.green);
   }
 }

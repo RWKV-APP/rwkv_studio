@@ -107,7 +107,7 @@ class ModelDetail extends StatelessWidget {
           ),
           Row(
             children: [
-              Spacer(),
+              const Spacer(),
               if (model is! RemoteModelInfo)
                 ModelItemActions(model: model, compact: false),
             ],

@@ -5,7 +5,7 @@ class DemoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationView(
+    return const NavigationView(
 
       content: SizedBox(),
     );

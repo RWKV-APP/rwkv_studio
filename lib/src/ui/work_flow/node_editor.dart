@@ -25,7 +25,7 @@ class NodeEditor extends StatelessWidget {
         onSecondaryTapUp: (detail) {
           final rb = context.findRenderObject() as RenderBox?;
           final local = rb!.globalToLocal(detail.globalPosition);
-          final pos = local - Offset(10, 0);
+          final pos = local - const Offset(10, 0);
           showMenu(
             position: RelativeRect.fromLTRB(
               pos.dx,
@@ -80,7 +80,7 @@ class NodeEditor extends StatelessWidget {
                         onPressed: () {
                           context.editorCubit.clear();
                         },
-                        icon: Icon(Icons.cleaning_services_sharp),
+                        icon: const Icon(Icons.cleaning_services_sharp),
                       ),
                       const SizedBox(height: 8),
                       IconButton.filledTonal(
@@ -88,7 +88,7 @@ class NodeEditor extends StatelessWidget {
                         onPressed: () {
                           context.editorCubit.link();
                         },
-                        icon: Icon(Icons.link),
+                        icon: const Icon(Icons.link),
                       ),
                     ],
                   ),
@@ -133,7 +133,7 @@ class NodeEditor extends StatelessWidget {
         ),
 
         /// Editing Edge
-        EditingEdge(),
+        const EditingEdge(),
 
         BlocBuilder<NodeEditorCubit, NodeEditorState>(
           buildWhen: (p, c) => p.cards != c.cards,
@@ -161,7 +161,7 @@ class NodeEditor extends StatelessWidget {
 
 class _EditorBackground extends CustomPainter {
   late final _paint = Paint()
-    ..color = Color(0xFF2F2F2F)
+    ..color = const Color(0xFF2F2F2F)
     ..strokeWidth = 0.5
     ..style = PaintingStyle.stroke;
 

@@ -167,7 +167,7 @@ class _ThemePreviewPageState extends State<ThemePreviewPage>
                               SizedBox(
                                 width: 220,
                                 child: DropdownButtonFormField<String>(
-                                  value: _dropdownValue,
+                                  initialValue: _dropdownValue,
                                   decoration: const InputDecoration(
                                     labelText: 'Profile',
                                   ),
@@ -321,9 +321,9 @@ class _ThemePreviewPageState extends State<ThemePreviewPage>
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Wrap(
+                                      const Wrap(
                                         spacing: 8,
-                                        children: const [
+                                        children: [
                                           Chip(label: Text('Home')),
                                           Icon(Icons.chevron_right),
                                           Chip(label: Text('Playground')),
@@ -402,11 +402,11 @@ class _ThemePreviewPageState extends State<ThemePreviewPage>
                                   ),
                                 ),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 width: 320,
                                 child: Card(
                                   child: Column(
-                                    children: const [
+                                    children: [
                                       ListTile(
                                         leading: Icon(Icons.chat),
                                         title: Text('Chat Session'),
@@ -517,7 +517,7 @@ class _ThemePreviewPageState extends State<ThemePreviewPage>
                           MaterialBanner(
                             content: const Text('Network is stable.'),
                             leading: const Icon(Icons.cloud_done),
-                            backgroundColor: scheme.surfaceVariant,
+                            backgroundColor: scheme.surfaceContainerHighest,
                             actions: [
                               TextButton(
                                 onPressed: () {},
@@ -550,7 +550,7 @@ class _ThemePreviewPageState extends State<ThemePreviewPage>
                           ),
                           _ColorSwatchTile(
                             label: 'surfaceVariant',
-                            color: scheme.surfaceVariant,
+                            color: scheme.surfaceContainerHighest,
                             borderColor: scheme.outlineVariant,
                           ),
                           _ColorSwatchTile(label: 'error', color: scheme.error),

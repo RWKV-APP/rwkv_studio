@@ -176,7 +176,7 @@ class NodeGroupPrototype extends NodePrototype {
   static NodeGroupPrototype instance = NodeGroupPrototype._(
     inputs: [],
     outputs: [],
-    executor: NodeExecutor(),
+    executor: const NodeExecutor(),
   );
 
   @override

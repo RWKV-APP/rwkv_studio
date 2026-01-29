@@ -13,7 +13,7 @@ extension DateUtils on DateTime {
 
   bool isToday() => isSameDate(_today);
 
-  bool isYesterday() => isSameDate(_today.subtract(Duration(days: 1)));
+  bool isYesterday() => isSameDate(_today.subtract(const Duration(days: 1)));
 
   bool isThisYear() => year == _today.year;
 
@@ -22,11 +22,11 @@ extension DateUtils on DateTime {
   bool isThisWeek() {
     DateTime monday = _today;
     while (monday.weekday != DateTime.monday) {
-      monday = monday.subtract(Duration(days: 1));
+      monday = monday.subtract(const Duration(days: 1));
     }
     DateTime monday2 = this;
     while (monday2.weekday != DateTime.monday) {
-      monday2 = monday2.subtract(Duration(days: 1));
+      monday2 = monday2.subtract(const Duration(days: 1));
     }
     return monday.isSameDate(monday2);
   }

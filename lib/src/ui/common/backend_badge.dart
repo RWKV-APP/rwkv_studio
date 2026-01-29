@@ -16,7 +16,7 @@ class ModelBackendBadge extends StatelessWidget {
           overflow: TextOverflow.clip,
           maxLines: 1,
           textAlign: .center,
-          style: TextStyle(color: Colors.white, fontSize: 10, height: 1),
+          style: const TextStyle(color: Colors.white, fontSize: 10, height: 1),
         );
     return Tooltip(
       message: info.backend.name,
@@ -58,7 +58,7 @@ class ModelBackendBadge extends StatelessWidget {
               'W',
               style: TextStyle(color: Colors.blue.lightest, fontSize: 10),
             ),
-            Text('R', style: TextStyle(color: Colors.black, fontSize: 10)),
+            const Text('R', style: TextStyle(color: Colors.black, fontSize: 10)),
           ],
         ),
       );
