@@ -7,3 +7,13 @@ extension DateTimeExtension on DateTime {
 
   String get datetimeString => '$dateString $timeString';
 }
+
+extension NumExtension on num {
+  String get formatFileSize {
+    if (this > 1024 * 1024 * 1024) {
+      return '${(this / 1024 / 1024 / 1024).toStringAsFixed(2)}GB';
+    } else {
+      return '${(this / 1024 / 1024).toStringAsFixed(2)}MB';
+    }
+  }
+}

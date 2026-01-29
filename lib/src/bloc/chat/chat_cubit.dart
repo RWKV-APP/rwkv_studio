@@ -67,11 +67,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future newChat() async {
-    final conv = ConversationState(
-      id: DateTime.now().toString(),
-      title: 'New Chat',
-      updateAt: DateTime.now(),
-    );
+    final conv = ConversationState.create();
     emit(
       state.copyWith(
         conversations: [conv, ...state.conversations],

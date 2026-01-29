@@ -11,6 +11,8 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rxdart/rxdart.dart';
 
+import '_model_list.dart';
+
 class ModelListPage extends StatefulWidget {
   const ModelListPage({super.key});
 
@@ -145,8 +147,8 @@ class _ModelListPageState extends State<ModelListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final searchBar = ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 240),
+    final searchBar = SizedBox(
+      width: 200,
       child: TextBox(
         controller: _controllerSearch,
         placeholder: 'name, tag, backend...',
@@ -160,8 +162,7 @@ class _ModelListPageState extends State<ModelListPage> {
         suffixMode: .always,
       ),
     );
-    final bar = Row(
-      mainAxisSize: .max,
+    final listHeaderBar = Row(
       mainAxisAlignment: .spaceBetween,
       children: [
         _SortButton(
@@ -171,7 +172,6 @@ class _ModelListPageState extends State<ModelListPage> {
             sortModel();
           },
         ),
-        const SizedBox(width: 16),
         _FilterButton(
           filter: _filters,
           onFilterChanged: (f) {
@@ -179,7 +179,6 @@ class _ModelListPageState extends State<ModelListPage> {
             filterByFilters(f);
           },
         ),
-        const SizedBox(width: 16),
         IconButton(
           onPressed: () {
             context.modelManage.updateModelList().withToast(context);
@@ -228,14 +227,27 @@ class _ModelListPageState extends State<ModelListPage> {
               Expanded(
                 flex: 3,
                 child: Column(
+                  crossAxisAlignment: .stretch,
                   children: [
                     Padding(
                       padding: const .symmetric(horizontal: 8, vertical: 4),
-                      child: bar,
+                      child: LayoutBuilder(
+                        builder: (ctx, cs) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minWidth: cs.maxWidth,
+                              ),
+                              child: listHeaderBar,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                     const Divider(),
                     Expanded(
-                      child: _ModelList(
+                      child: ModelList(
                         models: _showModels,
                         selectedModelId: _selectedModel?.id ?? '',
                         onModelSelected: (model) {
@@ -261,60 +273,6 @@ class _ModelListPageState extends State<ModelListPage> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ModelList extends StatelessWidget {
-  final String selectedModelId;
-  final ValueChanged<ModelInfo> onModelSelected;
-  final List<ModelInfo> models;
-
-  const _ModelList({
-    required this.selectedModelId,
-    required this.onModelSelected,
-    this.models = const [],
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (models.isEmpty) {
-      return Center(child: Text('暂无模型', style: AppTextStyle.bodySecondary));
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      itemCount: models.length,
-      itemBuilder: (context, index) {
-        final model = models[index];
-        final selected = selectedModelId == model.id;
-
-        Widget? trailing;
-        if (model.isRemote) {
-          trailing = Tooltip(
-            message: '远程模型: ${model.providerName}',
-            child: const Icon(FluentIcons.remote),
-          );
-        } else if (model.localPath.isNotEmpty) {
-          trailing = const Icon(FluentIcons.status_circle_checkmark);
-        }
-
-        return ListTile.selectable(
-          selected: selected,
-          onSelectionChange: (value) {
-            if (value) {
-              onModelSelected(model);
-            }
-          },
-          trailing: trailing,
-          contentPadding: const .only(right: 24),
-          title: Text(
-            model.name,
-            style: AppTextStyle.bodyBold,
-            overflow: .ellipsis,
-            maxLines: 1,
-          ),
-        );
-      },
     );
   }
 }

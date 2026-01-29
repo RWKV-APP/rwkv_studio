@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
-import 'package:rwkv_studio/src/utils/file_util.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 import 'model_provider.dart';
@@ -67,6 +64,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         models: models,
         tags: _manager.modelConfig.tags,
         groups: _manager.modelConfig.groups,
+        backends: ModelBackend.defaultBackends,
         downloadSource: _manager.downloadSource,
         modelStates: {
           for (final entry in tasks.entries)
@@ -144,24 +142,20 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     emit(state.copyWith(downloadSource: source));
   }
 
-  Future importModel(String path) async {
-    final file = File(path);
-    final size = await file.length();
-    final sha256 = ''; // await file.sha256();
-    final md5 = await file.md5();
-
-    final model = ModelInfo.base(
-      id: sha256,
-      name: file.name,
-      url: path,
-      fileSize: size,
-      backend: ModelBackend.conjecture(file.extension) ?? ModelBackend.unknown,
-      sha256: sha256,
-      md5: md5,
-      localPath: path,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
+  void onImportModel(ModelInfo model) {
+    // TODO persist
+    emit(
+      state.copyWith(
+        models: [
+          model.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString()),
+          ..._manager.models,
+        ],
+      ),
     );
-    emit(state.copyWith(models: [model, ..._manager.models]));
+  }
+
+  ModelInfo? findModelByMD5(String md5) {
+    return state.models.where((e) => e.md5 == md5).firstOrNull;
   }
 
   void _emitTaskUpdate({

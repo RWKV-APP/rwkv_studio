@@ -16,13 +16,7 @@ class ModelDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String fileSize = '';
-    if (model.fileSize > 1024 * 1024 * 1024) {
-      fileSize =
-          '${(model.fileSize / 1024 / 1024 / 1024).toStringAsFixed(2)}GB';
-    } else {
-      fileSize = '${(model.fileSize / 1024 / 1024).toStringAsFixed(2)}MB';
-    }
+    String fileSize = model.fileSize.formatFileSize;
 
     String datetime = '0000-00-00';
     if (model.updatedAt > 0) {
@@ -37,7 +31,7 @@ class ModelDetail extends StatelessWidget {
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   children: [
@@ -108,7 +102,7 @@ class ModelDetail extends StatelessWidget {
           Row(
             children: [
               const Spacer(),
-              if (model is! RemoteModelInfo)
+              if (!model.isRemote)
                 ModelItemActions(model: model, compact: false),
             ],
           ),

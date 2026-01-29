@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
@@ -37,8 +38,18 @@ class ModelListFlyout extends StatelessWidget {
                 instanceId: loadedModels[model.id]?.id,
               ),
             const MenuFlyoutSeparator(),
-            MenuFlyoutItem(text: const Text('模型管理'), onPressed: () {}),
-            MenuFlyoutItem(text: const Text('导入本地模型'), onPressed: () {}),
+            MenuFlyoutItem(
+              text: const Text('模型管理'),
+              onPressed: () {
+                context.app.jump2ModelManage();
+              },
+            ),
+            MenuFlyoutItem(
+              text: const Text('导入本地模型'),
+              onPressed: () {
+                //
+              },
+            ),
           ],
         );
       },

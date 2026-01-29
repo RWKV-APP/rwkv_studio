@@ -1,14 +1,20 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/ui/common/import_model_dialog.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ImportModelDropArea extends StatelessWidget {
   final Widget child;
 
+  static bool _importing = false;
+
   const ImportModelDropArea({super.key, required this.child});
 
   void onDragDone(BuildContext context, DropDoneDetails details) async {
+    if (_importing) {
+      return;
+    }
     final acceptedExtensions = [
       '.gguf',
       '.ggml',
@@ -33,10 +39,16 @@ class ImportModelDropArea extends StatelessWidget {
       context.toast('不支持的文件类型');
       return;
     }
-    context.modelManage
-        .importModel(files.first)
-        .withLoading(context)
-        .withToast(context, success: '导入成功');
+
+    _importing = true;
+    final model = await ImportModelDialog.show(context, files.first);
+    _importing = false;
+
+    if (model == null || !context.mounted) {
+      return;
+    }
+    context.modelManage.onImportModel(model);
+    context.toast('导入成功');
   }
 
   @override
