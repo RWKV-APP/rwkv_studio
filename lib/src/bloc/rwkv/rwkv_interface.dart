@@ -27,7 +27,7 @@ mixin class RwkvInterface {
   Stream<GenerationResponse> chat(
     List<String> message,
     String instanceId,
-    DecodeParam param,
+    String decodeParamId,
     GenerationConfig config,
   ) async* {
     throw UnimplementedError();

@@ -33,7 +33,7 @@ class ModelList extends StatelessWidget {
             message: '远程模型: ${model.providerName}',
             child: const Icon(FluentIcons.remote),
           );
-        } else if (model.isImportManully) {
+        } else if (model.isImportManually) {
           trailing = const Padding(
             padding: .only(left: 16),
             child: Icon(FluentIcons.arrow_tall_down_left, size: 10),

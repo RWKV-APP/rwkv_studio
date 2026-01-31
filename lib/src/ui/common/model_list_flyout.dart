@@ -20,7 +20,10 @@ class ModelListFlyout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final availableModels = context.modelManage.availableModels;
+    final availableModels = context.modelManage.availableTextModels.where(
+      (e) => !e.tags.contains('translate'),
+    );
+
     ModelInstanceState? selectedInstance = context.rwkv.getModelInstance(
       modelInstanceId,
     );

@@ -1,168 +1,11 @@
 part of 'chat_cubit.dart';
 
-extension MessageExtras on MessageState {
-  int get firstTokenTime => extra['first_token_time'] ?? 0;
-
-  set firstTokenTime(int value) => extra['first_token_time'] = value;
-
-  int get thinkEndTime => extra['think_end_time'] ?? 0;
-
-  set thinkEndTime(int value) => extra['think_end_time'] = value;
-}
-
-class MessageState {
-  final String id;
-  final String text;
-  final int thinkEndAt;
-  final DateTime datetime;
-  final String role;
-  final String error;
-  final String modelName;
-  final StopReason stopReason;
-  final Map<String, dynamic> extra;
-
-  bool get isUser => role == 'user';
-
-  bool get hasThinkContent => thinkEndAt > 8;
-
-  bool get thinking => thinkEndAt == text.length;
-
-  String get thinkContent {
-    return text.substring(0, thinkEndAt).replaceAll('<think>', '').trim();
-  }
-
-  String get bodyContent {
-    return text.substring(thinkEndAt).replaceAll('</think>', '').trim();
-  }
-
-  MessageState._({
-    required this.id,
-    required this.text,
-    required this.datetime,
-    required this.role,
-    required this.modelName,
-    this.thinkEndAt = 0,
-    this.stopReason = StopReason.none,
-    this.error = '',
-    this.extra = const {},
-  });
-
-  static String _newId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
-
-  factory MessageState.create({
-    required final String role,
-    String? text,
-    String? modelName,
-  }) {
-    final id = _newId();
-    return MessageState._(
-      id: id,
-      text: text ?? '',
-      datetime: DateTime.now(),
-      role: role,
-      stopReason: StopReason.none,
-      error: '',
-      extra: {},
-      modelName: modelName ?? '',
-    );
-  }
-
-  MessageState copyWith({
-    String? id,
-    String? text,
-    DateTime? datetime,
-    String? role,
-    String? error,
-    String? modelName,
-    StopReason? stopReason,
-    Map<String, dynamic>? extra,
-    int? thinkEndAt,
-  }) {
-    return MessageState._(
-      id: id ?? this.id,
-      text: text ?? this.text,
-      datetime: datetime ?? this.datetime,
-      role: role ?? this.role,
-      error: error ?? this.error,
-      modelName: modelName ?? this.modelName,
-      stopReason: stopReason ?? this.stopReason,
-      extra: extra ?? this.extra,
-      thinkEndAt: thinkEndAt ?? this.thinkEndAt,
-    );
-  }
-}
-
-class ConversationState {
-  final String id;
-  final String title;
-  final DateTime updateAt;
-  final String systemPrompt;
-  final String modelId;
-  final String decodeParmaId;
-  final int pinned;
-
-  static ConversationState empty = ConversationState(
-    id: '',
-    title: '',
-    updateAt: DateTime(0, 0),
-    systemPrompt: '',
-    modelId: '',
-    pinned: 0,
-    decodeParmaId: '',
-  );
-
-  ConversationState({
-    required this.id,
-    required this.title,
-    required this.updateAt,
-    required this.systemPrompt,
-    required this.modelId,
-    required this.pinned,
-    required this.decodeParmaId,
-  });
-
-  factory ConversationState.create() {
-    return ConversationState(
-      id: DateTime.now().toString(),
-      title: 'Untitled',
-      updateAt: DateTime.now(),
-      systemPrompt: '',
-      modelId: '',
-      decodeParmaId: '',
-      pinned: 0,
-    );
-  }
-
-  ConversationState copyWith({
-    String? id,
-    String? title,
-    DateTime? updateAt,
-    String? systemPrompt,
-    String? modelId,
-    int? pinned,
-    String? decodeParmaId,
-  }) {
-    return ConversationState(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      updateAt: updateAt ?? this.updateAt,
-      systemPrompt: systemPrompt ?? this.systemPrompt,
-      modelId: modelId ?? this.modelId,
-      pinned: pinned ?? this.pinned,
-      decodeParmaId: decodeParmaId ?? this.decodeParmaId,
-    );
-  }
-}
-
 class ChatState {
   final bool initialized;
 
   final List<ConversationState> conversations;
   final Map<String, List<MessageState>> messages;
   final ConversationState selected;
-  final DecodeParam decodeParam;
   final GenerationConfig generationConfig;
   final bool generating;
   final bool showSettingPanel;
@@ -185,7 +28,6 @@ class ChatState {
     required this.selected,
     required this.messages,
     required this.inputController,
-    required this.decodeParam,
     required this.generationConfig,
     required this.generating,
     required this.modelState,
@@ -200,7 +42,6 @@ class ChatState {
         selected: ConversationState.empty,
         messages: {},
         inputController: TextEditingController(),
-        decodeParam: DecodeParam.initial(),
         generating: false,
         generationConfig: GenerationConfig.initial(),
         modelState: ModelLoadState.empty(),
@@ -213,7 +54,6 @@ class ChatState {
     Map<String, List<MessageState>>? messages,
     ConversationState? selected,
     TextEditingController? inputController,
-    DecodeParam? decodeParam,
     bool? generating,
     GenerationConfig? generationConfig,
     bool? showSettingPanel,
@@ -226,7 +66,6 @@ class ChatState {
       messages: messages ?? this.messages,
       selected: selected ?? this.selected,
       inputController: inputController ?? this.inputController,
-      decodeParam: decodeParam ?? this.decodeParam,
       generating: generating ?? this.generating,
       generationConfig: generationConfig ?? this.generationConfig,
       showSettingPanel: showSettingPanel ?? this.showSettingPanel,

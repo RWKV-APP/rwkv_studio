@@ -6,9 +6,10 @@ import 'package:rwkv_studio/src/ui/chat/_chat_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_input.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_title_bar.dart';
-import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
 import 'package:rwkv_studio/src/widget/drag_edit_recognizer.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
+
+import '_chat_setting_pannel.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -43,7 +44,10 @@ class _ChatPageState extends State<ChatPage> {
             crossAxisAlignment: .stretch,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     const Expanded(child: Text('对话')),
@@ -87,10 +91,7 @@ class _ChatState extends State<_Chat> {
         return CollapsibleSidebarLayout(
           open: state.showSettingPanel,
           divider: const Divider(direction: .vertical),
-          sidebar: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            child: _SettingPanel(),
-          ),
+          sidebar: const ChatSettingPanel(),
           content: Column(
             crossAxisAlignment: .stretch,
             mainAxisSize: .max,
@@ -127,60 +128,6 @@ class _ChatState extends State<_Chat> {
           ),
         );
       },
-    );
-  }
-}
-
-class _SettingPanel extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .stretch,
-      mainAxisSize: .max,
-      children: [
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            const Expanded(child: Text('设置', style: TextStyle(fontSize: 18))),
-            IconButton(
-              icon: const Icon(FluentIcons.chrome_close),
-              onPressed: () {
-                context.chat.toggleSettingPanelVisible();
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Button(
-          child: const Text('重置'),
-          onPressed: () {
-            context.chat.resetSettings();
-          },
-        ),
-        const SizedBox(height: 12),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                BlocBuilder<ChatCubit, ChatState>(
-                  buildWhen: (p, c) =>
-                      p.decodeParam != c.decodeParam ||
-                      p.generating != c.generating,
-                  builder: (context, state) {
-                    return DecodeParamForm(
-                      param: state.decodeParam,
-                      onChanged: state.generating
-                          ? null
-                          : (v) => context.chat.setDecodeParam(v),
-                    );
-                  },
-                ),
-                const SizedBox(height: 60),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

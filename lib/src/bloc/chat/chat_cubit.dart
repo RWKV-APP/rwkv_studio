@@ -7,6 +7,8 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'chat_state.dart';
+part 'conversation_state.dart';
+part 'message_state.dart';
 
 extension Ext on BuildContext {
   ChatCubit get chat => read<ChatCubit>();
@@ -48,12 +50,36 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     emit(state.copyWith(showSettingPanel: !state.showSettingPanel));
   }
 
-  void resetSettings() {
-    emit(state.copyWith(decodeParam: DecodeParam.initial()));
+  void setDecodeParam(String param) {
+    updateConversation(
+      state.selected.id,
+      (e) => e.copyWith(decodeParmaId: param),
+    );
   }
 
-  void setDecodeParam(DecodeParam param) {
-    emit(state.copyWith(decodeParam: param));
+  void setUseGlobalSystemPrompt(bool useGlobalSystemPrompt) {
+    if (state.selected.useGlobalSystemPrompt == useGlobalSystemPrompt) {
+      return;
+    }
+    updateConversation(
+      state.selected.id,
+      (e) => e.copyWith(useGlobalSystemPrompt: useGlobalSystemPrompt),
+    );
+  }
+
+  void setSystemPrompt(String prompt) {
+    if (state.selected.useGlobalSystemPrompt) {
+      emit(
+        state.copyWith(
+          generationConfig: state.generationConfig.copyWith(prompt: prompt),
+        ),
+      );
+    } else {
+      updateConversation(
+        state.selected.id,
+        (e) => e.copyWith(systemPrompt: prompt),
+      );
+    }
   }
 
   void toggleThinkMode() {
@@ -232,12 +258,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       thinkResolved = true;
       assistant = assistant.copyWith(thinkEndAt: assistant.text.length);
     }
+    final conv = state.conversations.firstWhere((e) => e.id == conversationId);
+    final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
     rwkv
         .chat(
           messages,
           state.modelInstanceId,
-          state.decodeParam,
-          state.generationConfig,
+          conv.decodeParmaId,
+          state.generationConfig.copyWith(prompt: systemPrompt),
         )
         .listen(
           (resp) {
@@ -255,7 +283,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
                   thinkEndAt = index;
                   thinkResolved = true;
                   logd('think resolved: $thinkEndAt');
-                  assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+                  assistant.thinkEndTime =
+                      DateTime.now().millisecondsSinceEpoch;
                 }
               }
             }

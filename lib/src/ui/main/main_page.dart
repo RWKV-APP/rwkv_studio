@@ -15,6 +15,7 @@ import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
+
 part 'navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
@@ -71,7 +72,7 @@ class MainPage extends StatelessWidget {
         selected: state.pane,
         displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
-          if ({12, 7, 1}.contains(i)) {
+          if ({12, 7, 3}.contains(i)) {
             return;
           }
           context.app.setPane(i);

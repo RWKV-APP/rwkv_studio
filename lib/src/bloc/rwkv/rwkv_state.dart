@@ -75,20 +75,31 @@ class ModelInstanceState {
 class RwkvState {
   final Map<InstanceId, ModelInstanceState> models;
   final List<RwkvServiceClient> services;
+  final Map<String, DecodeParam> decodeParams;
 
-  RwkvState({required this.models, required this.services});
+  RwkvState({
+    required this.models,
+    required this.services,
+    required this.decodeParams,
+  });
 
   factory RwkvState.initial() {
-    return RwkvState(models: {}, services: []);
+    return RwkvState(
+      models: {},
+      services: [],
+      decodeParams: {'default': DecodeParam.initial()},
+    );
   }
 
   RwkvState copyWith({
     Map<InstanceId, ModelInstanceState>? models,
     List<RwkvServiceClient>? services,
+    Map<String, DecodeParam>? decodeParams,
   }) {
     return RwkvState(
       models: models ?? this.models,
       services: services ?? this.services,
+      decodeParams: decodeParams ?? this.decodeParams,
     );
   }
 }

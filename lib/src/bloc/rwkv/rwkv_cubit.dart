@@ -22,6 +22,16 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     //
   }
 
+  void setOrPutDecodeParam(String id, DecodeParam param) {
+    emit(state.copyWith(decodeParams: {...state.decodeParams, id: param}));
+  }
+
+  void deleteDecodeParam(String id) {
+    final params = {...state.decodeParams};
+    params.remove(id);
+    emit(state.copyWith(decodeParams: params));
+  }
+
   Future setRemoteServiceList(Map<String, String> id2url) async {
     final serviceIds = id2url.keys;
     final removed = <String>[];
@@ -91,11 +101,13 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   Stream<GenerationResponse> chat(
     List<String> message,
     String instanceId,
-    DecodeParam param,
+    String decodeParamId,
     GenerationConfig config,
   ) async* {
     final instance = state.models[instanceId];
     if (instance == null) throw "Model not found";
+    final param = state.decodeParams[decodeParamId];
+    if (param == null) throw "decode param preset not found: $decodeParamId";
     await _syncModelConfig(instanceId, param, config);
     try {
       yield* instance.rwkv

@@ -2,6 +2,24 @@ part of 'main_page.dart';
 
 List<NavigationPaneItem> buildNavItems(BuildContext context) => [
   PaneItem(
+    icon: const WindowsIcon(WindowsIcons.chat_bubbles),
+    title: const Text('对话'),
+    body: const ChatPage(),
+  ),
+  PaneItem(
+    icon: const WindowsIcon(FluentIcons.text_document_edit),
+    title: const Text('文本生成'),
+    body: const TextGenerationPage(),
+  ),
+  PaneItem(
+    icon: const WindowsIcon(WindowsIcons.apps),
+    title: const Text('模型管理'),
+    body: const ModelListPage(),
+  ),
+];
+
+List<NavigationPaneItem> _buildNavItems(BuildContext context) => [
+  PaneItem(
     icon: const WindowsIcon(WindowsIcons.home),
     title: const Text('欢迎'),
     body: const ThemePreviewPage(),
@@ -81,4 +99,3 @@ List<NavigationPaneItem> buildNavFooterItems(BuildContext context) => [
     body: const SettingPage(),
   ),
 ];
-

@@ -6,7 +6,7 @@ class AppState {
   AppState({required this.pane});
 
   factory AppState.initial() {
-    return AppState(pane: 2);
+    return AppState(pane: 0);
   }
 
   AppState copyWith({int? pane}) {
