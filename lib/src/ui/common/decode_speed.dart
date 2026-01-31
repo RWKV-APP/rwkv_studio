@@ -11,8 +11,8 @@ class DecodeSpeedInfo extends StatelessWidget {
     return RwkvModelStateBuilder(
       modelInstanceId: modelInstanceId,
       builder: (ctx, model) {
-        final decode = model.state.decodeSpeed.toStringAsFixed(2);
-        final prefill = model.state.prefillSpeed.toStringAsFixed(2);
+        final decode = model.state.decodeSpeed.toInt();
+        final prefill = model.state.prefillSpeed.toInt();
         final label = Text(
           'prefill: $prefill t/s \t decode: $decode t/s',
           textAlign: TextAlign.end,

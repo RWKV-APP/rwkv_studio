@@ -81,6 +81,7 @@ void logw(dynamic msg) {
 void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
   _listenToLogs();
   _logger.severe(msg, error, stackTrace);
+  _logger.severe(StackTrace.current.toString().split('\n')[1].trim());
 }
 
 void logwtf(dynamic msg) {

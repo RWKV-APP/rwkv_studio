@@ -1,5 +1,15 @@
 part of 'chat_cubit.dart';
 
+extension MessageExtras on MessageState {
+  int get firstTokenTime => extra['first_token_time'] ?? 0;
+
+  set firstTokenTime(int value) => extra['first_token_time'] = value;
+
+  int get thinkEndTime => extra['think_end_time'] ?? 0;
+
+  set thinkEndTime(int value) => extra['think_end_time'] = value;
+}
+
 class MessageState {
   final String id;
   final String text;
@@ -14,6 +24,8 @@ class MessageState {
   bool get isUser => role == 'user';
 
   bool get hasThinkContent => thinkEndAt > 8;
+
+  bool get thinking => thinkEndAt == text.length;
 
   String get thinkContent {
     return text.substring(0, thinkEndAt).replaceAll('<think>', '').trim();
@@ -52,7 +64,7 @@ class MessageState {
       role: role,
       stopReason: StopReason.none,
       error: '',
-      extra: const {},
+      extra: {},
       modelName: modelName ?? '',
     );
   }

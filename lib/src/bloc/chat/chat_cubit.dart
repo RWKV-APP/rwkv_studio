@@ -185,11 +185,6 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     if (text.isEmpty) {
       return;
     }
-    final message = MessageState.create(
-      role: rwkv.roleUser,
-      text: text,
-      modelName: await rwkv.getModelName(state.modelInstanceId),
-    );
 
     String convId = state.selected.id;
 
@@ -198,6 +193,11 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     Future.delayed(const Duration(milliseconds: 50), () {
       state.inputController.clear();
     });
+    final message = MessageState.create(
+      role: rwkv.roleUser,
+      text: text,
+      modelName: await rwkv.getModelName(state.modelInstanceId),
+    );
     final history = <MessageState>[...(state.messages[convId] ?? []), message];
 
     if (history.length == 1) {
@@ -255,8 +255,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
                   thinkEndAt = index;
                   thinkResolved = true;
                   logd('think resolved: $thinkEndAt');
+                  assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
                 }
               }
+            }
+
+            if (assistant.firstTokenTime <= 0) {
+              assistant.firstTokenTime = DateTime.now().millisecondsSinceEpoch;
             }
             assistant = assistant.copyWith(
               text: content,

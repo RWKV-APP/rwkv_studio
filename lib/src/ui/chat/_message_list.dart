@@ -76,7 +76,12 @@ class _MessageItem extends StatelessWidget {
         crossAxisAlignment: .start,
         children: [
           if (message.hasThinkContent)
-            MessageThink(content: message.thinkContent),
+            MessageThink(
+              content: message.thinkContent,
+              thinking: message.thinking,
+              duration: message.thinkEndTime - message.firstTokenTime,
+              paused: message.stopReason == StopReason.canceled,
+            ),
           if (message.hasThinkContent && response.isNotEmpty)
             const SizedBox(height: 6),
           if (response.isNotEmpty) content,
@@ -89,11 +94,13 @@ class _MessageItem extends StatelessWidget {
     if (isLast) {
       return MeasureSize(
         onChange: (s) {
-          Scrollable.ensureVisible(
-            context,
-            duration: const Duration(milliseconds: 200),
-            alignmentPolicy: .keepVisibleAtEnd,
-          );
+          if (context.chat.state.generating) {
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 200),
+              alignmentPolicy: .keepVisibleAtEnd,
+            );
+          }
         },
         child: box,
       );

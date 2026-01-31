@@ -204,8 +204,8 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   ]) async {
     ModelInstanceState instance = state.models[instanceId]!;
     bool updated = false;
-    if (instance.config != config) {
-      await instance.rwkv.setGenerationConfig(config!);
+    if (instance.config != config && config != null) {
+      await instance.rwkv.setGenerationConfig(config);
       instance = instance.copyWith(config: config);
       updated = true;
     }
