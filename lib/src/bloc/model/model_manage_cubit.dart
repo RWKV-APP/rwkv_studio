@@ -79,7 +79,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     updateModelList(local: false);
   }
 
-  void download(String id) async {
+  Future download(String id) async {
     try {
       await _manager.download(id);
     } catch (e) {
@@ -91,8 +91,8 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     }
   }
 
-  void resume(String id) {
-    _manager.download(id);
+  Future resume(String id) async {
+    await _manager.download(id);
   }
 
   Future delete(String id) async {
@@ -101,8 +101,13 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future cancel(String id) async {
-    await _manager.cancelTask(id);
-    emit(state.copyWith(modelStates: {...state.modelStates, id: null}));
+    _manager.cancelTask(id);
+    emit(
+      state.copyWith(
+        modelStates: {...state.modelStates, id: null}
+          ..removeWhere((k, v) => v == null),
+      ),
+    );
   }
 
   Future pause(String id) async {
@@ -172,8 +177,10 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         models: m,
         modelStates: {
           ...state.modelStates,
-          modelId: ModelDownloadState(update: update, error: error),
-        },
+          modelId: update.isCompleted
+              ? null
+              : ModelDownloadState(update: update, error: error),
+        }..removeWhere((k, v) => v == null || v.update.isCompleted),
       ),
     );
   }

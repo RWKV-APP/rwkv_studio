@@ -4,7 +4,10 @@ class ModelDownloadState {
   final TaskUpdate update;
   final dynamic error;
 
-  ModelDownloadState({required this.update, required this.error});
+  ModelDownloadState({
+    required this.update,
+    required this.error,
+  });
 }
 
 class ModelManageState {

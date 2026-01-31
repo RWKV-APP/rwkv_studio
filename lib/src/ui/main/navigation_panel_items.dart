@@ -74,17 +74,11 @@ List<NavigationPaneItem> buildNavItems(BuildContext context) => [
 
 List<NavigationPaneItem> buildNavFooterItems(BuildContext context) => [
   PaneItemSeparator(),
-  PaneItem(
-    icon: const WindowsIcon(WindowsIcons.download),
-    title: const Text('下载任务'),
-    onTap: () {
-      Navigator.pushNamed(context, AppRouter.demo);
-    },
-    body: const SizedBox(),
-  ),
+  buildDownloadPaneItem(),
   PaneItem(
     icon: const WindowsIcon(WindowsIcons.settings),
     title: const Text('设置'),
     body: const SettingPage(),
   ),
 ];
+

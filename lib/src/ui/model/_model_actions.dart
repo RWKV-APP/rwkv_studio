@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ModelItemActions extends StatelessWidget {
   final ModelInfo model;
@@ -15,7 +16,7 @@ class ModelItemActions extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext ctx) {
     return BlocSelector<
       ModelManageCubit,
       ModelManageState,
@@ -40,7 +41,7 @@ class ModelItemActions extends StatelessWidget {
             primary: true,
             label: '下载',
             onPressed: () {
-              context.modelManage.download(model.id);
+              context.modelManage.download(model.id).withToast(ctx);
             },
           );
         }
@@ -104,7 +105,7 @@ class ModelItemActions extends StatelessWidget {
                 primary: true,
                 label: '继续下载',
                 onPressed: () {
-                  context.modelManage.resume(model.id);
+                  context.modelManage.resume(model.id).withToast(context);
                 },
               ),
           ],
