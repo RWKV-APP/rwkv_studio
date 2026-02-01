@@ -24,6 +24,9 @@ class ModelDetail extends StatelessWidget {
         model.updatedAt,
       ).dateString;
     }
+    final backend = model.tags.contains('albatross')
+        ? ModelBackend.albatross
+        : model.backend;
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -72,7 +75,7 @@ class ModelDetail extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildLabel("推理后端: "),
-                    ModelBackendBadge(info: model),
+                    ModelBackendBadge(backend: backend),
                     const SizedBox(width: 8),
                     _buildLabel(model.backend.name),
                   ],

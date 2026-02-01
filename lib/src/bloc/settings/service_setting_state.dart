@@ -3,16 +3,19 @@ part of 'setting_cubit.dart';
 class ServiceSettingState extends Equatable {
   final List<RemoteService> remoteServices;
   final String modelListUrl;
+  final List<ModelBackend> enabledBackends;
 
   @override
-  List<Object?> get props => [remoteServices, modelListUrl];
+  List<Object?> get props => [remoteServices, modelListUrl, enabledBackends];
 
   ServiceSettingState({
     required this.remoteServices,
     required this.modelListUrl,
+    required this.enabledBackends,
   });
 
   static final initial = ServiceSettingState(
+    enabledBackends: ModelBackend.defaultBackends,
     remoteServices: [],
     modelListUrl:
         'https://aifasthub.com/meta-logic/config/resolve/main/model_config.json?download=true',
@@ -22,6 +25,7 @@ class ServiceSettingState extends Equatable {
     return {
       'remoteServices': remoteServices.map((e) => e.toMap()).toList(),
       'modelListUrl': modelListUrl,
+      'enabledBackends': enabledBackends.map((e) => e.name).toList(),
     };
   }
 
@@ -36,16 +40,19 @@ class ServiceSettingState extends Equatable {
               .toList() ??
           [],
       modelListUrl: map['modelListUrl'] ?? initial.modelListUrl,
+      enabledBackends: ModelBackend.fromJson(map['enabledBackends']),
     );
   }
 
   ServiceSettingState copyWith({
     List<RemoteService>? remoteServices,
     String? modelListUrl,
+    List<ModelBackend>? enabledBackends,
   }) {
     return ServiceSettingState(
       remoteServices: remoteServices ?? this.remoteServices,
       modelListUrl: modelListUrl ?? this.modelListUrl,
+      enabledBackends: enabledBackends ?? this.enabledBackends,
     );
   }
 }

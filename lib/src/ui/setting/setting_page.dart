@@ -8,6 +8,7 @@ import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/setting/_appearance_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/_behavior_setting.dart';
+import 'package:rwkv_studio/src/ui/setting/_model_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/service/_service_settings.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
 
@@ -67,6 +68,18 @@ class _SettingBody extends StatelessWidget {
           buildWhen: (p, c) => p.cache != c.cache,
           builder: (context, state) {
             return CacheSettingsCard(cache: state.cache);
+          },
+        ),
+        const SizedBox(height: 12),
+        BlocBuilder<SettingCubit, SettingState>(
+          buildWhen: (p, c) => p.service != c.service,
+          builder: (context, state) {
+            return ModelSettings(
+              settings: state.service,
+              onChanged: (v) {
+                context.settings.setServiceSetting(v);
+              },
+            );
           },
         ),
         const SizedBox(height: 12),

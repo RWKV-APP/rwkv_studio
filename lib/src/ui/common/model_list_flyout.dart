@@ -5,6 +5,7 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
@@ -20,8 +21,11 @@ class ModelListFlyout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabledBackends = context.settings.state.service.enabledBackends;
+
     final availableModels = context.modelManage.availableTextModels.where(
-      (e) => !e.tags.contains('translate'),
+      (e) =>
+          !e.tags.contains('translate') && enabledBackends.contains(e.backend),
     );
 
     ModelInstanceState? selectedInstance = context.rwkv.getModelInstance(
@@ -88,12 +92,15 @@ class ModelListFlyout extends StatelessWidget {
       tooltips = model.fileName;
     }
 
+    final backend = model.tags.contains('albatross')
+        ? ModelBackend.albatross
+        : model.backend;
     return ToggleMenuFlyoutItem(
       text: Tooltip(
         message: tooltips,
         child: Row(
           children: [
-            ModelBackendBadge(info: model),
+            ModelBackendBadge(backend: backend),
             const SizedBox(width: 8),
             Text(name),
           ],

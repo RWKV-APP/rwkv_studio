@@ -3,27 +3,27 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 
 class ModelBackendBadge extends StatelessWidget {
-  final ModelInfo info;
+  final ModelBackend backend;
 
-  const ModelBackendBadge({super.key, required this.info});
+  const ModelBackendBadge({super.key, required this.backend});
 
   @override
   Widget build(BuildContext context) {
     Widget icon =
         _getIcon() ??
         Text(
-          info.backend.name,
+          backend.name,
           overflow: TextOverflow.clip,
           maxLines: 1,
           textAlign: .center,
-          style: const TextStyle(color: Colors.white, fontSize: 10, height: 1),
+          style: const TextStyle(color: Colors.white, fontSize: 8, height: 1),
         );
     return Tooltip(
-      message: info.backend.name,
+      message: backend.name,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
-          color: context.fluent.accentColor.lightest,
+          color: Colors.teal.lightest,
         ),
         height: 20,
         width: 20,
@@ -35,8 +35,7 @@ class ModelBackendBadge extends StatelessWidget {
   }
 
   Widget? _getIcon() {
-    if (info.backend == ModelBackend.albatross ||
-        info.tags.contains('albatross')) {
+    if (backend == ModelBackend.albatross) {
       return ColoredBox(
         color: Colors.grey[60],
         child: Image.asset(
@@ -44,9 +43,16 @@ class ModelBackendBadge extends StatelessWidget {
           fit: BoxFit.contain,
         ),
       );
-    } else if (info.backend == ModelBackend.llama_cpp) {
+    } else if (backend == ModelBackend.llama_cpp) {
       return Image.asset('assets/img/icon_llama_cpp.png', fit: BoxFit.contain);
-    } else if (info.backend == ModelBackend.web_rwkv) {
+    } else if (backend == ModelBackend.pytorch) {
+      return Container(
+        height: 20,
+        width: 20,
+        color: Colors.black,
+        child: Image.asset('assets/img/icon_pytorch.png', fit: BoxFit.contain),
+      );
+    } else if (backend == ModelBackend.web_rwkv) {
       return Container(
         height: 20,
         width: 20,
@@ -58,7 +64,10 @@ class ModelBackendBadge extends StatelessWidget {
               'W',
               style: TextStyle(color: Colors.blue.lightest, fontSize: 10),
             ),
-            const Text('R', style: TextStyle(color: Colors.black, fontSize: 10)),
+            const Text(
+              'R',
+              style: TextStyle(color: Colors.black, fontSize: 10),
+            ),
           ],
         ),
       );

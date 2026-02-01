@@ -5,8 +5,6 @@ import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_add_service_button.dart';
 
-part '_model_list_config.dart';
-
 class ServiceSettingCard extends StatelessWidget {
   final ServiceSettingState setting;
   final ValueChanged<ServiceSettingState>? onChanged;
@@ -21,13 +19,6 @@ class ServiceSettingCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        _ModelListProvider(
-          url: setting.modelListUrl,
-          onChanged: (v) {
-            onChanged?.call(setting.copyWith(modelListUrl: v));
-          },
-        ),
-        const SizedBox(height: 12),
         Expander(
           contentBackgroundColor: context.fluent.cardColor,
           header: const Text('API 模型服务'),
