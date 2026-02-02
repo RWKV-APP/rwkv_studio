@@ -37,6 +37,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   Future setModelDownloadDir(String path, {bool migration = false}) async {
     await _manager.setModelDownloadDir(path, migration: migration);
     await _manager.init();
+    await updateModelList(remote: false);
   }
 
   Future init({required String modelDir, required String configUrl}) async {

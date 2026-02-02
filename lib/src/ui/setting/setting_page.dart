@@ -84,7 +84,17 @@ class _SettingBody extends StatelessWidget {
           },
         ),
         const SizedBox(height: 12),
-        PythonSettings(),
+        BlocBuilder<SettingCubit, SettingState>(
+          buildWhen: (p, c) => p.python != c.python,
+          builder: (context, state) {
+            return PythonSettings(
+              state: state.python,
+              onChanged: (v) {
+                context.settings.setPythonSetting(v);
+              },
+            );
+          },
+        ),
         const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.model != c.model,

@@ -10,13 +10,10 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 
 part 'appearance_state.dart';
-
 part 'cache_setting_state.dart';
-
-part 'service_setting_state.dart';
-
-part 'setting_state.dart';
 part 'python_setting_state.dart';
+part 'service_setting_state.dart';
+part 'setting_state.dart';
 
 extension SettingStateExtension on BuildContext {
   SettingCubit get settings => BlocProvider.of<SettingCubit>(this);
@@ -60,6 +57,10 @@ class SettingCubit extends Cubit<SettingState> {
 
   void setServiceSetting(ModelSettingState model) {
     emit(state.copyWith(model: model));
+  }
+
+  void setPythonSetting(PythonSettingState python) {
+    emit(state.copyWith(python: python));
   }
 
   Future setCacheSetting(CacheSettingState cache) async {

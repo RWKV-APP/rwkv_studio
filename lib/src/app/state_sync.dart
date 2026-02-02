@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_acrylic/window.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_provider.dart';
@@ -50,7 +51,9 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
     final modelManage = context.modelManage;
 
     await setting.init();
-    await context.rwkv.init();
+    if (mounted) {
+      await context.rwkv.init();
+    }
 
     modelManage.init(
       modelDir: setting.state.cache.modelDownloadDir,
@@ -61,6 +64,10 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
       _syncRemoteServiceList(context, setting.state.model.remoteServices);
     }
     _syncAppearance(setting.state.appearance);
+
+    if (mounted) {
+      context.app.init(selectedPythonId: setting.state.python.selected);
+    }
   }
 
   @override
@@ -90,12 +97,17 @@ Widget _buildStateSyncListeners(Widget child) {
         },
         child: Container(),
       ),
-
       BlocListener<SettingCubit, SettingState>(
-        listenWhen: (p, c) =>
-            p.model.remoteServices != c.model.remoteServices,
+        listenWhen: (p, c) => p.model.remoteServices != c.model.remoteServices,
         listener: (context, state) async {
           _syncRemoteServiceList(context, state.model.remoteServices);
+        },
+        child: const SizedBox(),
+      ),
+      BlocListener<SettingCubit, SettingState>(
+        listenWhen: (p, c) => p.python != c.python,
+        listener: (context, state) async {
+          context.app.onPythonSelected(state.python.selected);
         },
         child: const SizedBox(),
       ),

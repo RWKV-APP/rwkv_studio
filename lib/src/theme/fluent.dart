@@ -25,6 +25,15 @@ extension CustomeFluent on FluentThemeData {
         ),
       ),
       buttonTheme: ButtonThemeData(
+        outlinedButtonStyle: ButtonStyle(
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          ),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(fontWeight: FontWeight.w500),
+          ),
+          foregroundColor: WidgetStatePropertyAll(accentColor),
+        ),
         hyperlinkButtonStyle: const ButtonStyle(
           textStyle: WidgetStatePropertyAll(
             TextStyle(fontWeight: FontWeight.w500),

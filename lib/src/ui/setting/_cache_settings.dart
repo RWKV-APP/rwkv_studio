@@ -131,10 +131,32 @@ Future<bool?> _askMigrationModels(
     context: context,
     builder: (ctx) => ContentDialog(
       title: const Text('迁移模型'),
-      content: Text(
-        '是否需要迁移模型文件到新目录？\n\n'
-        '旧目录$old\n'
-        '新目录$dir',
+      content: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .stretch,
+        children: [
+          Text(
+            '是否需要迁移模型文件到新目录？\n\n'
+            '旧目录 $old\n'
+            '新目录 $dir',
+          ),
+          const SizedBox(height: 12),
+          FutureBuilder(
+            future: () async {
+              return await Directory(dir).list().toList();
+            }(),
+            builder: (ctx, snapshot) {
+              final count = snapshot.data?.length ?? 0;
+              if (count <= 0) {
+                return const SizedBox();
+              }
+              return const InfoBar(
+                title: Text('请注意, 目标文件夹不是空文件夹'),
+                severity: InfoBarSeverity.warning,
+              );
+            },
+          ),
+        ],
       ),
       actions: [
         Button(

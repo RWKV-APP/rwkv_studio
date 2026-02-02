@@ -3,11 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'chat_state.dart';
+
 part 'conversation_state.dart';
+
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -336,11 +339,15 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             emit(ns);
           },
           onError: (e, s) {
-            loge(s);
-            assistant = assistant.copyWith(
-              error: "$e",
-              stopReason: StopReason.error,
-            );
+            if (isCanceledException(e)) {
+              assistant = assistant.copyWith(stopReason: StopReason.canceled);
+            } else {
+              loge(e, s);
+              assistant = assistant.copyWith(
+                error: "$e",
+                stopReason: StopReason.error,
+              );
+            }
             updateConversation(
               conversationId,
               (c) => c.copyWith(updateAt: DateTime.now()),
