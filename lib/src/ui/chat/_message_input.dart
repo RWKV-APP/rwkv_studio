@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
@@ -81,11 +82,7 @@ class _SendButton extends StatelessWidget {
               ? null
               : () => _onTapSend(context),
           child: const Row(
-            children: [
-              Text('发送'),
-              SizedBox(width: 8),
-              Icon(WindowsIcons.send),
-            ],
+            children: [Text('发送'), SizedBox(width: 8), Icon(WindowsIcons.send)],
           ),
         );
       },
@@ -99,21 +96,50 @@ class _ThinkModeButton extends StatelessWidget {
     return BlocBuilder<ChatCubit, ChatState>(
       buildWhen: (p, c) => p.generationConfig != c.generationConfig,
       builder: (context, state) {
-        final checked = state.generationConfig.chatReasoning;
+        String label = '';
+        bool checked = true;
+        switch (state.generationConfig.reasoningEffort) {
+          case ReasoningEffort.none:
+            label = '推理-关';
+            checked = false;
+            break;
+          case ReasoningEffort.mini:
+          case ReasoningEffort.low:
+            label = '推理-低';
+            break;
+          case ReasoningEffort.medium:
+            label = '推理-中';
+            break;
+          case ReasoningEffort.high:
+          case ReasoningEffort.xhig:
+            label = '推理-高';
+            break;
+        }
+
         return AppSplitButton.toggle(
           checked: checked,
           onInvoked: () {
-            context.chat.toggleThinkMode();
+            context.chat.toggleReasoningEnable();
           },
           flyout: MenuFlyout(
             items: [
-              MenuFlyoutItem(text: const Text('推理-中'), onPressed: () {}),
-              MenuFlyoutItem(text: const Text('推理-高'), onPressed: () {}),
+              MenuFlyoutItem(
+                text: const Text('推理-中'),
+                onPressed: () {
+                  context.chat.setReasoningMode(ReasoningEffort.medium);
+                },
+              ),
+              MenuFlyoutItem(
+                text: const Text('推理-高'),
+                onPressed: () {
+                  context.chat.setReasoningMode(ReasoningEffort.high);
+                },
+              ),
             ],
           ),
-          child: const Padding(
-            padding: EdgeInsetsGeometry.symmetric(horizontal: 8, vertical: 4),
-            child: Text('推理'),
+          child: Padding(
+            padding: const .symmetric(horizontal: 8, vertical: 4),
+            child: Text(label),
           ),
         );
       },

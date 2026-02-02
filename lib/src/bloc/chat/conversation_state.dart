@@ -35,7 +35,7 @@ class ConversationState {
   factory ConversationState.create() {
     return ConversationState(
       id: DateTime.now().toString(),
-      title: 'Untitled',
+      title: '',
       updateAt: DateTime.now(),
       systemPrompt: '',
       modelId: '',

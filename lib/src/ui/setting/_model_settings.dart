@@ -5,8 +5,8 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 
 class ModelSettings extends StatelessWidget {
-  final ServiceSettingState settings;
-  final ValueChanged<ServiceSettingState>? onChanged;
+  final ModelSettingState settings;
+  final ValueChanged<ModelSettingState>? onChanged;
 
   ModelSettings({super.key, required this.settings, this.onChanged});
 

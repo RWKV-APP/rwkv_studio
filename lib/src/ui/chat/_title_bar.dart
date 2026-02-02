@@ -27,7 +27,7 @@ class ChatTitleBar extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 100),
                   child: Text(
-                    conv.title,
+                    conv.title.isEmpty ? 'untitled' : conv.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.fluent.typography.bodyLarge,

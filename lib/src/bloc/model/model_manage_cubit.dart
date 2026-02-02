@@ -22,10 +22,11 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   Iterable<ModelInfo> get availableModels =>
       state.models.where((e) => e.localPath.isNotEmpty || e.isRemote);
 
+  // TODO optimize
   Iterable<ModelInfo> get availableTextModels => state.models.where(
     (e) =>
         (e.localPath.isNotEmpty || e.isRemote) &&
-        e.groups.overlaps({'chat', 'albatross', 'roleplay'}),
+        (e.groups.overlaps({'chat', 'albatross', 'roleplay'}) || e.isRemote),
   );
 
   void setModelProviders(List<ModelListProvider> providers) {

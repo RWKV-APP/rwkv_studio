@@ -84,7 +84,7 @@ class _MessageItem extends StatelessWidget {
             ),
           if (message.hasThinkContent && response.isNotEmpty)
             const SizedBox(height: 6),
-          if (response.isNotEmpty) content,
+          if (response.isNotEmpty || message.error.isNotEmpty) content,
         ],
       ),
     );

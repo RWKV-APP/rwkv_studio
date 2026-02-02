@@ -1,6 +1,6 @@
 part of 'setting_cubit.dart';
 
-class ServiceSettingState extends Equatable {
+class ModelSettingState extends Equatable {
   final List<RemoteService> remoteServices;
   final String modelListUrl;
   final List<ModelBackend> enabledBackends;
@@ -8,13 +8,13 @@ class ServiceSettingState extends Equatable {
   @override
   List<Object?> get props => [remoteServices, modelListUrl, enabledBackends];
 
-  ServiceSettingState({
+  ModelSettingState({
     required this.remoteServices,
     required this.modelListUrl,
     required this.enabledBackends,
   });
 
-  static final initial = ServiceSettingState(
+  static final initial = ModelSettingState(
     enabledBackends: ModelBackend.defaultBackends,
     remoteServices: [],
     modelListUrl:
@@ -29,11 +29,11 @@ class ServiceSettingState extends Equatable {
     };
   }
 
-  factory ServiceSettingState.fromMap(Map<String, dynamic>? map) {
+  factory ModelSettingState.fromMap(Map<String, dynamic>? map) {
     if (map == null) {
-      return ServiceSettingState.initial;
+      return ModelSettingState.initial;
     }
-    return ServiceSettingState(
+    return ModelSettingState(
       remoteServices:
           (map['remoteServices'] as Iterable?)
               ?.map((e) => RemoteService.fromMap(e as Map<String, dynamic>))
@@ -44,12 +44,12 @@ class ServiceSettingState extends Equatable {
     );
   }
 
-  ServiceSettingState copyWith({
+  ModelSettingState copyWith({
     List<RemoteService>? remoteServices,
     String? modelListUrl,
     List<ModelBackend>? enabledBackends,
   }) {
-    return ServiceSettingState(
+    return ModelSettingState(
       remoteServices: remoteServices ?? this.remoteServices,
       modelListUrl: modelListUrl ?? this.modelListUrl,
       enabledBackends: enabledBackends ?? this.enabledBackends,

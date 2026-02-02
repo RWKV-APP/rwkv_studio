@@ -16,6 +16,7 @@ part 'cache_setting_state.dart';
 part 'service_setting_state.dart';
 
 part 'setting_state.dart';
+part 'python_setting_state.dart';
 
 extension SettingStateExtension on BuildContext {
   SettingCubit get settings => BlocProvider.of<SettingCubit>(this);
@@ -30,7 +31,7 @@ class SettingCubit extends Cubit<SettingState> {
   }
 
   List<RemoteService> getEnabledRemoteServices() {
-    return state.service.remoteServices.where((e) => e.enabled).toList();
+    return state.model.remoteServices.where((e) => e.enabled).toList();
   }
 
   void reset() {
@@ -57,8 +58,8 @@ class SettingCubit extends Cubit<SettingState> {
     emit(state.copyWith(appearance: appearance));
   }
 
-  void setServiceSetting(ServiceSettingState service) {
-    emit(state.copyWith(service: service));
+  void setServiceSetting(ModelSettingState model) {
+    emit(state.copyWith(model: model));
   }
 
   Future setCacheSetting(CacheSettingState cache) async {

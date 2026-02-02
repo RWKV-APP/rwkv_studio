@@ -111,9 +111,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     await _syncModelConfig(instanceId, param, config);
     try {
       yield* instance.rwkv
-          .chat(
-            ChatParam(messages: message, model: instanceId, reasoning: 'high'),
-          )
+          .chat(ChatParam(messages: message, model: instanceId))
           .timeout(const Duration(seconds: 30));
     } catch (e, s) {
       loge(e);

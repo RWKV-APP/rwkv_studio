@@ -1,19 +1,21 @@
 part of 'setting_cubit.dart';
 
 class SettingState extends Equatable {
-  final ServiceSettingState service;
+  final ModelSettingState model;
   final AppearanceSettingState appearance;
   final CacheSettingState cache;
+  final PythonSettingState python;
 
   final bool initialized;
 
   @override
-  List<Object?> get props => [service, appearance, cache, initialized];
+  List<Object?> get props => [model, appearance, cache, python, initialized];
 
   SettingState({
     required this.appearance,
     required this.cache,
-    required this.service,
+    required this.model,
+    required this.python,
     required this.initialized,
   });
 
@@ -21,7 +23,8 @@ class SettingState extends Equatable {
     return SettingState(
       appearance: AppearanceSettingState.initial(),
       cache: CacheSettingState.initial(),
-      service: ServiceSettingState.initial,
+      model: ModelSettingState.initial,
+      python: PythonSettingState.initial(),
       initialized: false,
     );
   }
@@ -29,31 +32,35 @@ class SettingState extends Equatable {
   SettingState copyWith({
     AppearanceSettingState? appearance,
     CacheSettingState? cache,
-    ServiceSettingState? service,
+    ModelSettingState? model,
+    PythonSettingState? python,
     bool? initialized,
   }) {
     return SettingState(
       appearance: appearance ?? this.appearance,
       cache: cache ?? this.cache,
-      service: service ?? this.service,
+      model: model ?? this.model,
+      python: python ?? this.python,
       initialized: initialized ?? this.initialized,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'service': service.toMap(),
+      'model': model.toMap(),
       'appearance': appearance.toMap(),
+      'python': python.toMap(),
       'cache': cache.toMap(),
     };
   }
 
   factory SettingState.fromMap(Map<String, dynamic> map) {
     return SettingState(
-      service: ServiceSettingState.fromMap(map['service']),
+      model: ModelSettingState.fromMap(map['model']),
       appearance: AppearanceSettingState.fromMap(map['appearance']),
       cache: CacheSettingState.fromMap(map['cache']),
       initialized: true,
+      python: PythonSettingState.fromMap(map['python']),
     );
   }
 }

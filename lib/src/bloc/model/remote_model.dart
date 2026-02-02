@@ -10,18 +10,6 @@ extension Ext on ModelInfo {
   String get serviceId => (this as RemoteModelInfo).serviceId;
 }
 
-class RemoteModelProviderInfo {
-  final String name;
-  final String url;
-  final String serviceId;
-
-  RemoteModelProviderInfo({
-    required this.name,
-    required this.url,
-    required this.serviceId,
-  });
-}
-
 class RemoteModelInfo extends ModelInfo {
   String providerName = '';
   String serviceId = '';

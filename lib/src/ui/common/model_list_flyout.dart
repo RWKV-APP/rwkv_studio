@@ -21,11 +21,11 @@ class ModelListFlyout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final enabledBackends = context.settings.state.service.enabledBackends;
-
+    final modelSetting = context.settings.state.model;
     final availableModels = context.modelManage.availableTextModels.where(
       (e) =>
-          !e.tags.contains('translate') && enabledBackends.contains(e.backend),
+          !e.tags.contains('translate') &&
+          (modelSetting.enabledBackends.contains(e.backend) || e.isRemote),
     );
 
     ModelInstanceState? selectedInstance = context.rwkv.getModelInstance(
@@ -43,6 +43,7 @@ class ModelListFlyout extends StatelessWidget {
                 model: model,
                 selectedInstance: selectedInstance,
                 instanceId: loadedModels[model.id]?.id,
+                modelSetting: modelSetting,
               ),
             const MenuFlyoutSeparator(),
             MenuFlyoutItem(
@@ -68,6 +69,7 @@ class ModelListFlyout extends StatelessWidget {
     required ModelInfo model,
     required ModelInstanceState? selectedInstance,
     required String? instanceId,
+    required ModelSettingState modelSetting,
   }) {
     Widget? trailing;
     String name = model.name;
@@ -86,8 +88,11 @@ class ModelListFlyout extends StatelessWidget {
     }
 
     if (isRemote) {
-      name = "🔗$name";
-      tooltips = '${model.providerName} 远程模型, instanceId: $instanceId';
+      final s = modelSetting.remoteServices
+          .where((e) => e.id == model.serviceId)
+          .firstOrNull;
+      tooltips =
+          '${s?.name ?? model.providerName} 远程模型, instanceId: $instanceId';
     } else {
       tooltips = model.fileName;
     }
@@ -100,7 +105,9 @@ class ModelListFlyout extends StatelessWidget {
         message: tooltips,
         child: Row(
           children: [
-            ModelBackendBadge(backend: backend),
+            model.isRemote
+                ? const Icon(FluentIcons.link12)
+                : ModelBackendBadge(backend: backend),
             const SizedBox(width: 8),
             Text(name),
           ],

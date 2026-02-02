@@ -82,11 +82,19 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     }
   }
 
-  void toggleThinkMode() {
+  void toggleReasoningEnable() {
+    final effort =
+        state.generationConfig.reasoningEffort != ReasoningEffort.none
+        ? ReasoningEffort.none
+        : ReasoningEffort.high;
+    setReasoningMode(effort);
+  }
+
+  void setReasoningMode(ReasoningEffort effort) {
     emit(
       state.copyWith(
         generationConfig: state.generationConfig.copyWith(
-          chatReasoning: !state.generationConfig.chatReasoning,
+          reasoningEffort: effort,
         ),
       ),
     );
@@ -311,10 +319,28 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
               conversationId,
               (c) => c.copyWith(updateAt: DateTime.now()),
             );
-            emit(state.copyWith(generating: false));
+            var ns = state.copyWith(generating: false);
+            if (assistant.stopReason == StopReason.none) {
+              assistant = assistant.copyWith(stopReason: StopReason.unknown);
+              if (assistant.thinkEndTime <= 0) {
+                assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+              }
+              ns = ns.copyWith(
+                messages: {
+                  ...state.messages,
+                  conversationId: [...history, assistant],
+                },
+              );
+            }
+            logd('chat generation done: ${assistant.stopReason}');
+            emit(ns);
           },
           onError: (e, s) {
-            assistant = assistant.copyWith(error: e.toString());
+            loge(s);
+            assistant = assistant.copyWith(
+              error: "$e",
+              stopReason: StopReason.error,
+            );
             updateConversation(
               conversationId,
               (c) => c.copyWith(updateAt: DateTime.now()),

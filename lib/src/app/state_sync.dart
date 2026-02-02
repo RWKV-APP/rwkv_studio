@@ -54,11 +54,11 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
 
     modelManage.init(
       modelDir: setting.state.cache.modelDownloadDir,
-      configUrl: setting.state.service.modelListUrl,
+      configUrl: setting.state.model.modelListUrl,
     );
 
     if (mounted) {
-      _syncRemoteServiceList(context, setting.state.service.remoteServices);
+      _syncRemoteServiceList(context, setting.state.model.remoteServices);
     }
     _syncAppearance(setting.state.appearance);
   }
@@ -93,9 +93,9 @@ Widget _buildStateSyncListeners(Widget child) {
 
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) =>
-            p.service.remoteServices != c.service.remoteServices,
+            p.model.remoteServices != c.model.remoteServices,
         listener: (context, state) async {
-          _syncRemoteServiceList(context, state.service.remoteServices);
+          _syncRemoteServiceList(context, state.model.remoteServices);
         },
         child: const SizedBox(),
       ),

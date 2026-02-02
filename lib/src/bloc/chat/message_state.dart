@@ -25,7 +25,8 @@ class MessageState {
 
   bool get hasThinkContent => thinkEndAt > 8;
 
-  bool get thinking => thinkEndAt == text.length;
+  bool get thinking =>
+      thinkEndAt == text.length && stopReason == StopReason.none;
 
   String get thinkContent {
     return text.substring(0, thinkEndAt).replaceAll('<think>', '').trim();

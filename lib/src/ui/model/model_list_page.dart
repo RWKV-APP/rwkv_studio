@@ -35,7 +35,7 @@ class _ModelListPageState extends State<ModelListPage> {
   late final _controllerSearchChange = StreamController<String>();
   late final _controllerSearch = TextEditingController();
 
-  ModelInfo? _selectedModel;
+  String? _selectedModelId;
   List<ModelInfo> _allModels = [];
   List<ModelInfo> _showModels = [];
   List<String> _filters = [];
@@ -85,9 +85,9 @@ class _ModelListPageState extends State<ModelListPage> {
           e.tags.any((t) => t.toLowerCase().contains(keywords)) ||
           e.backend.name.toLowerCase().contains(keywords),
     );
-    final selected = m.any((e) => e.id == _selectedModel?.id);
+    final selected = m.any((e) => e.id == _selectedModelId);
     if (!selected) {
-      _selectedModel = null;
+      _selectedModelId = null;
     }
     _showModels = m.toList();
     sortModel();
@@ -106,9 +106,9 @@ class _ModelListPageState extends State<ModelListPage> {
           e.tags.any((t) => filters.contains(t)) ||
           e.groups.any((t) => filters.contains(t)),
     );
-    final selected = ms.any((e) => e.id == _selectedModel?.id);
+    final selected = ms.any((e) => e.id == _selectedModelId);
     if (!selected) {
-      _selectedModel = null;
+      _selectedModelId = null;
     }
     _showModels = ms.toList();
     sortModel();
@@ -249,10 +249,10 @@ class _ModelListPageState extends State<ModelListPage> {
                     Expanded(
                       child: ModelList(
                         models: _showModels,
-                        selectedModelId: _selectedModel?.id ?? '',
+                        selectedModelId: _selectedModelId ?? '',
                         onModelSelected: (model) {
                           setState(() {
-                            _selectedModel = model;
+                            _selectedModelId = model.id;
                           });
                         },
                       ),
@@ -263,11 +263,25 @@ class _ModelListPageState extends State<ModelListPage> {
               const Divider(direction: .vertical),
               Expanded(
                 flex: 5,
-                child: _selectedModel == null
+                child: _selectedModelId == null || _selectedModelId!.isEmpty
                     ? Center(
                         child: Text('未选择模型', style: AppTextStyle.bodySecondary),
                       )
-                    : ModelDetail(model: _selectedModel!),
+                    : BlocSelector<
+                        ModelManageCubit,
+                        ModelManageState,
+                        ModelInfo?
+                      >(
+                        selector: (state) => state.models
+                            .where((m) => m.id == _selectedModelId)
+                            .firstOrNull,
+                        builder: (context, state) {
+                          if (state == null) {
+                            return const SizedBox();
+                          }
+                          return ModelDetail(model: state);
+                        },
+                      ),
               ),
             ],
           ),

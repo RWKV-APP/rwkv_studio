@@ -9,6 +9,7 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/setting/_appearance_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/_behavior_setting.dart';
 import 'package:rwkv_studio/src/ui/setting/_model_settings.dart';
+import 'package:rwkv_studio/src/ui/setting/_python_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/service/_service_settings.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
 
@@ -72,10 +73,10 @@ class _SettingBody extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
-          buildWhen: (p, c) => p.service != c.service,
+          buildWhen: (p, c) => p.model != c.model,
           builder: (context, state) {
             return ModelSettings(
-              settings: state.service,
+              settings: state.model,
               onChanged: (v) {
                 context.settings.setServiceSetting(v);
               },
@@ -83,11 +84,13 @@ class _SettingBody extends StatelessWidget {
           },
         ),
         const SizedBox(height: 12),
+        PythonSettings(),
+        const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
-          buildWhen: (p, c) => p.service != c.service,
+          buildWhen: (p, c) => p.model != c.model,
           builder: (context, state) {
             return ServiceSettingCard(
-              setting: state.service,
+              setting: state.model,
               onChanged: (v) {
                 context.settings.setServiceSetting(v);
               },

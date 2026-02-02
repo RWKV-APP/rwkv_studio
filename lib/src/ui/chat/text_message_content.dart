@@ -63,7 +63,11 @@ class _MessageThinkState extends State<MessageThink> {
                     ),
                   if (widget.thinking) const SizedBox(width: 8),
                   Text(
-                    widget.thinking ? '正在思考...' : '思考完成 (用时 $thinkDuration 秒)',
+                    widget.thinking
+                        ? '正在思考...'
+                        : (thinkDuration <= 0 || thinkDuration > 180
+                              ? '思考完成'
+                              : '思考完成 (用时 $thinkDuration 秒)'),
                     style: TextStyle(color: Colors.grey[100]),
                   ),
                   if (!widget.thinking) const SizedBox(width: 8),

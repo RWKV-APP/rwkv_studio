@@ -15,6 +15,6 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void jump2ModelManage() {
-    emit(state.copyWith(pane: 8));
+    emit(state.copyWith(pane: 2));
   }
 }

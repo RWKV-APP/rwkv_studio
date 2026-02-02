@@ -53,7 +53,7 @@ class _Item extends StatelessWidget {
                   color: context.fluent.accentColor.lightest,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.all(6),
+                padding: const .all(6),
                 child: Icon(
                   WindowsIcons.message,
                   color: context.fluent.activeColor,
@@ -63,7 +63,7 @@ class _Item extends StatelessWidget {
               title: Padding(
                 padding: const .only(top: 8, bottom: 8, right: 12),
                 child: Text(
-                  conversation.title,
+                  conversation.title.isEmpty ? 'untitled' : conversation.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13),
@@ -109,7 +109,10 @@ void _showMenu(
               WindowsIcons.delete,
               color: Colors.errorPrimaryColor,
             ),
-            text: const Text('删除', style: TextStyle(color: Colors.errorPrimaryColor)),
+            text: const Text(
+              '删除',
+              style: TextStyle(color: Colors.errorPrimaryColor),
+            ),
             onPressed: () async {
               await context.chat.mayPause(context.rwkv);
               if (!context.mounted) return;

@@ -6,8 +6,8 @@ import 'package:rwkv_studio/src/utils/toast_util.dart';
 part '_add_service_button.dart';
 
 class ServiceSettingCard extends StatelessWidget {
-  final ServiceSettingState setting;
-  final ValueChanged<ServiceSettingState>? onChanged;
+  final ModelSettingState setting;
+  final ValueChanged<ModelSettingState>? onChanged;
 
   const ServiceSettingCard({super.key, required this.setting, this.onChanged});
 
@@ -153,9 +153,9 @@ class _TableHeader extends StatelessWidget {
 
 class _ServiceItem extends StatelessWidget {
   final RemoteService service;
-  final ServiceSettingState setting;
+  final ModelSettingState setting;
 
-  final ValueChanged<ServiceSettingState>? onChanged;
+  final ValueChanged<ModelSettingState>? onChanged;
 
   const _ServiceItem({
     required this.service,
