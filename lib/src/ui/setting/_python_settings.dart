@@ -63,7 +63,9 @@ class _PythonSettingsState extends State<PythonSettings> {
       _error = e.toString();
     }
     _loading = false;
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override

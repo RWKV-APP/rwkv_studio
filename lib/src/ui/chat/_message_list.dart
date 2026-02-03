@@ -10,26 +10,80 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/measure_size.dart';
 
-class ChatMessageList extends StatelessWidget {
+class ChatMessageList extends StatefulWidget {
   const ChatMessageList({super.key});
 
   @override
+  State<ChatMessageList> createState() => _ChatMessageListState();
+}
+
+class _ChatMessageListState extends State<ChatMessageList> {
+  final _scrollController = ScrollController();
+  String chatId = '';
+  List<MessageState> _messages = [];
+  bool _autoScrolling = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(() {
+      final max = _scrollController.position.maxScrollExtent;
+      final auto = (max - _scrollController.position.pixels) < 40;
+      if (auto != _autoScrolling) {
+        _autoScrolling = auto;
+        logd('auto scrolling=$auto');
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onConversationChanged(context.chat.state);
+    });
+  }
+
+  void _onConversationChanged(ChatState state) {
+    final list = state.messages[state.selected.id] ?? [];
+    setState(() {
+      chatId = state.selected.id;
+      _messages = list;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ChatCubit, ChatState>(
-      buildWhen: (p, c) => p.currentChat != c.currentChat,
-      builder: (context, state) {
-        final list = state.messages[state.selected.id] ?? [];
-        return ListView.builder(
-          itemCount: list.length,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          itemBuilder: (context, index) {
-            return _MessageItem(
-              message: list[index],
-              isLast: index == list.length - 1,
-            );
-          },
-        );
+    return BlocListener<ChatCubit, ChatState>(
+      listenWhen: (p, c) => p.currentChat != c.currentChat,
+      listener: (context, state) {
+        _onConversationChanged(state);
       },
+      child: ListView.builder(
+        key: PageStorageKey('message-$chatId'),
+        controller: _scrollController,
+        itemCount: _messages.length,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        itemBuilder: (context, i) {
+          final index = i;
+          final isLast = index == _messages.length - 1;
+          final item = _MessageItem(message: _messages[index], isLast: isLast);
+
+          if (isLast) {
+            return MeasureSize(
+              onChange: (v) {
+                if (_autoScrolling && context.chat.state.generating) {
+                  Scrollable.ensureVisible(
+                    context,
+                    duration: const Duration(milliseconds: 200),
+                    alignmentPolicy: .keepVisibleAtEnd,
+                  );
+                }
+              },
+              child: item,
+            );
+          }
+
+          return item;
+        },
+      ),
     );
   }
 }
@@ -101,21 +155,6 @@ class _MessageItem extends StatelessWidget {
     );
 
     box = _ContextMenu(message: message, child: box);
-
-    if (isLast) {
-      return MeasureSize(
-        onChange: (s) {
-          if (context.chat.state.generating) {
-            Scrollable.ensureVisible(
-              context,
-              duration: const Duration(milliseconds: 200),
-              alignmentPolicy: .keepVisibleAtEnd,
-            );
-          }
-        },
-        child: box,
-      );
-    }
     return box;
   }
 }
@@ -180,6 +219,7 @@ class _MessageItemFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final eos = message.stopReason == StopReason.eos;
     final paused = message.stopReason == StopReason.canceled;
+    final generating = message.stopReason == StopReason.none;
 
     return Row(
       children: [
@@ -190,14 +230,14 @@ class _MessageItemFooter extends StatelessWidget {
               context.chat.resume(context.rwkv).withToast(context);
             },
           ),
-        if (isLast)
+        if (isLast && !generating)
           IconButton(
             icon: const Icon(WindowsIcons.refresh),
             onPressed: () {
               context.chat.regenerate(context.rwkv).withToast(context);
             },
           ),
-        if (isLast) const SizedBox(width: 4),
+        if (isLast && !generating) const SizedBox(width: 4),
         Text(
           message.modelName,
           style: TextStyle(fontSize: 10, color: Colors.grey[80]),
