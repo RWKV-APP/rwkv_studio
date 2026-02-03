@@ -174,6 +174,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future regenerate(RwkvInterface rwkv) async {
+    if (state.generating) {
+      return;
+    }
     final convId = state.selected.id;
 
     final history = state.messages[convId]!;
@@ -263,7 +266,6 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     if (assistant.text.isNotEmpty) {
       messages.add(assistant.text);
     }
-    emit(state.copyWith(generating: true));
     bool thinkResolved = assistant.thinkEndAt < assistant.text.length;
     if (assistant.text.isNotEmpty && !assistant.text.startsWith('<')) {
       thinkResolved = true;
@@ -271,6 +273,17 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     }
     final conv = state.conversations.firstWhere((e) => e.id == conversationId);
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
+
+    assistant = assistant.copyWith(stopReason: StopReason.none);
+    emit(
+      state.copyWith(
+        generating: true,
+        messages: {
+          ...state.messages,
+          conversationId: [...history, assistant],
+        },
+      ),
+    );
     rwkv
         .chat(
           messages,
@@ -310,6 +323,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             );
             emit(
               state.copyWith(
+                generating: true,
                 messages: {
                   ...state.messages,
                   conversationId: [...history, assistant],

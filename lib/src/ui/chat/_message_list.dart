@@ -66,6 +66,11 @@ class _MessageItem extends StatelessWidget {
       content = TextMessageContent(content: response);
     }
 
+    final prefilling =
+        !message.hasThinkContent &&
+        message.bodyContent.isEmpty &&
+        !message.stopped;
+
     Widget box = _MessageBox(
       alignmentRight: message.isUser,
       footer: message.isUser
@@ -75,6 +80,12 @@ class _MessageItem extends StatelessWidget {
         mainAxisSize: .min,
         crossAxisAlignment: .start,
         children: [
+          if (prefilling)
+            const SizedBox(
+              height: 18,
+              width: 18,
+              child: ProgressRing(strokeWidth: 3),
+            ),
           if (message.hasThinkContent)
             MessageThink(
               content: message.thinkContent,

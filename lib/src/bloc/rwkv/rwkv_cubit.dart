@@ -112,7 +112,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     try {
       yield* instance.rwkv
           .chat(ChatParam(messages: message, model: instanceId))
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
     } catch (e, s) {
       loge(e);
       loge(s);

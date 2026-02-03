@@ -54,6 +54,7 @@ class _MessageThinkState extends State<MessageThink> {
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: Row(
+                mainAxisSize: .min,
                 children: [
                   if (widget.thinking)
                     const SizedBox(

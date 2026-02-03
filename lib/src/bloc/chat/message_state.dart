@@ -21,6 +21,8 @@ class MessageState {
   final StopReason stopReason;
   final Map<String, dynamic> extra;
 
+  bool get stopped => stopReason != StopReason.none;
+
   bool get isUser => role == 'user';
 
   bool get hasThinkContent => thinkEndAt > 8;
@@ -29,7 +31,11 @@ class MessageState {
       thinkEndAt == text.length && stopReason == StopReason.none;
 
   String get thinkContent {
-    return text.substring(0, thinkEndAt).replaceAll('<think>', '').trim();
+    return text
+        .substring(0, thinkEndAt)
+        .replaceFirst('<think>', '')
+        .replaceFirst('<think', '')
+        .trim();
   }
 
   String get bodyContent {
