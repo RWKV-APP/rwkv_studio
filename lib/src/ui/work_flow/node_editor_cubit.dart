@@ -20,7 +20,7 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
   void addNode(Offset position, NodePrototype proto) {
     final node = proto.create();
     double height = nodeHeaderHeight;
-    final rows = max(proto.inputs.length, proto.outputs.length);
+    final rows = max(node.allInputs.length, node.allOutputs.length);
     height += rows * (nodeSocketSpacing + nodeSocketSize) + nodeSocketSpacing;
     final card = NodeCardState(
       node: node,
@@ -88,8 +88,23 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
     final socket = _edgeSocketHitTest(pos);
     final old = state.editingEdge;
     if (socket == null) {
+      final controlTarget = _controlTargetForPosition(pos);
+      if (controlTarget == null) {
+        emit(
+          state.copyWith(editingEdge: old.copyWith(toPos: pos)..target = null),
+        );
+        return;
+      }
+      final card = state.cards[controlTarget.nodeId]!;
+      final toPos = card.getSocketPosition(controlTarget);
+      if (controlTarget.id == old.target?.id && toPos == old.toPos) {
+        return;
+      }
       emit(
-        state.copyWith(editingEdge: old.copyWith(toPos: pos)..target = null),
+        state.copyWith(
+          editingEdge:
+              state.editingEdge.copyWith(toPos: toPos)..target = controlTarget,
+        ),
       );
       return;
     }
@@ -124,6 +139,9 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
         fromSocket: from.id,
         targetSocket: to.id,
         color: state.editingEdge.color,
+        isControl:
+            from.prototype.type == NodeDataType.void_ ||
+            to.prototype.type == NodeDataType.void_,
       );
     }
     emit(
@@ -167,7 +185,8 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
   NodeSocket? _hitTestSocket(NodeCardState node, Offset position) {
     final isInput = state.editingEdge.linkInput;
     final from = state.editingEdge.from!;
-    for (final socket in isInput ? node.node.inputs : node.node.outputs) {
+    for (final socket
+        in isInput ? node.node.allInputs : node.node.allOutputs) {
       final connected = state.edges.values.where((e) {
         return e.targetNode == node.id && e.targetSocket == socket.id;
       }).isNotEmpty;
@@ -204,5 +223,26 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
       }
     }
     return null;
+  }
+
+  NodeControlIn? _controlTargetForPosition(Offset pos) {
+    if (!_isControlLink()) return null;
+    if (!state.editingEdge.linkInput) return null;
+    for (final card in state.cards.values) {
+      if (card.id == state.editingEdge.from?.nodeId) {
+        continue;
+      }
+      if (!card.bounds.contains(pos)) continue;
+      if (card.node.prototype.controlInputs.isNotEmpty) continue;
+      if (card.node.inputs.isEmpty) continue;
+      if (card.node.controlInputs.isEmpty) continue;
+      return card.node.controlInputs.first;
+    }
+    return null;
+  }
+
+  bool _isControlLink() {
+    final from = state.editingEdge.from;
+    return from?.prototype.type == NodeDataType.void_;
   }
 }

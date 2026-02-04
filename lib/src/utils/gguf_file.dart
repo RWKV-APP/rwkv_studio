@@ -130,7 +130,6 @@ class GgufFile {
         list.length = take;
 
         for (var i = 0; i < take; i++) {
-          // 数组元素本身“没有额外 type 字段”，按 elemType 解码
           final v = await _readValue(
             r,
             elemType,
@@ -139,7 +138,6 @@ class GgufFile {
           list[i] = v.value;
         }
 
-        // 如果你限制了 maxArrayElements，需要把剩余元素“跳过”
         for (var i = take; i < len; i++) {
           await _skipValue(r, elemType);
         }
@@ -151,7 +149,6 @@ class GgufFile {
   }
 
   static Future<void> _skipValue(_BinReader r, int type) async {
-    // 只用于“跳过数组剩余元素”，实现尽量完整一点
     int szOfScalar(int t) {
       switch (t) {
         case GgufValueType.uint8:
@@ -270,7 +267,7 @@ class _BinReader {
 
   Future<String> ggufString() async {
     final lenBI = await u64();
-    final len = lenBI.toInt(); // 现实里不会大到爆 int
+    final len = lenBI.toInt();
     if (len == 0) return '';
     final b = await readN(len);
     return utf8.decode(b, allowMalformed: true);

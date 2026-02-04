@@ -7,6 +7,7 @@ class EdgeState {
   final Color color;
   final String fromSocket;
   final String targetSocket;
+  final bool isControl;
 
   EdgeState({
     required this.from,
@@ -14,6 +15,7 @@ class EdgeState {
     required this.color,
     required this.fromSocket,
     required this.targetSocket,
+    required this.isControl,
   }) : id = '${from}_${targetNode}_${fromSocket}_$targetSocket';
 
   EdgeState copyWith({
@@ -22,6 +24,7 @@ class EdgeState {
     Color? color,
     String? fromSocket,
     String? toSocket,
+    bool? isControl,
   }) {
     return EdgeState(
       from: from ?? this.from,
@@ -29,6 +32,7 @@ class EdgeState {
       color: color ?? this.color,
       fromSocket: fromSocket ?? this.fromSocket,
       targetSocket: toSocket ?? targetSocket,
+      isControl: isControl ?? this.isControl,
     );
   }
 }
@@ -45,10 +49,16 @@ class NodeCardState {
   Map<NodeSocket, Offset> getSocketPositions(bool isInput) {
     final result = <NodeSocket, Offset>{};
     int index = 1;
-    final sockets = isInput ? node.inputs : node.outputs;
+    final sockets = isInput ? node.allInputs : node.allOutputs;
     for (final socket in sockets) {
       double dx = 0;
       double dy = 0;
+      if (_isAutoControlIn(socket)) {
+      dx = nodeSocketSize / 2;
+      dy = nodeHeaderHeight / 2;
+      result[socket] = bounds.topLeft + Offset(dx, dy);
+        continue;
+      }
       if (isInput) {
         dx = 0;
       } else {
@@ -62,12 +72,12 @@ class NodeCardState {
   }
 
   Offset getInputPosition(SocketId socketId) {
-    final socket = node.inputs.firstWhere((s) => s.id == socketId);
+    final socket = node.allInputs.firstWhere((s) => s.id == socketId);
     return getSocketPosition(socket);
   }
 
   Offset getOutputPosition(SocketId socketId) {
-    final socket = node.outputs.firstWhere((s) => s.id == socketId);
+    final socket = node.allOutputs.firstWhere((s) => s.id == socketId);
     return getSocketPosition(socket);
   }
 
@@ -75,12 +85,17 @@ class NodeCardState {
     double dx = 0;
     double dy = 0;
     int index = 0;
+    if (_isAutoControlIn(socket)) {
+      dx = nodeSocketSize / 2;
+      dy = nodeHeaderHeight / 2;
+      return bounds.topLeft + Offset(dx, dy);
+    }
     if (socket is NodeInput) {
       dx = nodeSocketSize / 2;
-      index = node.inputs.indexOf(socket) + 1;
+      index = node.allInputs.indexOf(socket) + 1;
     } else if (socket is NodeOutput) {
       dx = bounds.size.width - nodeSocketSize / 2;
-      index = node.outputs.indexOf(socket) + 1;
+      index = node.allOutputs.indexOf(socket) + 1;
     } else {
       throw UnimplementedError();
     }
@@ -89,12 +104,12 @@ class NodeCardState {
   }
 
   NodeSocket findSocket(SocketId socketId) {
-    for (final socket in node.inputs) {
+    for (final socket in node.allInputs) {
       if (socket.id == socketId) {
         return socket;
       }
     }
-    for (final socket in node.outputs) {
+    for (final socket in node.allOutputs) {
       if (socket.id == socketId) {
         return socket;
       }
@@ -113,12 +128,17 @@ class NodeCardState {
   Offset getSocketPositionFromIndex(int index, NodeSocket socket) {
     double dx = 0;
     double dy = 0;
+    if (_isAutoControlIn(socket)) {
+      dx = nodeSocketSize / 2;
+      dy = nodeHeaderHeight / 2;
+      return bounds.topLeft + Offset(dx, dy);
+    }
     if (socket is NodeInput) {
       dx = nodeSocketSize / 2;
-      index = node.inputs.indexOf(socket) + 1;
+      index = node.allInputs.indexOf(socket) + 1;
     } else if (socket is NodeOutput) {
       dx = bounds.size.width - nodeSocketSize / 2;
-      index = node.outputs.indexOf(socket) + 1;
+      index = node.allOutputs.indexOf(socket) + 1;
     } else {
       throw UnimplementedError();
     }
@@ -126,6 +146,12 @@ class NodeCardState {
     dy += (nodeSocketSpacing + nodeSocketSize) * index;
     dy -= nodeSocketSize / 2;
     return bounds.topLeft + Offset(dx, dy);
+  }
+
+  bool _isAutoControlIn(NodeSocket socket) {
+    return socket is NodeControlIn &&
+        node.prototype.controlInputs.isEmpty &&
+        node.inputs.isNotEmpty;
   }
 
   static String _newId() => '${DateTime.now().millisecondsSinceEpoch}';

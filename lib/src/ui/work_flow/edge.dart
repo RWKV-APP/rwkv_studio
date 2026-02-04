@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../node/data_type.dart';
 import 'node_editor_cubit.dart';
 
 class EditingEdge extends StatelessWidget {
@@ -18,6 +19,9 @@ class EditingEdge extends StatelessWidget {
               start: editing.linkInput ? editing.fromPos : editing.toPos,
               startColor: editing.color,
               endColor: editing.color,
+              isControl:
+                  editing.from?.prototype.type == NodeDataType.void_ ||
+                  editing.target?.prototype.type == NodeDataType.void_,
             ),
           );
         } else {
@@ -34,10 +38,11 @@ class NodeEdgeCustomPainter extends CustomPainter {
   final Color startColor;
 
   final Color endColor;
+  final bool isControl;
 
   late final _paint = Paint()
     ..color = startColor
-    ..strokeWidth = 2
+    ..strokeWidth = isControl ? 1.2 : 2
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round;
 
@@ -50,17 +55,41 @@ class NodeEdgeCustomPainter extends CustomPainter {
     required this.end,
     required this.startColor,
     required this.endColor,
+    this.isControl = false,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-      Path()
-        ..moveTo(start.dx, start.dy - 2)
-        ..quadraticBezierTo(start.dx + offset, start.dy, center.dx, center.dy)
-        ..quadraticBezierTo(end.dx - offset, end.dy - 1, end.dx, end.dy - 1),
-      _paint,
-    );
+    final path = Path()
+      ..moveTo(start.dx, start.dy - 2)
+      ..quadraticBezierTo(start.dx + offset, start.dy, center.dx, center.dy)
+      ..quadraticBezierTo(end.dx - offset, end.dy - 1, end.dx, end.dy - 1);
+    if (!isControl) {
+      canvas.drawPath(path, _paint);
+      return;
+    }
+    _drawDashedPath(canvas, path, _paint, 6, 6);
+  }
+
+  void _drawDashedPath(
+    Canvas canvas,
+    Path path,
+    Paint paint,
+    double dashLength,
+    double gapLength,
+  ) {
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = distance + dashLength;
+        final extract = metric.extractPath(
+          distance,
+          next.clamp(0, metric.length),
+        );
+        canvas.drawPath(extract, paint);
+        distance = next + gapLength;
+      }
+    }
   }
 
   @override
@@ -68,5 +97,6 @@ class NodeEdgeCustomPainter extends CustomPainter {
       oldDelegate.start != start ||
       oldDelegate.end != end ||
       oldDelegate.startColor != startColor ||
-      oldDelegate.endColor != endColor;
+      oldDelegate.endColor != endColor ||
+      oldDelegate.isControl != isControl;
 }

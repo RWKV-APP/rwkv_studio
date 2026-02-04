@@ -72,7 +72,7 @@ class MainPage extends StatelessWidget {
         selected: state.pane,
         displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
-          if ({12, 7, 3}.contains(i)) {
+          if ({12, 7, 4}.contains(i)) {
             return;
           }
           context.app.setPane(i);

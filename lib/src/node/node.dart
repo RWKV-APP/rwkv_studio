@@ -126,6 +126,10 @@ class NodePrototype {
     final now = DateTime.now().millisecondsSinceEpoch;
     final seq = _globalSeq++;
     final nodeId = '${name}_${now}_$seq';
+    final effectiveControlInputs =
+        controlInputs.isEmpty && inputs.isNotEmpty
+            ? [ControlPrototype(name: 'in')]
+            : controlInputs;
     var socketSeq = 0;
     return Node(
       id: nodeId,
@@ -147,7 +151,7 @@ class NodePrototype {
             ),
           )
           .toList(),
-      controlInputs: controlInputs
+      controlInputs: effectiveControlInputs
           .map(
             (def) => NodeControlIn(
               nodeId: nodeId,

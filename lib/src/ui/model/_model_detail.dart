@@ -93,7 +93,6 @@ class ModelDetail extends StatelessWidget {
                 if (model.fileSize > 0) _buildLabel("文件大小: $fileSize"),
                 if (model.sha256.isNotEmpty)
                   _buildLabel("SHA256: ${model.sha256}"),
-                // _buildLabel("路径: ${model.url}"),
                 if (model.localPath.isNotEmpty)
                   _buildLabel("文件路径: ${model.localPath}"),
                 _buildLabel(

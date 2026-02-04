@@ -8,3 +8,4 @@ export 'cache.dart';
 export 'compiler.dart';
 export 'scheduler.dart';
 export 'protypes.dart';
+export 'loop.dart';

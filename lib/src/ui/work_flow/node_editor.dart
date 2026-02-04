@@ -125,6 +125,7 @@ class NodeEditor extends StatelessWidget {
                       ),
                       startColor: edge.color,
                       endColor: edge.color,
+                      isControl: edge.isControl,
                     ),
                   ),
               ],
@@ -148,7 +149,17 @@ class NodeEditor extends StatelessWidget {
                     top: card.bounds.top,
                     width: card.bounds.width,
                     height: card.bounds.height,
-                    child: NodeCardView(card: card),
+                    child: NodeCardView(
+                      card: card,
+                      connectedInputs: state.edges.values
+                          .where((e) => e.targetNode == card.id)
+                          .map((e) => e.targetSocket)
+                          .toSet(),
+                      connectedOutputs: state.edges.values
+                          .where((e) => e.from == card.id)
+                          .map((e) => e.fromSocket)
+                          .toSet(),
+                    ),
                   ),
               ],
             );

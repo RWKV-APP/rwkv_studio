@@ -279,7 +279,8 @@ class Scheduler {
       ctx.setValue(
         'inputs',
         Map<String, Value>.from(session.nodeStates[node.id]!.inputs),
-    );
+      );
+      ctx.setValue('node', node);
       ctx.setValue('params', node.params);
       ctx.setValue('token', task.token);
       ctx.setValue('cancel', session.cancel);

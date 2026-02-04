@@ -16,6 +16,11 @@ List<NavigationPaneItem> buildNavItems(BuildContext context) => [
     title: const Text('模型管理'),
     body: const ModelListPage(),
   ),
+  PaneItem(
+    icon: const WindowsIcon(WindowsIcons.apps),
+    title: const Text('模型管理'),
+    body: const WorkFlowPage(),
+  ),
 ];
 
 List<NavigationPaneItem> _buildNavItems(BuildContext context) => [
