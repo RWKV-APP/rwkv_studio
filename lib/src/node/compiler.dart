@@ -38,12 +38,59 @@ class Compiler {
       final edge = entry.value;
       final out = edge.fromNodeId;
       final in_ = edge.toNodeId;
+      final outNode = group.nodes[out];
+      final inNode = group.nodes[in_];
+      if (outNode == null) {
+        throw StateError('Edge ${edge.id} references missing fromNodeId: $out');
+      }
+      if (inNode == null) {
+        throw StateError('Edge ${edge.id} references missing toNodeId: $in_');
+      }
+
       if (edge.kind == EdgeKind.data) {
+        final hasOut = outNode.outputs.any((o) => o.id == edge.fromSocket);
+        if (!hasOut) {
+          throw StateError(
+            'Edge ${edge.id} references missing data output: ${edge.fromSocket}',
+          );
+        }
+        final hasIn = inNode.inputs.any((i) => i.id == edge.toSocket);
+        if (!hasIn) {
+          throw StateError(
+            'Edge ${edge.id} references missing data input: ${edge.toSocket}',
+          );
+        }
+        if (inDataByPort[in_]?.containsKey(edge.toSocket) ?? false) {
+          throw StateError(
+            'Multiple data edges for input ${edge.toSocket} on node $in_',
+          );
+        }
         outData[out] ??= [];
         outData[out]!.add(edge);
         inDataByPort[in_] ??= {};
         inDataByPort[in_]![edge.toSocket] = edge;
       } else {
+        if (outNode.controlOutputs.isNotEmpty) {
+          final outMatches = outNode.controlOutputs.any(
+            (o) =>
+                o.id == edge.fromSocket || o.prototype.name == edge.fromSocket,
+          );
+          if (!outMatches) {
+            throw StateError(
+              'Edge ${edge.id} references missing control output: ${edge.fromSocket}',
+            );
+          }
+        }
+        if (inNode.controlInputs.isNotEmpty) {
+          final inMatches = inNode.controlInputs.any(
+            (i) => i.id == edge.toSocket || i.prototype.name == edge.toSocket,
+          );
+          if (!inMatches) {
+            throw StateError(
+              'Edge ${edge.id} references missing control input: ${edge.toSocket}',
+            );
+          }
+        }
         outControl[out] ??= [];
         outControl[out]!.add(edge);
         inControl[in_] ??= [];
@@ -53,7 +100,7 @@ class Compiler {
 
     for (final entry in group.nodes.entries) {
       final node = entry.value;
-      if (node.inputs.isEmpty) {
+      if (node.inputs.isEmpty && node.controlInputs.isEmpty) {
         entryNodes.add(node.id);
       }
     }
@@ -74,6 +121,6 @@ class Compiler {
   }
 
   void _validate(RunPlan plan) {
-    // check topo
+    // TODO: topology and cycle checks.
   }
 }

@@ -29,23 +29,6 @@ class Registry {
 
 void test() {
   final registry = Registry();
-  final context = NodeContext();
-
-  final startDef = NodePrototype(
-    executor: const NodeExecutor(),
-    name: 'Start',
-    description: 'Start node',
-    inputs: [
-      //
-    ],
-    outputs: [
-      SocketPrototype(
-        name: 'output',
-        description: 'Output',
-        type: NodeDataType.int,
-      ),
-    ],
-  );
 
   final testDef = NodePrototype(
     name: 'Math.add',
@@ -80,7 +63,7 @@ void test() {
   final group = NodeGroupPrototype.instance.create();
   group.addNode(node1);
   group.addNode(node2);
-  group.connect(node1.outputs[0], node2.inputs[0]);
+  group.connectData(node1.outputs[0], node2.inputs[0]);
 
   final engine = NodeEngine.def();
   engine.run(group);

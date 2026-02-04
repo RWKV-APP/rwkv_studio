@@ -75,12 +75,12 @@ class Scheduler {
     _done = Completer<RunResult>();
 
     for (final entry in plan.entryNodes) {
-      onControlToken(
-        plan,
-        session,
+      final st = session.nodeStates[entry]!;
+      st.controlQueue.add(
         Token(id: _nextTokenId(), from: '__entry__', to: entry),
-    );
+      );
     }
+    
     for (final entry in plan.nodes.entries) {
       final node = entry.value;
       if (node.inputs.isEmpty) continue;
@@ -90,8 +90,12 @@ class Scheduler {
       if (st.missingRequired.isEmpty && st.controlQueue.isEmpty) {
         st.controlQueue.add(
           Token(id: _nextTokenId(), from: '__auto__', to: node.id),
-    );
+        );
       }
+    }
+    
+    for (final entry in plan.nodes.entries) {
+      _maybeEnqueue(plan, session, entry.key, pump: false);
     }
 
     _pump(plan, session);
@@ -130,7 +134,7 @@ class Scheduler {
     _maybeEnqueue(plan, session, nodeId);
   }
 
-  void _maybeEnqueue(RunPlan plan, RunSession session, NodeId nodeId) {
+  void _maybeEnqueue(RunPlan plan, RunSession session, NodeId nodeId, {bool pump = true}) {
     final st = session.nodeStates[nodeId]!;
     if (st.closed || st.running) return;
     if (st.controlQueue.isEmpty) return;
@@ -138,7 +142,9 @@ class Scheduler {
 
     final token = st.controlQueue.removeFirst();
     _ready.add(Task(nodeId: nodeId, token: token, attempt: st.attempt));
-    _pump(plan, session);
+    if (pump) {
+      _pump(plan, session);
+    }
   }
 
   void _pump(RunPlan plan, RunSession session) {
@@ -164,8 +170,8 @@ class Scheduler {
   }
 
   Future<void> _runTask(RunPlan plan, RunSession session, Task task) async {
-    await _sem.acquire();
     _running++;
+    await _sem.acquire();
 
     final st = session.nodeStates[task.nodeId]!;
     if (st.closed || session.cancel.isCancelled) {
@@ -684,9 +690,20 @@ class Scheduler {
     final outEdges = plan.outControl[fromNodeId] ?? const <NodeEdge>[];
     if (outEdges.isEmpty) return;
 
+    final node = plan.nodes[fromNodeId];
     for (final em in emissions) {
+      final matchKeys = <String>{em.port};
+      if (node != null) {
+        for (final out in node.controlOutputs) {
+          if (out.prototype.name == em.port) {
+            matchKeys.add(out.id);
+          } else if (out.id == em.port) {
+            matchKeys.add(out.prototype.name);
+          }
+        }
+      }
       for (final e in outEdges) {
-        if (e.fromSocket != em.port) continue;
+        if (!matchKeys.contains(e.fromSocket)) continue;
         onControlToken(
           plan,
           session,

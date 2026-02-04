@@ -97,6 +97,8 @@ class NodePrototype {
   final String description;
   final List<SocketPrototype> inputs;
   final List<SocketPrototype> outputs;
+  final List<ControlPrototype> controlInputs;
+  final List<ControlPrototype> controlOutputs;
 
   final Duration timeout;
   final NodeSemantics semantics;
@@ -107,8 +109,10 @@ class NodePrototype {
   NodePrototype({
     required this.name,
     required this.description,
-    required this.inputs,
-    required this.outputs,
+    this.inputs = const [],
+    this.outputs = const [],
+    this.controlInputs = const [],
+    this.controlOutputs = const [],
     required this.executor,
     this.policy = const PolicyConfigurations(),
     this.dispatchType = NodeDispatchType.sync,
@@ -116,9 +120,12 @@ class NodePrototype {
     this.semantics = NodeSemantics.pure,
   });
 
+  static int _globalSeq = 0;
+
   Node create() {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final nodeId = '${name}_$now';
+    final seq = _globalSeq++;
+    final nodeId = '${name}_${now}_$seq';
     var socketSeq = 0;
     return Node(
       id: nodeId,
@@ -140,6 +147,24 @@ class NodePrototype {
             ),
           )
           .toList(),
+      controlInputs: controlInputs
+          .map(
+            (def) => NodeControlIn(
+              nodeId: nodeId,
+              id: '${nodeId}_${def.name}_${socketSeq++}',
+              name: def.name,
+            ),
+          )
+          .toList(),
+      controlOutputs: controlOutputs
+          .map(
+            (def) => NodeControlOut(
+              nodeId: nodeId,
+              id: '${nodeId}_${def.name}_${socketSeq++}',
+              name: def.name,
+            ),
+          )
+          .toList(),
       prototype: this,
     );
   }
@@ -149,42 +174,43 @@ class Node {
   final NodeId id;
   final List<NodeInput> inputs;
   final List<NodeOutput> outputs;
+  final List<NodeControlIn> controlInputs;
+  final List<NodeControlOut> controlOutputs;
   final NodePrototype prototype;
   final Map<String, dynamic> params;
 
   NodeSocket getSocketById(SocketId id) =>
       outputs.firstWhere((socket) => socket.id == id);
 
+  List<NodeSocket> get allInputs => [...inputs, ...controlInputs];
+
+  List<NodeSocket> get allOutputs => [...outputs, ...controlOutputs];
+
   Node({
     required this.id,
-    required this.inputs,
-    required this.outputs,
+    this.inputs = const [],
+    this.outputs = const [],
+    this.controlInputs = const [],
+    this.controlOutputs = const [],
     required this.prototype,
     Map<String, dynamic>? params,
   }) : params = params ?? {};
 }
 
 class NodeGroupPrototype extends NodePrototype {
-  NodeGroupPrototype._({
-    super.name = 'NodeGroup',
-    super.description = 'NodeGroup',
-    required super.inputs,
-    required super.outputs,
-    required super.executor,
-  });
+  NodeGroupPrototype._()
+    : super(
+        name: 'NodeGroup',
+        description: 'NodeGroup',
+        executor: const NodeExecutor(),
+      );
 
-  static NodeGroupPrototype instance = NodeGroupPrototype._(
-    inputs: [],
-    outputs: [],
-    executor: const NodeExecutor(),
-  );
+  static NodeGroupPrototype instance = NodeGroupPrototype._();
 
   @override
   NodeGroup create() {
     return NodeGroup(
       id: '${name}_${DateTime.now().millisecondsSinceEpoch}',
-      inputs: [],
-      outputs: [],
       prototype: this,
     );
   }
@@ -194,6 +220,8 @@ class OutputNode extends Node {
   OutputNode({
     required super.id,
     required super.inputs,
+    super.controlInputs = const [],
+    super.controlOutputs = const [],
     required super.prototype,
   }) : super(outputs: const []);
 }
@@ -202,6 +230,8 @@ class InputNode extends Node {
   InputNode({
     required super.id,
     required super.outputs,
+    super.controlInputs = const [],
+    super.controlOutputs = const [],
     required super.prototype,
   }) : super(inputs: const []);
 }
@@ -239,8 +269,10 @@ class NodeGroup extends Node {
 
   NodeGroup({
     required super.id,
-    required super.inputs,
-    required super.outputs,
+    super.inputs = const [],
+    super.outputs = const [],
+    super.controlInputs = const [],
+    super.controlOutputs = const [],
     required super.prototype,
   }) : _nodes = {},
        _edges = {};
@@ -249,11 +281,22 @@ class NodeGroup extends Node {
     _nodes[node.id] = node;
   }
 
+  void removeNode(NodeId nodeId) {
+    final node = _nodes.remove(nodeId);
+    if (node == null) return;
+    _edges.removeWhere((_, edge) => 
+      edge.fromNodeId == nodeId || edge.toNodeId == nodeId);
+  }
+
   void addEdge(NodeEdge edge) {
     _edges[edge.id] = edge;
   }
 
-  void connect(NodeOutput output, NodeInput input) {
+  void removeEdge(String edgeId) {
+    _edges.remove(edgeId);
+  }
+
+  void connectData(NodeOutput output, NodeInput input) {
     final edge = NodeEdge(
       id: '${input.id}_${output.id}_${DateTime.now().millisecondsSinceEpoch}',
       fromNodeId: output.nodeId,
@@ -263,5 +306,27 @@ class NodeGroup extends Node {
       toSocket: input.id,
     );
     addEdge(edge);
+  }
+
+  void connectControl(NodeControlOut output, NodeControlIn input) {
+    final fromPort = output.prototype.name;
+    final toPort = input.prototype.name;
+    final edge = NodeEdge(
+      id: '${input.id}_${output.id}_${DateTime.now().millisecondsSinceEpoch}',
+      fromNodeId: output.nodeId,
+      toNodeId: input.nodeId,
+      kind: EdgeKind.control,
+      fromSocket: fromPort,
+      toSocket: toPort,
+    );
+    addEdge(edge);
+  }
+
+  void disconnectInput(SocketId inputId) {
+    _edges.removeWhere((_, edge) => edge.toSocket == inputId);
+  }
+
+  void disconnectOutput(SocketId outputId) {
+    _edges.removeWhere((_, edge) => edge.fromSocket == outputId);
   }
 }

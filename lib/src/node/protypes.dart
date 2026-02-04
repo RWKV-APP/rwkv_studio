@@ -4,32 +4,25 @@ class StartNodePrototype extends NodePrototype {
   StartNodePrototype._({
     super.name = 'Start',
     super.description = 'Start',
-    required super.inputs,
-    required super.outputs,
+    required super.controlOutputs,
     required super.executor,
   });
 
   static StartNodePrototype instance = StartNodePrototype._(
-    inputs: [],
-    outputs: [ControlPrototype(name: 'entry')],
+    controlOutputs: [ControlPrototype(name: 'entry')],
     executor: const NodeExecutor(),
   );
 }
 
 class LoopNodePrototype extends NodePrototype {
-  LoopNodePrototype._({
-    super.name = 'Loop',
-    super.description = 'Loop',
-    required super.inputs,
-    required super.outputs,
-    required super.executor,
-  });
+  LoopNodePrototype._()
+    : super(
+        name: 'Loop',
+        description: 'Loop',
+        executor: const NodeExecutor(),
+      );
 
-  static LoopNodePrototype instance = LoopNodePrototype._(
-    inputs: [],
-    outputs: [],
-    executor: const NodeExecutor(),
-  );
+  static LoopNodePrototype instance = LoopNodePrototype._();
 }
 
 class BranchNodePrototype extends NodePrototype {
@@ -37,7 +30,8 @@ class BranchNodePrototype extends NodePrototype {
     super.name = 'Branch',
     super.description = 'Branch',
     required super.inputs,
-    required super.outputs,
+    required super.controlInputs,
+    required super.controlOutputs,
     required super.executor,
   });
 
@@ -49,9 +43,10 @@ class BranchNodePrototype extends NodePrototype {
         type: NodeDataType.bool,
       ),
     ],
-    outputs: [
-      SocketPrototype(name: 'true', description: '', type: NodeDataType.any),
-      SocketPrototype(name: 'false', description: '', type: NodeDataType.any),
+    controlInputs: [ControlPrototype(name: 'in')],
+    controlOutputs: [
+      ControlPrototype(name: 'true'),
+      ControlPrototype(name: 'false'),
     ],
     executor: const NodeExecutor(),
   );
