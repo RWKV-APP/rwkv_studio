@@ -10,7 +10,7 @@ class StartNodePrototype extends NodePrototype {
 
   static StartNodePrototype instance = StartNodePrototype._(
     controlOutputs: [ControlPrototype(name: 'entry')],
-    executor: const NodeExecutor(),
+    executor: const _StartExecutor(),
   );
 }
 
@@ -46,6 +46,48 @@ class LoopNodePrototype extends NodePrototype {
   static LoopNodePrototype instance = LoopNodePrototype._();
 }
 
+class EndNodePrototype extends NodePrototype {
+  EndNodePrototype._({
+    super.name = 'End',
+    super.description = 'End',
+    required super.inputs,
+    required super.controlInputs,
+    required super.executor,
+  });
+
+  static EndNodePrototype instance = EndNodePrototype._(
+    inputs: [
+      SocketPrototype(
+        name: 'value',
+        description: 'Value',
+        type: NodeDataType.any,
+      ),
+    ],
+    controlInputs: [ControlPrototype(name: 'in')],
+    executor: const _EndExecutor(),
+  );
+}
+
+class _StartExecutor extends NodeExecutor {
+  const _StartExecutor();
+
+  @override
+  NodeExecution execute(NodeContext ctx) {
+    return NodeExecution(
+      result: const NodeSuccess({}, control: [ControlEmission(port: 'entry')]),
+    );
+  }
+}
+
+class _EndExecutor extends NodeExecutor {
+  const _EndExecutor();
+
+  @override
+  NodeExecution execute(NodeContext ctx) {
+    return NodeExecution(result: const NodeSuccess({}));
+  }
+}
+
 class _ConstExecutor extends NodeExecutor {
   const _ConstExecutor();
 
@@ -56,9 +98,7 @@ class _ConstExecutor extends NodeExecutor {
     final raw = params['value'];
     final type = params['type'] as NodeDataType? ?? NodeDataType.any;
     final value = raw is Value ? raw : Value(data: raw, type: type, meta: null);
-    return NodeExecution(
-      result: NodeSuccess({node.outputs[0].id: value}),
-    );
+    return NodeExecution(result: NodeSuccess({node.outputs[0].id: value}));
   }
 }
 
@@ -217,11 +257,7 @@ class CommonNodePrototypes {
         name: 'op',
         description: 'Operator (+, -, *, /)',
         type: NodeDataType.string,
-        defaultValue: Value(
-          data: '+',
-          type: NodeDataType.string,
-          meta: null,
-        ),
+        defaultValue: Value(data: '+', type: NodeDataType.string, meta: null),
       ),
     ],
     outputs: [
@@ -232,7 +268,6 @@ class CommonNodePrototypes {
       ),
     ],
   );
-
 
   static final boolOp = NodePrototype(
     name: 'BoolOp',
@@ -245,11 +280,7 @@ class CommonNodePrototypes {
         name: 'condition',
         description: '== != > >= < <= and or not',
         type: NodeDataType.string,
-        defaultValue: Value(
-          data: '==',
-          type: NodeDataType.string,
-          meta: null,
-        ),
+        defaultValue: Value(data: '==', type: NodeDataType.string, meta: null),
       ),
     ],
     outputs: [

@@ -142,6 +142,19 @@ class RuntimeNodeState {
       final s = RuntimeNodeState(required: requiredInputs);
       for (final p in node.inputs) {
         final hasIncoming = (plan.inDataByPort[id]?.containsKey(p.id) ?? false);
+        final manualInputs =
+            node.params['inputValues'] as Map<String, dynamic>?;
+        if (!hasIncoming &&
+            manualInputs != null &&
+            manualInputs.containsKey(p.id)) {
+          final raw = manualInputs[p.id];
+          final v = raw is Value
+              ? raw
+              : Value(data: raw, type: p.prototype.type, meta: null);
+          s.inputs[p.id] = v;
+          s.missingRequired.remove(p.id);
+          continue;
+        }
         final defaultValue = p.prototype.defaultValue;
         if (!hasIncoming && defaultValue != null) {
           s.inputs[p.id] = defaultValue;

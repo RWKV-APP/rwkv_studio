@@ -3,6 +3,8 @@ import 'package:rwkv_studio/src/node/export.dart';
 class NodePrototypes {
   static List<NodePrototype> get list => [
     ...CommonNodePrototypes.list,
+    StartNodePrototype.instance,
+    EndNodePrototype.instance,
     llamaCppLoad,
     LoopNodePrototype.instance,
     BranchNodePrototype.instance,

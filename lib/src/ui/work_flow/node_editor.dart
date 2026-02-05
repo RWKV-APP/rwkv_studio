@@ -4,7 +4,7 @@ import 'package:rwkv_studio/src/ui/work_flow/edge.dart';
 import 'package:rwkv_studio/src/ui/work_flow/node_editor_cubit.dart';
 import 'package:rwkv_studio/src/ui/work_flow/node_prototypes.dart';
 
-import 'node_card.dart';
+import 'node/node_card.dart';
 
 class NodeEditor extends StatelessWidget {
   final focusNode = FocusNode();
@@ -90,6 +90,14 @@ class NodeEditor extends StatelessWidget {
                         },
                         icon: const Icon(Icons.link),
                       ),
+                      const SizedBox(height: 8),
+                      IconButton.filledTonal(
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          context.editorCubit.run();
+                        },
+                        icon: const Icon(Icons.play_arrow_rounded),
+                      ),
                     ],
                   ),
                 ),
@@ -154,10 +162,6 @@ class NodeEditor extends StatelessWidget {
                       connectedInputs: state.edges.values
                           .where((e) => e.targetNode == card.id)
                           .map((e) => e.targetSocket)
-                          .toSet(),
-                      connectedOutputs: state.edges.values
-                          .where((e) => e.from == card.id)
-                          .map((e) => e.fromSocket)
                           .toSet(),
                     ),
                   ),

@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/node/export.dart';
-import 'package:rwkv_studio/src/ui/work_flow/node_card.dart';
+import 'package:rwkv_studio/src/ui/work_flow/node/node_card_style.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'node_editor_state.dart';
@@ -19,9 +19,20 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
 
   void addNode(Offset position, NodePrototype proto) {
     final node = proto.create();
+    if (proto.name == 'Const') {
+      node.params['type'] = NodeDataType.any;
+      node.params['value'] = Value(
+        data: NodeDataType.any.defaultValue,
+        type: NodeDataType.any,
+        meta: null,
+      );
+    }
     double height = nodeHeaderHeight;
     final rows = max(node.allInputs.length, node.allOutputs.length);
     height += rows * (nodeSocketSpacing + nodeSocketSize) + nodeSocketSpacing;
+    if (proto.name == 'Const') {
+      height += nodeConstControlsHeight;
+    }
     final card = NodeCardState(
       node: node,
       bounds: Rect.fromLTWH(position.dx, position.dy, 200, height),
@@ -37,6 +48,100 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
 
   void link() {
     //
+  }
+
+  void run() {
+    final group = NodeGroupPrototype.instance.create();
+    for (final card in state.cards.values) {
+      group.addNode(card.node);
+    }
+
+    NodeSocket? findSocket(NodeCardState card, String socketId) {
+      for (final socket in card.node.allInputs) {
+        if (socket.id == socketId) {
+          return socket;
+        }
+      }
+      for (final socket in card.node.allOutputs) {
+        if (socket.id == socketId) {
+          return socket;
+        }
+      }
+      return null;
+    }
+
+    for (final edge in state.edges.values) {
+      final fromCard = state.cards[edge.from];
+      final toCard = state.cards[edge.targetNode];
+      if (fromCard == null || toCard == null) {
+        logw('edge ${edge.id} skipped: missing node');
+        continue;
+      }
+      final fromSocket = findSocket(fromCard, edge.fromSocket);
+      final toSocket = findSocket(toCard, edge.targetSocket);
+      if (fromSocket == null || toSocket == null) {
+        logw('edge ${edge.id} skipped: missing socket');
+        continue;
+      }
+      if (edge.isControl) {
+        if (fromSocket is NodeControlOut && toSocket is NodeControlIn) {
+          group.connectControl(fromSocket, toSocket);
+        } else {
+          logw('edge ${edge.id} skipped: control socket mismatch');
+        }
+        continue;
+      }
+      if (fromSocket is NodeOutput && toSocket is NodeInput) {
+        group.connectData(fromSocket, toSocket);
+      } else {
+        logw('edge ${edge.id} skipped: data socket mismatch');
+      }
+    }
+
+    emit(state.copyWith(group: group));
+
+    logi(
+      'node graph run start nodes=${group.nodes.length} edges=${group.edges.length}',
+    );
+    final handle = state.engine.run(group);
+    handle.subscribe((event) {
+      switch (event) {
+        case NodeStartEvent e:
+          logd('node start ${e.nodeId} attempt=${e.attempt}');
+        case NodeSuccessEvt e:
+          logd(
+            'node success ${e.nodeId} streaming=${e.streaming} index=${e.streamIndex}',
+          );
+        case NodeSuspendEvt e:
+          logd('node suspend ${e.nodeId}');
+        case NodeResumeEvt e:
+          logd('node resume ${e.nodeId}');
+        case NodeFailEvt e:
+          logw('node fail ${e.nodeId} retryable=${e.retryable} ${e.error}');
+        case NodeEndEvent e:
+          logd(
+            'node end ${e.nodeId} success=${e.success} duration=${e.duration.inMilliseconds}ms',
+          );
+      }
+    });
+    handle.done.then((result) {
+      if (result.ok) {
+        logi('node graph run finished');
+      } else {
+        loge('node graph run failed: ${result.error}');
+      }
+    });
+  }
+
+  void updateNodeParams(NodeId nodeId, Map<String, dynamic> params) {
+    final card = state.cards[nodeId];
+    if (card == null) return;
+    final updated = _copyNodeWithParams(card.node, params);
+    emit(
+      state.copyWith(
+        cards: {...state.cards, nodeId: card.copyWith(node: updated)},
+      ),
+    );
   }
 
   void startLink(NodeSocket socket, Offset position) {
@@ -244,5 +349,35 @@ class NodeEditorCubit extends Cubit<NodeEditorState> {
   bool _isControlLink() {
     final from = state.editingEdge.from;
     return from?.prototype.type == NodeDataType.void_;
+  }
+
+  Node _copyNodeWithParams(Node node, Map<String, dynamic> params) {
+    if (node is OutputNode) {
+      return OutputNode(
+        id: node.id,
+        inputs: node.inputs,
+        controlInputs: node.controlInputs,
+        controlOutputs: node.controlOutputs,
+        prototype: node.prototype,
+      )..params.addAll(params);
+    }
+    if (node is InputNode) {
+      return InputNode(
+        id: node.id,
+        outputs: node.outputs,
+        controlInputs: node.controlInputs,
+        controlOutputs: node.controlOutputs,
+        prototype: node.prototype,
+      )..params.addAll(params);
+    }
+    return Node(
+      id: node.id,
+      inputs: node.inputs,
+      outputs: node.outputs,
+      controlInputs: node.controlInputs,
+      controlOutputs: node.controlOutputs,
+      prototype: node.prototype,
+      params: params,
+    );
   }
 }

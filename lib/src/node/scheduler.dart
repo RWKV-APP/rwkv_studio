@@ -74,7 +74,8 @@ class Scheduler {
     _sem = Semaphore(maxConcurrent);
     _done = Completer<RunResult>();
 
-    for (final entry in plan.entryNodes) {
+    final entrySet = <NodeId>{...plan.entryNodes, ...plan.startNodes};
+    for (final entry in entrySet) {
       final st = session.nodeStates[entry]!;
       st.controlQueue.add(
         Token(id: _nextTokenId(), from: '__entry__', to: entry),
@@ -383,7 +384,21 @@ class Scheduler {
             streaming: streaming,
             streamIndex: streamIndex,
           ),
-    );
+        );
+        if (plan.endNodes.contains(node.id) && !streaming) {
+          st.closed = true;
+          session.cancel.cancel();
+          _emitEnd(
+            session,
+            node,
+            startTime,
+            result: s.outputs,
+            success: true,
+            error: null,
+          );
+          _finish(const RunResult.ok());
+          return true;
+        }
         _propagateData(plan, session, node.id, s.outputs);
         _propagateControl(plan, session, node.id, s.control);
         if (!streaming) {

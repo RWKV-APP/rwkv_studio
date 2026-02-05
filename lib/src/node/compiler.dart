@@ -12,6 +12,8 @@ class RunPlan {
   final Map<NodeId, List<NodeEdge>> inControl;
 
   final List<NodeId> entryNodes;
+  final List<NodeId> startNodes;
+  final List<NodeId> endNodes;
 
   RunPlan({
     required this.nodes,
@@ -21,6 +23,8 @@ class RunPlan {
     required this.inDataByPort,
     required this.inControl,
     required this.entryNodes,
+    required this.startNodes,
+    required this.endNodes,
   });
 }
 
@@ -33,6 +37,8 @@ class Compiler {
     final inDataByPort = <NodeId, Map<String, NodeEdge>>{};
     final inControl = <NodeId, List<NodeEdge>>{};
     final entryNodes = <NodeId>[];
+    final startNodes = <NodeId>[];
+    final endNodes = <NodeId>[];
 
     for (final entry in group.edges.entries) {
       final edge = entry.value;
@@ -100,6 +106,12 @@ class Compiler {
 
     for (final entry in group.nodes.entries) {
       final node = entry.value;
+      if (node.prototype is StartNodePrototype) {
+        startNodes.add(node.id);
+      }
+      if (node.prototype is EndNodePrototype) {
+        endNodes.add(node.id);
+      }
       if (node.inputs.isEmpty && node.controlInputs.isEmpty) {
         entryNodes.add(node.id);
       }
@@ -113,6 +125,8 @@ class Compiler {
       inDataByPort: inDataByPort,
       inControl: inControl,
       entryNodes: entryNodes,
+      startNodes: startNodes,
+      endNodes: endNodes,
     );
 
     _validate(plan);
@@ -121,6 +135,17 @@ class Compiler {
   }
 
   void _validate(RunPlan plan) {
-    // TODO: topology and cycle checks.
+    for (final node in plan.nodes.values) {
+      if (node.prototype is StartNodePrototype) {
+        if (node.inputs.isNotEmpty || node.controlInputs.isNotEmpty) {
+          throw StateError('Start node must not have inputs or control inputs');
+        }
+      }
+      if (node.prototype is EndNodePrototype) {
+        if (node.outputs.isNotEmpty || node.controlOutputs.isNotEmpty) {
+          throw StateError('End node must not have outputs or control outputs');
+        }
+      }
+    }
   }
 }
