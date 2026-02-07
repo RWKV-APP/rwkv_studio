@@ -43,7 +43,8 @@ class ChatTitleBar extends StatelessWidget {
                     modelState: state.modelState,
                     onModelSelected: state.generating
                         ? null
-                        : (s) => context.chat.loadModel(context.rwkv, s),
+                        : (s) =>
+                              context.chat.loadModel(context, context.rwkv, s),
                   );
                 },
               ),

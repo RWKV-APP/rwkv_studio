@@ -39,9 +39,9 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     emit(state.copyWith(decodeParam: param));
   }
 
-  void loadModel(RwkvInterface rwkv, ModelInfo model) {
+  void loadModel(BuildContext context, RwkvInterface rwkv, ModelInfo model) {
     final sp = rwkv
-        .loadOrGetModelInstance(model)
+        .loadOrGetModelInstance(context, model)
         .listen(
           (e) {
             emit(state.copyWith(modelState: e));

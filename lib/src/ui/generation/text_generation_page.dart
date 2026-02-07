@@ -28,7 +28,10 @@ class TextGenerationPage extends StatelessWidget {
               return CollapsibleSidebarLayout(
                 open: state.showSettingPane,
                 sidebar: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   child: _SettingPanel(),
                 ),
                 divider: const Divider(direction: .vertical),
@@ -78,7 +81,7 @@ class _TitleBar extends StatelessWidget {
               onModelSelected: state.generating
                   ? null
                   : (model) {
-                      context.cubit.loadModel(context.rwkv, model);
+                      context.cubit.loadModel(context, context.rwkv, model);
                     },
             ),
             const SizedBox(width: 8),

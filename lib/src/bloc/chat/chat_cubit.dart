@@ -8,9 +8,7 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'chat_state.dart';
-
 part 'conversation_state.dart';
-
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -35,9 +33,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     emit(state.copyWith(modelState: ModelLoadState.empty()));
   }
 
-  Future loadModel(RwkvInterface rwkv, ModelInfo model) async {
+  Future loadModel(
+    BuildContext context,
+    RwkvInterface rwkv,
+    ModelInfo model,
+  ) async {
     final sp = rwkv
-        .loadOrGetModelInstance(model)
+        .loadOrGetModelInstance(context, model)
         .listen(
           (e) {
             emit(state.copyWith(modelState: e));

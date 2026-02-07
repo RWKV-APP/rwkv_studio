@@ -7,6 +7,7 @@ import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ModelListFlyout extends StatelessWidget {
@@ -27,6 +28,7 @@ class ModelListFlyout extends StatelessWidget {
           !e.tags.contains('translate') &&
           (modelSetting.enabledBackends.contains(e.backend) || e.isRemote),
     );
+    final modelIds = availableModels.map((e) => e.id).toList();
 
     ModelInstanceState? selectedInstance = context.rwkv.getModelInstance(
       modelInstanceId,
@@ -35,8 +37,21 @@ class ModelListFlyout extends StatelessWidget {
       buildWhen: (p, c) => p.models != c.models,
       builder: (context, state) {
         final loadedModels = state.models.map((k, v) => MapEntry(v.info.id, v));
+
+        final additional = loadedModels.values.where(
+          (e) => !modelIds.contains(e.info.id),
+        );
+
         return MenuFlyout(
           items: [
+            for (final model in additional)
+              _buildMenuItem(
+                context: context,
+                model: model.info.toModelInfo(),
+                selectedInstance: selectedInstance,
+                instanceId: model.id,
+                modelSetting: modelSetting,
+              ),
             for (final model in availableModels)
               _buildMenuItem(
                 context: context,

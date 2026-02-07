@@ -34,6 +34,12 @@ class AppCubit extends Cubit<AppState> {
     return state.pythons;
   }
 
+  Python? getSelectedPython() {
+    return state.pythons
+        .where((e) => e.id == state.selectedPythonId)
+        .firstOrNull;
+  }
+
   void onPythonSelected(String id) {
     logd('on python interpreter selected: $id');
     emit(state.copyWith(selectedPythonId: id));

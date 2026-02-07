@@ -33,6 +33,10 @@ class ModeBaseInfo {
       serviceId: '',
     );
   }
+
+  ModelInfo toModelInfo() {
+    return ModelInfo.base(id: id, name: name, url: '');
+  }
 }
 
 class ModelInstanceState {

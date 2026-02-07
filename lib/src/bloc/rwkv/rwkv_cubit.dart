@@ -19,7 +19,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   RwkvCubit() : super(RwkvState.initial());
 
   Future init() async {
-    //
+    logd('init rwkv');
   }
 
   void setOrPutDecodeParam(String id, DecodeParam param) {
@@ -261,5 +261,24 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     final model = state.models[instanceId];
     if (model == null) return throw "Model not found, instanceId: $instanceId";
     return model.info.name;
+  }
+
+  @override
+  Stream<ModelLoadState> onExternalRWKVLoaded(
+    RWKV rwkv,
+    ModelInfo modelInfo,
+  ) async* {
+    final instance = ModelInstanceState(
+      rwkv: rwkv,
+      id: modelInfo.id,
+      info: ModeBaseInfo(
+        id: modelInfo.id,
+        name: modelInfo.name,
+        providerName: '',
+        serviceId: '',
+      ),
+    );
+    emit(state.copyWith(models: {...state.models, instance.id: instance}));
+    yield ModelLoadState.loaded(modelInfo.id, modelInfo.name, instance.id);
   }
 }

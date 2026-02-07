@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -85,10 +86,61 @@ class Python {
     return output.trim().split('\n').map((e) => e.trim()).toList();
   }
 
-  Future<int> validate() async {
+  Future<bool> validate() async {
+    try {
+      final output = await run(['--version']);
+      _version = output.trim().split(' ')[1];
+    } catch (e) {
+      logw(e);
+    }
+    return true;
+  }
+
+  Future<String> run(List<String> args) async {
     ProcessResult res;
+    final args_ = _formatArgs(args);
+    logd('running process: ${args_.join(' ')}');
     if (condaEnv != null) {
-      res = await Process.run('cmd', [
+      res = await Process.run('cmd', args_);
+    } else {
+      res = await Process.run(path, args_);
+    }
+    if (res.exitCode != 0) {
+      throw 'process exited with code: ${res.exitCode}\n${res.stderr.toString()}'
+          .trim();
+    }
+    final output = res.stdout.toString();
+    return output;
+  }
+
+  Stream<String> start(List<String> args) async* {
+    Process process;
+    final args_ = _formatArgs(args);
+    logd('starting process: ${args_.join(' ')}');
+    if (condaEnv != null) {
+      process = await Process.start('cmd', args_);
+    } else {
+      process = await Process.start(path, args_);
+    }
+    final output = StreamController<String>();
+
+    process.exitCode.then((e) {
+      if (e != 0) {
+        output.addError('process exited with code: $e');
+      } else {
+        logd('process exited, pid=${process.pid}');
+      }
+      output.close();
+    });
+    process.stdout.listen((e) => output.add(utf8.decode(e).trim()));
+    process.stderr.listen((e) => output.addError(utf8.decode(e).trim()));
+
+    yield* output.stream;
+  }
+
+  List<String> _formatArgs(List<String> args) {
+    if (condaEnv != null) {
+      return [
         '/c',
         'conda',
         'run',
@@ -96,19 +148,10 @@ class Python {
         condaEnv!.name,
         '--no-capture-output',
         'python',
-        '--version',
-      ]);
+        ...args,
+      ];
     } else {
-      res = await Process.run(path, ['--version']);
+      return [path, ...args];
     }
-    if (res.exitCode != 0) {
-      logw('python: validate failed: ${res.exitCode}\n$path');
-      return res.exitCode;
-    }
-
-    final output = res.stdout.toString();
-    _version = output.trim().split(' ')[1];
-    logd('python: $_version\n$path');
-    return 0;
   }
 }
