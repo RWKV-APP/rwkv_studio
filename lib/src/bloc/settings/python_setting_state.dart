@@ -44,7 +44,7 @@ class PythonSettingState extends Equatable {
     return {'selected': selected};
   }
 
-  factory PythonSettingState.fromMap(Map<String, dynamic>? map) {
+  factory PythonSettingState.fromMap(dynamic map) {
     if (map == null) {
       return PythonSettingState.initial();
     }

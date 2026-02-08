@@ -45,7 +45,7 @@ class AppearanceSettingState extends Equatable {
     };
   }
 
-  factory AppearanceSettingState.fromMap(Map<String, dynamic>? map) {
+  factory AppearanceSettingState.fromMap(dynamic map) {
     if (map == null) {
       return AppearanceSettingState.initial();
     }

@@ -4,15 +4,19 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/cache/preferences_box.dart';
 import 'package:rwkv_studio/src/utils/equatable.dart';
-import 'package:rwkv_studio/src/utils/file_cache_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 
 part 'appearance_state.dart';
+
 part 'cache_setting_state.dart';
+
 part 'python_setting_state.dart';
+
 part 'service_setting_state.dart';
+
 part 'setting_state.dart';
 
 extension SettingStateExtension on BuildContext {
@@ -37,10 +41,8 @@ class SettingCubit extends Cubit<SettingState> {
 
   Future init() async {
     try {
-      final map = await FileCacheUtils.readMap('settings.json');
-      if (map.isNotEmpty) {
-        final ns = SettingState.fromMap(map);
-
+      final ns = await PreferencesBox.getRaw();
+      if (ns != null) {
         /// avoid theme apply not work
         await Future.delayed(const Duration(milliseconds: 500));
         emit(ns);
@@ -68,8 +70,7 @@ class SettingCubit extends Cubit<SettingState> {
   }
 
   void _persist() async {
-    final map = state.toMap();
-    await FileCacheUtils.saveMap('settings.json', map);
+    await PreferencesBox.putRaw(state);
     logi('settings persisted');
   }
 

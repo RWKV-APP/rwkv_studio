@@ -9,6 +9,7 @@ import 'package:rwkv_studio/src/bloc/model/model_provider.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
+import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -24,7 +25,7 @@ class WithGlobalStateSync extends StatefulWidget {
 }
 
 class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
-  bool _initialized = false;
+  static bool _initialized = false;
 
   @override
   void initState() {
@@ -32,6 +33,7 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
+        await _init();
         await _syncSetting2AppState();
       } catch (e) {
         logw(e);
@@ -41,12 +43,27 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
     });
   }
 
+  Future _init() async {
+    if (_initialized) {
+      return;
+    }
+    await AppAssets.init().withToast(
+      context,
+      error: 'Assets initialization failed',
+    );
+    if (!mounted) return;
+    await HiveManager.init().withToast(
+      context,
+      error: 'Database initialization failed',
+    );
+    await HiveManager.openPreferencesBox();
+  }
+
   Future _syncSetting2AppState() async {
     final setting = context.settings;
     if (setting.state.initialized) {
       return;
     }
-    AppAssets.init().withToast(context);
 
     final modelManage = context.modelManage;
 

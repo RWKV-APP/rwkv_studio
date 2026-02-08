@@ -265,20 +265,16 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   @override
   Stream<ModelLoadState> onExternalRWKVLoaded(
-    RWKV rwkv,
-    ModelInfo modelInfo,
-  ) async* {
+    RWKV rwkv, {
+    required String id,
+    required String name,
+  }) async* {
     final instance = ModelInstanceState(
       rwkv: rwkv,
-      id: modelInfo.id,
-      info: ModeBaseInfo(
-        id: modelInfo.id,
-        name: modelInfo.name,
-        providerName: '',
-        serviceId: '',
-      ),
+      id: id,
+      info: ModeBaseInfo(id: id, name: name, providerName: '', serviceId: ''),
     );
     emit(state.copyWith(models: {...state.models, instance.id: instance}));
-    yield ModelLoadState.loaded(modelInfo.id, modelInfo.name, instance.id);
+    yield ModelLoadState.loaded(id, name, instance.id);
   }
 }

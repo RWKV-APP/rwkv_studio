@@ -28,7 +28,7 @@ class CacheSettingState extends Equatable {
     return {'modelDownloadDir': modelDownloadDir, 'appCacheDir': appCacheDir};
   }
 
-  factory CacheSettingState.fromMap(Map<String, dynamic>? map) {
+  factory CacheSettingState.fromMap(dynamic map) {
     if (map == null) {
       return CacheSettingState.initial();
     }

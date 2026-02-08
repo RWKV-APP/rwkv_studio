@@ -28,7 +28,11 @@ mixin class RwkvInterface {
     throw UnimplementedError();
   }
 
-  Stream<ModelLoadState> onExternalRWKVLoaded(RWKV rwkv, ModelInfo modelInfo) {
+  Stream<ModelLoadState> onExternalRWKVLoaded(
+    RWKV rwkv, {
+    required String id,
+    required String name,
+  }) {
     throw UnimplementedError();
   }
 
@@ -70,7 +74,7 @@ mixin class RwkvInterface {
       try {
         yield ModelLoadState.loading(modelInfo.id);
         final r = await _loadAlbatross(context, modelInfo);
-        yield* onExternalRWKVLoaded(r, modelInfo);
+        yield* onExternalRWKVLoaded(r, id: modelInfo.id, name: modelInfo.name);
       } catch (e) {
         yield ModelLoadState.error(modelInfo.id, e);
       }

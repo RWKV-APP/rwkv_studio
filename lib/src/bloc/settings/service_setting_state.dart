@@ -29,14 +29,14 @@ class ModelSettingState extends Equatable {
     };
   }
 
-  factory ModelSettingState.fromMap(Map<String, dynamic>? map) {
+  factory ModelSettingState.fromMap(dynamic map) {
     if (map == null) {
       return ModelSettingState.initial;
     }
     return ModelSettingState(
       remoteServices:
           (map['remoteServices'] as Iterable?)
-              ?.map((e) => RemoteService.fromMap(e as Map<String, dynamic>))
+              ?.map(RemoteService.fromMap)
               .toList() ??
           [],
       modelListUrl: map['modelListUrl'] ?? initial.modelListUrl,
@@ -91,7 +91,7 @@ class RemoteService extends Equatable {
     return {'id': id, 'name': name, 'url': url, 'enabled': enabled};
   }
 
-  factory RemoteService.fromMap(Map<String, dynamic> map) {
+  factory RemoteService.fromMap(dynamic map) {
     return RemoteService(
       id: map['id'] as String,
       name: map['name'] as String,

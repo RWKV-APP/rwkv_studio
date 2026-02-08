@@ -1,0 +1,65 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'message_box.dart';
+
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class MessageBoxAdapter extends TypeAdapter<MessageBox> {
+  @override
+  final typeId = 3;
+
+  @override
+  MessageBox read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return MessageBox(
+      id: fields[0] as String,
+      text: fields[1] as String,
+      thinkEndAt: (fields[2] as num).toInt(),
+      datetime: fields[3] as DateTime,
+      role: fields[4] as String,
+      error: fields[5] as String,
+      modelName: fields[6] as String,
+      stopReason: fields[7] as int,
+      extra: (fields[8] as Map).cast<String, dynamic>(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, MessageBox obj) {
+    writer
+      ..writeByte(9)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.text)
+      ..writeByte(2)
+      ..write(obj.thinkEndAt)
+      ..writeByte(3)
+      ..write(obj.datetime)
+      ..writeByte(4)
+      ..write(obj.role)
+      ..writeByte(5)
+      ..write(obj.error)
+      ..writeByte(6)
+      ..write(obj.modelName)
+      ..writeByte(7)
+      ..write(obj.stopReason)
+      ..writeByte(8)
+      ..write(obj.extra);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MessageBoxAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
