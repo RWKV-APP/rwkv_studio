@@ -1,5 +1,6 @@
 import 'package:hive_ce/hive.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/cache/hive_manager.dart';
 
 part 'conversation_box.g.dart';
 
@@ -51,6 +52,21 @@ class ConversationBox {
       pinned: conv.pinned,
       useGlobalSystemPrompt: conv.useGlobalSystemPrompt,
     );
+  }
+
+  static Future put(ConversationState conv) async {
+    await HiveManager.conversationBox.put(
+      conv.id,
+      ConversationBox.fromChat(conv),
+    );
+  }
+
+  static Future delete(String id) async {
+    await HiveManager.conversationBox.delete(id);
+  }
+
+  static Iterable<ConversationBox> getAll() {
+    return HiveManager.conversationBox.values;
   }
 
   ConversationState toChat() {

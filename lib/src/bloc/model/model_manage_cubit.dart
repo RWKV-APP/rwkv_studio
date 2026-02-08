@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
-import 'package:rwkv_studio/src/utils/colletion_extensions.dart';
+import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 import 'model_provider.dart';

@@ -35,6 +35,7 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
       try {
         await _init();
         await _syncSetting2AppState();
+        await context.chat.init();
       } catch (e) {
         logw(e);
       }

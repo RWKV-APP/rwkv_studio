@@ -12,6 +12,7 @@ extension MessageExtras on MessageState {
 
 class MessageState {
   final String id;
+  final String convId;
   final String text;
   final int thinkEndAt;
   final DateTime datetime;
@@ -44,6 +45,7 @@ class MessageState {
 
   MessageState._({
     required this.id,
+    required this.convId,
     required this.text,
     required this.datetime,
     required this.role,
@@ -60,12 +62,14 @@ class MessageState {
 
   factory MessageState.create({
     required final String role,
+    required final String convId,
     String? text,
     String? modelName,
   }) {
     final id = _newId();
     return MessageState._(
       id: id,
+      convId: convId,
       text: text ?? '',
       datetime: DateTime.now(),
       role: role,
@@ -78,6 +82,7 @@ class MessageState {
 
   MessageState copyWith({
     String? id,
+    String? convId,
     String? text,
     DateTime? datetime,
     String? role,
@@ -89,6 +94,7 @@ class MessageState {
   }) {
     return MessageState._(
       id: id ?? this.id,
+      convId: convId ?? this.convId,
       text: text ?? this.text,
       datetime: datetime ?? this.datetime,
       role: role ?? this.role,

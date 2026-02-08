@@ -18,13 +18,14 @@ class MessageBoxAdapter extends TypeAdapter<MessageBox> {
     };
     return MessageBox(
       id: fields[0] as String,
+      convId: fields[9] as String,
       text: fields[1] as String,
       thinkEndAt: (fields[2] as num).toInt(),
       datetime: fields[3] as DateTime,
       role: fields[4] as String,
       error: fields[5] as String,
       modelName: fields[6] as String,
-      stopReason: fields[7] as int,
+      stopReason: (fields[7] as num).toInt(),
       extra: (fields[8] as Map).cast<String, dynamic>(),
     );
   }
@@ -32,7 +33,7 @@ class MessageBoxAdapter extends TypeAdapter<MessageBox> {
   @override
   void write(BinaryWriter writer, MessageBox obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +51,9 @@ class MessageBoxAdapter extends TypeAdapter<MessageBox> {
       ..writeByte(7)
       ..write(obj.stopReason)
       ..writeByte(8)
-      ..write(obj.extra);
+      ..write(obj.extra)
+      ..writeByte(9)
+      ..write(obj.convId);
   }
 
   @override

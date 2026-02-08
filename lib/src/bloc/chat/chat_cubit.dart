@@ -3,12 +3,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/cache/conversation_box.dart';
+import 'package:rwkv_studio/src/cache/hive_manager.dart';
+import 'package:rwkv_studio/src/cache/message_box.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
+import 'package:rwkv_studio/src/utils/collection_extensions.dart';
+import 'package:rwkv_studio/src/utils/diff_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
+import 'package:rxdart/rxdart.dart';
 
 part 'chat_state.dart';
+
 part 'conversation_state.dart';
+
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -23,10 +31,63 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       return;
     }
 
+    emit(state.copyWith(initialized: true));
+
+    final convBox = await HiveManager.openConversationBox();
+    final msgBox = await HiveManager.openMessageBox();
+
+    final convs = convBox.values.map((e) => e.toChat()).toList();
+    final msgs = msgBox.values
+        .map((e) => e.toMessage())
+        .groupBy((e) => e.convId);
+    emit(state.copyWith(conversations: convs, messages: msgs));
+
     if (state.messages.isEmpty) {
       await newChat();
     }
-    emit(state.copyWith(initialized: true));
+
+    _initStatePersistence();
+  }
+
+  void _initStatePersistence() {
+    final sp1 = stream
+        .map((e) => e.conversations)
+        .distinct((p, c) => p == c)
+        .throttleTime(
+          const Duration(milliseconds: 500),
+          trailing: true,
+          leading: false,
+        )
+        .diff(keyExtractor: (e) => e.id)
+        .listen((e) {
+          logi('conversation changed, persisting...');
+          for (final conv in e.removed) {
+            ConversationBox.delete(conv.id);
+          }
+          for (final conv in [...e.added, ...e.changed]) {
+            ConversationBox.put(conv);
+          }
+        });
+    addSubscription(sp1);
+
+    final sp2 = stream
+        .distinct((p, c) => p == c)
+        .throttleTime(
+          const Duration(milliseconds: 1000),
+          trailing: true,
+          leading: false,
+        )
+        .flatMap((e) => Stream.fromIterable(e.messages.values))
+        .diff(keyExtractor: (e) => e)
+        .listen((e) {
+          for (final item in e.removed) {
+            MessageBox.delete(item.id);
+          }
+          for (final item in [...e.added, ...e.changed]) {
+            MessageBox.put(item);
+          }
+        });
+    addSubscription(sp2);
   }
 
   void onModelReleased() {
@@ -186,6 +247,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     MessageState generated = MessageState.create(
       role: rwkv.roleAssistant,
+      convId: convId,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
@@ -205,6 +267,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     String id,
     ConversationState Function(ConversationState) update,
   ) {
+    logi('updateConversation $id');
     ConversationState? updated;
     final c = state.conversations.map((e) {
       if (e.id == id) {
@@ -237,6 +300,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     });
     final message = MessageState.create(
       role: rwkv.roleUser,
+      convId: convId,
       text: text,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
@@ -252,6 +316,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     MessageState assistant = MessageState.create(
       role: rwkv.roleAssistant,
+      convId: convId,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
