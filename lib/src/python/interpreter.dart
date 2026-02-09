@@ -113,14 +113,14 @@ class Python {
     return output;
   }
 
-  Stream<String> start(List<String> args) async* {
+  Stream<String> start(List<String> args, {String? workingDir}) async* {
     Process process;
     final args_ = _formatArgs(args);
     logd('starting process: ${args_.join(' ')}');
     if (condaEnv != null) {
-      process = await Process.start('cmd', args_);
+      process = await Process.start('cmd', args_, workingDirectory: workingDir);
     } else {
-      process = await Process.start(path, args_);
+      process = await Process.start(path, args_, workingDirectory: workingDir);
     }
     final output = StreamController<String>();
 
@@ -133,7 +133,7 @@ class Python {
       output.close();
     });
     process.stdout.listen((e) => output.add(utf8.decode(e).trim()));
-    process.stderr.listen((e) => output.addError(utf8.decode(e).trim()));
+    process.stderr.listen((e) => output.add(utf8.decode(e).trim()));
 
     yield* output.stream;
   }

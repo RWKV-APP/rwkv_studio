@@ -12,8 +12,13 @@ extension Ext on BuildContext {
 class AppCubit extends Cubit<AppState> {
   AppCubit() : super(AppState.initial());
 
-  void init({required String selectedPythonId}) {
-    onPythonSelected(selectedPythonId);
+  void init({required String selectedPythonId, required String albatrossPath}) {
+    emit(
+      state.copyWith(
+        albatrossPath: albatrossPath,
+        selectedPythonId: selectedPythonId,
+      ),
+    );
   }
 
   void setPane(int pane) {
@@ -40,9 +45,9 @@ class AppCubit extends Cubit<AppState> {
         .firstOrNull;
   }
 
-  void onPythonSelected(String id) {
+  void onPythonSelected({required String id, String? albatrossPath}) {
     logd('on python interpreter selected: $id');
-    emit(state.copyWith(selectedPythonId: id));
+    emit(state.copyWith(selectedPythonId: id, albatrossPath: albatrossPath));
   }
 
   void jump2ModelManage() {

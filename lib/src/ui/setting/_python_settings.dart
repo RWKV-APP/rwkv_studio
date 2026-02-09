@@ -23,6 +23,10 @@ class _PythonSettingsState extends State<PythonSettings> {
   String _selectedType = 'python';
   String _version = '';
 
+  late final _controller = TextEditingController(
+    text: widget.state.albatrossPath,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -151,6 +155,19 @@ class _PythonSettingsState extends State<PythonSettings> {
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: 12),
+          const Text('Albatross (rwkv_lightning) 路径 (回车保存)'),
+          const SizedBox(height: 8, width: 12),
+          Container(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: TextBox(
+              controller: _controller,
+              onSubmitted: (v) {
+                widget.onChanged(widget.state.copyWith(albatrossPath: v));
+              },
+            ),
           ),
         ],
       ),

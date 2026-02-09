@@ -62,6 +62,7 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
 
   Future _syncSetting2AppState() async {
     final setting = context.settings;
+    final app = context.app;
     if (setting.state.initialized) {
       return;
     }
@@ -82,10 +83,10 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
       _syncRemoteServiceList(context, setting.state.model.remoteServices);
     }
     _syncAppearance(setting.state.appearance);
-
-    if (mounted) {
-      context.app.init(selectedPythonId: setting.state.python.selected);
-    }
+    app.init(
+      selectedPythonId: setting.state.python.selected,
+      albatrossPath: setting.state.python.albatrossPath,
+    );
   }
 
   @override
@@ -125,7 +126,10 @@ Widget _buildStateSyncListeners(Widget child) {
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.python != c.python,
         listener: (context, state) async {
-          context.app.onPythonSelected(state.python.selected);
+          context.app.onPythonSelected(
+            id: state.python.selected,
+            albatrossPath: state.python.albatrossPath,
+          );
         },
         child: const SizedBox(),
       ),

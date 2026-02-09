@@ -40,6 +40,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final msgs = msgBox.values
         .map((e) => e.toMessage())
         .groupBy((e) => e.convId);
+
+    logd(
+      'restored conversations: ${convs.length}, messages: ${msgBox.values.length}',
+    );
     emit(state.copyWith(conversations: convs, messages: msgs));
 
     if (state.messages.isEmpty) {
@@ -71,14 +75,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     addSubscription(sp1);
 
     final sp2 = stream
-        .distinct((p, c) => p == c)
+        .distinct((p, c) => p.messages == c.messages)
         .throttleTime(
           const Duration(milliseconds: 1000),
           trailing: true,
           leading: false,
         )
         .flatMap((e) => Stream.fromIterable(e.messages.values))
-        .diff(keyExtractor: (e) => e)
+        .diff(keyExtractor: (e) => e.id)
         .listen((e) {
           for (final item in e.removed) {
             MessageBox.delete(item.id);

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -22,16 +24,17 @@ class AlbatrossLauncher {
   }) : port = _startPort++;
 
   Future<AlbatrossClient> startup() async {
+    final workingDir = File(scriptPath).parent.path;
     final out = python.start([
       scriptPath,
-      '--model_path',
+      '--model-path',
       modelPath,
       '--port',
       port.toString(),
-    ]).asBroadcastStream();
+    ], workingDir: workingDir).asBroadcastStream();
     out.listen(
       (e) {
-        logd('albatross output: $e');
+        logd('python: $e');
         _outputs.add(e);
       },
       onError: (e) {

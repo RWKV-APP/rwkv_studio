@@ -32,26 +32,39 @@ class InterpreterState extends Equatable {
 
 class PythonSettingState extends Equatable {
   final String selected;
+  final String albatrossPath;
 
-  PythonSettingState({required this.selected});
+  PythonSettingState({required this.selected, required this.albatrossPath});
 
-  factory PythonSettingState.initial() => PythonSettingState(selected: '');
+  factory PythonSettingState.initial() => PythonSettingState(
+    selected: '',
+    albatrossPath: pathJoin(
+      appExecutableDir.path,
+      'rwkv_lightning'.joinPath('app.py'),
+    ),
+  );
 
   @override
-  List<Object?> get props => [selected];
+  List<Object?> get props => [selected, albatrossPath];
 
   Map<String, dynamic> toMap() {
-    return {'selected': selected};
+    return {'selected': selected, 'albatrossPath': albatrossPath};
   }
 
   factory PythonSettingState.fromMap(dynamic map) {
     if (map == null) {
       return PythonSettingState.initial();
     }
-    return PythonSettingState(selected: map['selected'] as String);
+    return PythonSettingState(
+      selected: map['selected'] ?? '',
+      albatrossPath: map['albatrossPath'] ?? '',
+    );
   }
 
-  PythonSettingState copyWith({String? selected}) {
-    return PythonSettingState(selected: selected ?? this.selected);
+  PythonSettingState copyWith({String? selected, String? albatrossPath}) {
+    return PythonSettingState(
+      selected: selected ?? this.selected,
+      albatrossPath: albatrossPath ?? this.albatrossPath,
+    );
   }
 }
