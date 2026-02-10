@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
@@ -53,18 +54,47 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     addSubscription(sp);
   }
 
-  Future generate(RwkvInterface rwkv) async {
-    final prompt = state.controllerText.text.trim();
-    emit(state.copyWith(generating: true));
+  void stop(RwkvInterface rwkv) {
+    rwkv.stop(state.modelInstanceId);
+    emit(state.copyWith(generating: false));
+  }
 
+  Future generate(RwkvInterface rwkv, {bool fim = false}) async {
+    final prompt = state.controllerText.text.trim();
     String result = state.controllerText.text;
 
+    String prefix = '';
+    String suffix = '';
+    int offset = 0;
+    if (fim) {
+      offset = state.controllerText.selection.baseOffset;
+      if (offset == prompt.length) {
+        throw AppException('fim suffix is empty');
+      }
+      prefix = prompt.substring(0, offset);
+      suffix = prompt.substring(offset);
+      result = '';
+    }
     final sp = rwkv
-        .generate(prompt, state.modelInstanceId, state.decodeParam)
+        .generate(
+          prompt,
+          state.modelInstanceId,
+          state.decodeParam,
+          fimSuffix: fim ? suffix : null,
+        )
         .listen(
           (e) {
-            result += e.text;
-            state.controllerText.text = result.substring(prompt.length);
+            if (fim) {
+              result += e.text;
+              final r = prefix + result + suffix;
+              state.controllerText.text = r;
+            } else {
+              result += e.text;
+              state.controllerText.text = result.substring(prompt.length);
+            }
+            if (!state.generating) {
+              emit(state.copyWith(generating: true));
+            }
           },
           onError: (e, s) {
             loge(e, s);

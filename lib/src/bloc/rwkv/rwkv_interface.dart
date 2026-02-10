@@ -48,8 +48,9 @@ mixin class RwkvInterface {
   Stream<GenerationResponse> generate(
     String prompt,
     String instanceId,
-    DecodeParam decodeParam,
-  ) async* {
+    DecodeParam decodeParam, {
+    String? fimSuffix,
+  }) async* {
     throw UnimplementedError();
   }
 

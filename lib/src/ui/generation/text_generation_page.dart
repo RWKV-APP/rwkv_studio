@@ -9,6 +9,8 @@ import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
+part '_title_bar.dart';
+
 extension _Ext on BuildContext {
   TextGenerationCubit get cubit => BlocProvider.of<TextGenerationCubit>(this);
 }
@@ -65,61 +67,6 @@ class TextGenerationPage extends StatelessWidget {
   }
 }
 
-class _TitleBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<TextGenerationCubit, TextGenerationState>(
-      buildWhen: (p, c) =>
-          p.modelState != c.modelState || p.generating != c.generating,
-      builder: (context, state) {
-        return Row(
-          children: [
-            Text('文本生成', style: context.fluent.typography.subtitle),
-            const Spacer(),
-            ModelSelector(
-              modelState: state.modelState,
-              onModelSelected: state.generating
-                  ? null
-                  : (model) {
-                      context.cubit.loadModel(context, context.rwkv, model);
-                    },
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: state.modelInstanceId.isEmpty
-                  ? null
-                  : () async {
-                      if (state.generating) {
-                        context.rwkv
-                            .stop(state.modelInstanceId)
-                            .withToast(context);
-                      } else {
-                        context.cubit.generate(context.rwkv).withToast(context);
-                      }
-                    },
-              child: Row(
-                children: [
-                  Icon(
-                    state.generating ? WindowsIcons.pause : WindowsIcons.play,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(state.generating ? '停止生成' : '开始生成'),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(FluentIcons.settings),
-              onPressed: () {
-                context.cubit.toggleSettingPane();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
 
 class _TextBox extends StatelessWidget {
   @override

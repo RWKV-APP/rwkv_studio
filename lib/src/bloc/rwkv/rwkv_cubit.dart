@@ -4,6 +4,7 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -124,12 +125,26 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   Stream<GenerationResponse> generate(
     String prompt,
     String instanceId,
-    DecodeParam decodeParam,
-  ) async* {
+    DecodeParam decodeParam, {
+    String? fimSuffix,
+  }) async* {
     final instance = state.models[instanceId];
-    if (instance == null) throw "Model not found";
+    if (instance == null) throw AppException('model not found $instanceId');
     await _syncModelConfig(instanceId, decodeParam, null);
     await instance.rwkv.clearState();
+
+    if (fimSuffix != null) {
+      if (instance.rwkv is AlbatrossClient) {
+        final ac = instance.rwkv as AlbatrossClient;
+        final stream = ac.fimBatchStream(
+          FimRequest(prefix: [prompt], suffix: [fimSuffix]),
+        );
+        yield* stream;
+      } else {
+        throw AppException('fim only supported by albatross');
+      }
+    }
+
     try {
       yield* instance.rwkv.generate(
         GenerationParam(prompt: prompt, model: instanceId),
