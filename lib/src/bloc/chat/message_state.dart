@@ -15,7 +15,7 @@ class MessageState {
   final String convId;
   final String text;
   final int thinkEndAt;
-  final DateTime datetime;
+  final DateTime updateAt;
   final String role;
   final String error;
   final String modelName;
@@ -47,7 +47,7 @@ class MessageState {
     required this.id,
     required this.convId,
     required this.text,
-    required this.datetime,
+    required this.updateAt,
     required this.role,
     required this.modelName,
     this.thinkEndAt = 0,
@@ -55,6 +55,8 @@ class MessageState {
     this.error = '',
     this.extra = const {},
   });
+
+  static int _incrementalId = 0;
 
   static String _newId() {
     return DateTime.now().millisecondsSinceEpoch.toString();
@@ -68,10 +70,10 @@ class MessageState {
   }) {
     final id = _newId();
     return MessageState._(
-      id: id,
+      id: '$convId-$id-${_incrementalId++}',
       convId: convId,
       text: text ?? '',
-      datetime: DateTime.now(),
+      updateAt: DateTime.now(),
       role: role,
       stopReason: StopReason.none,
       error: '',
@@ -84,7 +86,7 @@ class MessageState {
     String? id,
     String? convId,
     String? text,
-    DateTime? datetime,
+    DateTime? updateAt,
     String? role,
     String? error,
     String? modelName,
@@ -96,7 +98,7 @@ class MessageState {
       id: id ?? this.id,
       convId: convId ?? this.convId,
       text: text ?? this.text,
-      datetime: datetime ?? this.datetime,
+      updateAt: updateAt ?? this.updateAt,
       role: role ?? this.role,
       error: error ?? this.error,
       modelName: modelName ?? this.modelName,

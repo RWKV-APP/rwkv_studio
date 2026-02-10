@@ -65,14 +65,8 @@ class ChatSettingPanel extends StatelessWidget {
                       buildWhen: (p, c) => p.decodeParams != c.decodeParams,
                       builder: (context, state2) {
                         final param = state2.decodeParams[currentId];
-                        if (param == null) {
-                          context.chat.setDecodeParam(
-                            state2.decodeParams.keys.first,
-                          );
-                          return const SizedBox();
-                        }
                         return DecodeParamForm(
-                          param: param,
+                          param: param ?? state2.decodeParams.values.first,
                           onChanged: state.generating
                               ? null
                               : (v) => context.rwkv.setOrPutDecodeParam(

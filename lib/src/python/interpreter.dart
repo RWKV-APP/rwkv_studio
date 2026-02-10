@@ -113,7 +113,7 @@ class Python {
     return output;
   }
 
-  Stream<String> start(List<String> args, {String? workingDir}) async* {
+  Future<PythonProcess> start(List<String> args, {String? workingDir}) async {
     Process process;
     final args_ = _formatArgs(args);
     logd('starting process: ${args_.join(' ')}');
@@ -122,20 +122,8 @@ class Python {
     } else {
       process = await Process.start(path, args_, workingDirectory: workingDir);
     }
-    final output = StreamController<String>();
 
-    process.exitCode.then((e) {
-      if (e != 0) {
-        output.addError('process exited with code: $e');
-      } else {
-        logd('process exited, pid=${process.pid}');
-      }
-      output.close();
-    });
-    process.stdout.listen((e) => output.add(utf8.decode(e).trim()));
-    process.stderr.listen((e) => output.add(utf8.decode(e).trim()));
-
-    yield* output.stream;
+    return PythonProcess._(process);
   }
 
   List<String> _formatArgs(List<String> args) {
@@ -153,5 +141,36 @@ class Python {
     } else {
       return [path, ...args];
     }
+  }
+}
+
+class PythonProcess {
+  final _output = StreamController<String>.broadcast();
+  final Process _process;
+  int _exitCode = -1;
+
+  Stream<String> get outputs => _output.stream;
+
+  int get pid => _process.pid;
+
+  int get exitCode => _exitCode;
+
+  PythonProcess._(this._process) {
+    _process.exitCode.then((e) {
+      _exitCode = e;
+      if (e != 0) {
+        _output.addError('process exited with code: $e');
+      } else {
+        logd('process exited, pid=${_process.pid}, code=$e');
+      }
+      _output.close();
+    });
+    _process.stdout.listen((e) => _output.add(utf8.decode(e).trim()));
+    _process.stderr.listen((e) => _output.add(utf8.decode(e).trim()));
+  }
+
+  Future kill() async {
+    _process.kill();
+    _output.close();
   }
 }

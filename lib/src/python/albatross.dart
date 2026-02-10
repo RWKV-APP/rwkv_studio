@@ -13,10 +13,6 @@ class AlbatrossLauncher {
   final String modelPath;
   final int port;
 
-  final List<String> _outputs = [];
-
-  List<String> get outputs => _outputs;
-
   AlbatrossLauncher({
     required this.python,
     required this.scriptPath,
@@ -25,27 +21,56 @@ class AlbatrossLauncher {
 
   Future<AlbatrossClient> startup() async {
     final workingDir = File(scriptPath).parent.path;
-    final out = python.start([
+    final process = await python.start([
       scriptPath,
       '--model-path',
       modelPath,
       '--port',
       port.toString(),
-    ], workingDir: workingDir).asBroadcastStream();
-    out.listen(
+    ], workingDir: workingDir);
+    final wrap = _AlbatrossWrap('http://127.0.0.1:$port', process: process);
+    await wrap._waitStart();
+    return wrap;
+  }
+}
+
+class _AlbatrossWrap extends AlbatrossClient {
+  final PythonProcess process;
+  final List<String> _outputs = [];
+
+  _AlbatrossWrap(super.baseUrl, {required this.process}) {
+    process.outputs.listen(
       (e) {
-        logd('python: $e');
         _outputs.add(e);
       },
-      onError: (e) {
-        loge('albatross error: $e');
+      onError: (e, stack) {
+        loge('albatross error: $e', stack);
+        _outputs.add(e.toString());
+        _outputs.add(stack.toString());
       },
     );
-    await out.firstWhere(
-      (e) => e.contains('Starting server at http://0.0.0.0:$port'),
-    );
-    logd('albatross server started');
-    // todo binding lifecycle with python process
-    return AlbatrossClient('http://127.0.0.1:$port');
+  }
+
+  Future _waitStart() async {
+    try {
+      await process.outputs.firstWhere(
+        (e) => e.contains('Starting server at http://0.0.0.0:'),
+      );
+    } on StateError {
+      /// No output
+      throw Exception(
+        'albatross startup failed, exit code: ${process.exitCode}',
+      );
+    }
+  }
+
+  @override
+  Future<String> dumpLog() {
+    return Future.value(_outputs.join('\n'));
+  }
+
+  @override
+  Future<dynamic> release() async {
+    process.kill();
   }
 }

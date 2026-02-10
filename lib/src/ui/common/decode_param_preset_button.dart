@@ -110,7 +110,7 @@ class DecodeParamPresetButton extends StatelessWidget {
     return FlyoutTarget(
       controller: menuController,
       child: Button(
-        child: Text('预设: $currentId'),
+        child: Text(currentId.isEmpty ? '默认' : currentId),
         onPressed: () => showPresetMenu(context),
       ),
     );

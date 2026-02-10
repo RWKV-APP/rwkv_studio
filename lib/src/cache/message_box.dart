@@ -1,6 +1,7 @@
 import 'package:hive_ce/hive.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 
 import 'hive_manager.dart';
 
@@ -59,6 +60,7 @@ class MessageBox {
   }
 
   static Future delete(String id) async {
+    logi('delete message: $id');
     await HiveManager.messageBox.delete(id);
   }
 
@@ -68,7 +70,7 @@ class MessageBox {
       convId: message.convId,
       text: message.text,
       thinkEndAt: message.thinkEndAt,
-      datetime: message.datetime,
+      datetime: message.updateAt,
       role: message.role,
       error: message.error,
       modelName: message.modelName,
@@ -86,7 +88,7 @@ class MessageBox {
     ).copyWith(
       id: id,
       thinkEndAt: thinkEndAt,
-      datetime: datetime,
+      updateAt: datetime,
       error: error,
       stopReason: StopReason.values[stopReason],
       extra: extra,

@@ -14,9 +14,7 @@ import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'chat_state.dart';
-
 part 'conversation_state.dart';
-
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -39,8 +37,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final convs = convBox.values.map((e) => e.toChat()).toList();
     final msgs = msgBox.values
         .map((e) => e.toMessage())
-        .groupBy((e) => e.convId);
+        .groupBy((e) => e.convId)
+        .map((k, v) {
+          final ms = v.toList();
+          ms.sort((a, b) => a.updateAt.compareTo(b.updateAt));
+          return MapEntry(k, ms);
+        });
 
+    convs.sort((a, b) => a.updateAt.compareTo(b.updateAt));
     logd(
       'restored conversations: ${convs.length}, messages: ${msgBox.values.length}',
     );
@@ -64,7 +68,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         )
         .diff(keyExtractor: (e) => e.id)
         .listen((e) {
-          logi('conversation changed, persisting...');
+          logi(
+            'conversation changed, added: ${e.added.length}, changed: ${e.changed.length}, removed: ${e.removed.length}',
+          );
           for (final conv in e.removed) {
             ConversationBox.delete(conv.id);
           }
@@ -81,14 +87,18 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
           trailing: true,
           leading: false,
         )
-        .flatMap((e) => Stream.fromIterable(e.messages.values))
+        .map((e) => e.messages.values.flatten())
         .diff(keyExtractor: (e) => e.id)
         .listen((e) {
           for (final item in e.removed) {
             MessageBox.delete(item.id);
+            logd('delete message: ${item.id}');
           }
           for (final item in [...e.added, ...e.changed]) {
             MessageBox.put(item);
+          }
+          if (e.added.isNotEmpty) {
+            logd('add messages: ${e.added.length}');
           }
         });
     addSubscription(sp2);
@@ -243,6 +253,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   Future regenerate(RwkvInterface rwkv) async {
     if (state.generating) {
       return;
+    }
+    if (state.modelInstanceId.isEmpty) {
+      throw 'Model not loaded';
     }
     final convId = state.selected.id;
 

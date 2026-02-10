@@ -12,4 +12,31 @@ extension CollectionExtensions<T> on Iterable<T> {
     }
     return result;
   }
+
+  List<T> distinctBy<K>(K Function(T) key) {
+    Map<K, T> result = {};
+    for (final e in this) {
+      final k = key(e);
+      result[k] = e;
+    }
+    return result.values.toList();
+  }
+
+  List<R> flatten<R>(List<R> Function(T) key) {
+    List<R> result = [];
+    for (final e in this) {
+      result.addAll(key(e));
+    }
+    return result;
+  }
+}
+
+extension IterableExtensions<T> on Iterable<List<T>> {
+  List<T> flatten() {
+    List<T> result = [];
+    for (final e in this) {
+      result.addAll(e);
+    }
+    return result;
+  }
 }
