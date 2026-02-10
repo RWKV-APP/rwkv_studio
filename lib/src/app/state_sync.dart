@@ -10,6 +10,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
+import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -67,6 +68,7 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
       return;
     }
 
+    UserType.current = setting.state.appearance.userType;
     final modelManage = context.modelManage;
 
     await setting.init();
@@ -113,6 +115,13 @@ Widget _buildStateSyncListeners(Widget child) {
             p.appearance.theme.brightness != c.appearance.theme.brightness,
         listener: (context, state) {
           _syncAppearance(state.appearance);
+        },
+        child: Container(),
+      ),
+      BlocListener<SettingCubit, SettingState>(
+        listenWhen: (p, c) => p.appearance != c.appearance,
+        listener: (context, state) {
+          UserType.current = state.appearance.userType;
         },
         child: Container(),
       ),

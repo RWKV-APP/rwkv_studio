@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/contract/user_type.dart';
 
 class AppearanceSettings extends StatelessWidget {
   final AppearanceSettingState appearance;
@@ -22,6 +24,7 @@ class AppearanceSettings extends StatelessWidget {
             children: [
               const Text('主题'),
               const SizedBox(width: 12),
+              const Spacer(),
               ComboBox<FluentThemeData>(
                 items: [
                   ComboBoxItem(
@@ -50,6 +53,7 @@ class AppearanceSettings extends StatelessWidget {
             children: [
               const Text('字体'),
               const SizedBox(width: 12),
+              const Spacer(),
               ComboBox(
                 value: appearance.fontFamily,
                 onChanged: (v) {
@@ -65,9 +69,14 @@ class AppearanceSettings extends StatelessWidget {
                   const ComboBoxItem(value: '仿宋', child: Text('仿宋')),
                 ],
               ),
-              const SizedBox(width: 24),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
               const Text('字体大小'),
               const SizedBox(width: 12),
+              const Spacer(),
               ComboBox(
                 value: appearance.fontSize,
                 // onChanged: (v) {
@@ -83,33 +92,44 @@ class AppearanceSettings extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Row(
+          Row(
             children: [
-              Text('语言'),
-              SizedBox(width: 12),
+              const Text('语言'),
+              const SizedBox(width: 12),
+              const Spacer(),
               ComboBox(
                 value: 'zh',
-                onChanged: null,
+                onChanged: (v) {
+                  //
+                },
                 items: [
-                  ComboBoxItem(value: 'zh', child: Text('简体中文')),
-                  ComboBoxItem(value: 'en', child: Text('English')),
+                  const ComboBoxItem(value: 'zh', child: Text('简体中文')),
+                  // ComboBoxItem(value: 'en', child: Text('English')),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Row(
+          Row(
             children: [
-              Text('应用模式'),
-              SizedBox(width: 12),
+              const Text('应用模式'),
+              const SizedBox(width: 12),
+              const Spacer(),
               ComboBox(
-                value: 'dev',
-                onChanged: null,
+                value: appearance.userType,
+                onChanged: (v) {
+                  onChanged?.call(appearance.copyWith(userType: v));
+                },
                 items: [
-                  ComboBoxItem(value: 'dev', child: Text('开发者')),
-                  ComboBoxItem(value: 'expert', child: Text('专家')),
-                  ComboBoxItem(value: 'user', child: Text('用户')),
-                  ComboBoxItem(value: 'basic', child: Text('基础')),
+                  const ComboBoxItem(value: UserType.user, child: Text('用户')),
+                  const ComboBoxItem(
+                    value: UserType.advanced,
+                    child: Text('高级'),
+                  ),
+                  const ComboBoxItem(
+                    value: UserType.developer,
+                    child: Text('开发者'),
+                  ),
                 ],
               ),
             ],

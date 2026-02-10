@@ -7,14 +7,16 @@ class AppearanceSettingState extends Equatable {
   final FluentThemeData theme;
   final String fontFamily;
   final int fontSize;
+  final UserType userType;
 
   @override
-  List<Object?> get props => [theme, fontFamily, fontSize];
+  List<Object?> get props => [theme, fontFamily, fontSize, userType];
 
   AppearanceSettingState({
     required this.theme,
     required this.fontFamily,
     required this.fontSize,
+    required this.userType,
   });
 
   factory AppearanceSettingState.initial() {
@@ -22,6 +24,7 @@ class AppearanceSettingState extends Equatable {
       theme: AppearanceSettingState.lightTheme,
       fontFamily: 'Microsoft YaHei',
       fontSize: 16,
+      userType: UserType.user,
     );
   }
 
@@ -29,11 +32,13 @@ class AppearanceSettingState extends Equatable {
     FluentThemeData? theme,
     String? fontFamily,
     int? fontSize,
+    UserType? userType,
   }) {
     return AppearanceSettingState(
       theme: theme ?? this.theme,
       fontFamily: fontFamily ?? this.fontFamily,
       fontSize: fontSize ?? this.fontSize,
+      userType: userType ?? this.userType,
     );
   }
 
@@ -42,6 +47,7 @@ class AppearanceSettingState extends Equatable {
       'theme': theme == AppearanceSettingState.lightTheme ? 'light' : 'dark',
       'fontFamily': fontFamily,
       'fontSize': fontSize,
+      'userType': userType.index,
     };
   }
 
@@ -55,6 +61,7 @@ class AppearanceSettingState extends Equatable {
           : AppearanceSettingState.darkTheme,
       fontFamily: map['fontFamily'] as String,
       fontSize: map['fontSize'] as int,
+      userType: UserType.fromValue(map['userType']),
     );
   }
 }

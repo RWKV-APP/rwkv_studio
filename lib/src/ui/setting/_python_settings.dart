@@ -110,6 +110,7 @@ class _PythonSettingsState extends State<PythonSettings> {
                 constraints: const BoxConstraints(minWidth: 100),
                 child: const Text('类型'),
               ),
+              const Spacer(),
               ComboBox(
                 value: _selectedType,
                 items: [
