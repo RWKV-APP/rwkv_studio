@@ -53,4 +53,8 @@ class AppCubit extends Cubit<AppState> {
   void jump2ModelManage() {
     emit(state.copyWith(pane: 2));
   }
+
+  void jump2PythonSettings(){
+    emit(state.copyWith(pane: 5));
+  }
 }

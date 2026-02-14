@@ -7,7 +7,6 @@ import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ModelListFlyout extends StatelessWidget {
@@ -19,6 +18,42 @@ class ModelListFlyout extends StatelessWidget {
     this.modelInstanceId,
     required this.onModelSelected,
   });
+
+  Future _onModelSelected(BuildContext context, ModelInfo info) async {
+    if (info.backend == ModelBackend.albatross) {
+      if (context.app.getSelectedPython() == null) {
+        showDialog(
+          context: context,
+          builder: (ctx) => ContentDialog(
+            title: const Text('请先设置 Python 环境'),
+            content: const Text(
+              'Albatross 需要 Python 环境才能运行, 请在设置 -> Python 中设置环境',
+            ),
+            actions: [
+              Button(
+                child: const Text('取消'),
+                onPressed: () => Navigator.of(ctx).pop(),
+              ),
+              FilledButton(
+                child: const Text('去设置'),
+                onPressed: () {
+                  context.app.jump2PythonSettings();
+                  Navigator.of(ctx).pop();
+                  Navigator.of(ctx).pop();
+                },
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+    }
+    onModelSelected(info);
+  }
+
+  Future _onModelReleased(BuildContext context, String instanceId) async {
+    context.rwkv.release(instanceId).withToast(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +130,7 @@ class ModelListFlyout extends StatelessWidget {
       trailing = Button(
         onPressed: selectedInstance?.info.id == model.id
             ? null
-            : () {
-                context.rwkv.release(instanceId).withToast(context);
-              },
+            : () => _onModelReleased(context, instanceId),
         child: const Text('释放', style: TextStyle(fontSize: 13, height: 1.1)),
       );
     }
@@ -132,7 +165,7 @@ class ModelListFlyout extends StatelessWidget {
       value: selectedInstance?.info.id == model.id,
       onChanged: (bool value) {
         if (value) {
-          onModelSelected(model);
+          _onModelSelected(context, model);
         }
       },
     );

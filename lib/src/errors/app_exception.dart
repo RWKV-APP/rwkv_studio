@@ -3,7 +3,7 @@ class AppException implements Exception {
   final String? stackTrace;
   final String? code;
 
-  AppException(this.message, {this.stackTrace, this.code});
+  const AppException(this.message, {this.stackTrace, this.code});
 
   @override
   String toString() {
