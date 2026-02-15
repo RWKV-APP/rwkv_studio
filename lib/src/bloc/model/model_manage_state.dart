@@ -4,16 +4,14 @@ class ModelDownloadState {
   final TaskUpdate update;
   final dynamic error;
 
-  ModelDownloadState({
-    required this.update,
-    required this.error,
-  });
+  ModelDownloadState({required this.update, required this.error});
 }
 
 class ModelManageState {
   final bool initialized;
 
   final List<ModelInfo> models;
+  final List<ModelInfo> importedModels;
   final Map<String, ModelDownloadState?> modelStates;
   final DownloadSource downloadSource;
   final String downloadDir;
@@ -25,6 +23,23 @@ class ModelManageState {
   Iterable<ModelInfo> get availableModels =>
       models.where((e) => e.localPath.isNotEmpty || e.isRemote);
 
+  List<ModelInfo> get allModels => [...models, ...importedModels];
+
+  List<ModelTag> getDisplayTags() {
+    return tags.where((e) => e.name != 'mlx' && e.name != 'coreml').toList();
+  }
+
+  List<ModelGroup> getDisplayGroups() {
+    return groups
+        .where((e) => e.name != 'sudoku' && e.name != 'othello')
+        .toList();
+  }
+
+  bool shouldModelListUpdate(ModelManageState other) {
+    return other.models.length != models.length ||
+        other.importedModels.length != importedModels.length;
+  }
+
   ModelManageState._({
     required this.initialized,
     required this.models,
@@ -35,6 +50,7 @@ class ModelManageState {
     required this.groups,
     required this.backends,
     required this.remoteModelProviders,
+    required this.importedModels,
   });
 
   factory ModelManageState.initial() {
@@ -48,6 +64,7 @@ class ModelManageState {
       groups: const [],
       backends: [],
       remoteModelProviders: [],
+      importedModels: [],
     );
   }
 
@@ -62,6 +79,7 @@ class ModelManageState {
     List<ModelGroup>? groups,
     List<ModelBackend>? backends,
     List<ModelListProvider>? remoteModelProviders,
+    List<ModelInfo>? importedModels,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
@@ -73,6 +91,7 @@ class ModelManageState {
       groups: groups ?? this.groups,
       backends: backends ?? this.backends,
       remoteModelProviders: remoteModelProviders ?? this.remoteModelProviders,
+      importedModels: importedModels ?? this.importedModels,
     );
   }
 }

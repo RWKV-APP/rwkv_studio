@@ -61,16 +61,18 @@ class RemoteService extends Equatable {
   final String id;
   final String name;
   final String url;
+  final String apiKey;
   final bool enabled;
 
   @override
-  List<Object?> get props => [id, name, url, enabled];
+  List<Object?> get props => [id, name, url, enabled, apiKey];
 
   RemoteService({
     required this.url,
     required this.id,
     required this.name,
     required this.enabled,
+    required this.apiKey,
   });
 
   RemoteService copyWith({
@@ -78,17 +80,25 @@ class RemoteService extends Equatable {
     String? id,
     String? name,
     bool? enabled,
+    String? apiKey,
   }) {
     return RemoteService(
       url: url ?? this.url,
       id: id ?? this.id,
       name: name ?? this.name,
       enabled: enabled ?? this.enabled,
+      apiKey: apiKey ?? this.apiKey,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {'id': id, 'name': name, 'url': url, 'enabled': enabled};
+    return {
+      'id': id,
+      'name': name,
+      'url': url,
+      'enabled': enabled,
+      'apiKey': apiKey,
+    };
   }
 
   factory RemoteService.fromMap(dynamic map) {
@@ -96,7 +106,8 @@ class RemoteService extends Equatable {
       id: map['id'] as String,
       name: map['name'] as String,
       url: map['url'] as String,
-      enabled: map['enabled'] as bool,
+      enabled: map['enabled'] ?? true,
+      apiKey: map['apiKey'] ?? '',
     );
   }
 }

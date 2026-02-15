@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
+import 'package:rwkv_studio/src/cache/hive_manager.dart';
+import 'package:rwkv_studio/src/cache/model_file_box.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -18,9 +20,6 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   late final ModelManager _manager;
 
   ModelManageCubit() : super(ModelManageState.initial());
-
-  Iterable<ModelInfo> get availableModels =>
-      state.models.where((e) => e.localPath.isNotEmpty || e.isRemote);
 
   // TODO optimize
   Iterable<ModelInfo> get availableTextModels => state.models.where(
@@ -66,11 +65,20 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       );
     });
 
-    final models = _manager.models;
+    final models = _getModelList();
+
+    List<ModelInfo> importedModels = [];
+    try {
+      await HiveManager.openModelFileBox();
+      importedModels = ModelFileBox.getAllModels().toList();
+    } catch (e) {
+      logw(e);
+    }
     emit(
       state.copyWith(
         initialized: true,
         models: models,
+        importedModels: importedModels,
         tags: _manager.modelConfig.tags,
         groups: _manager.modelConfig.groups,
         backends: ModelBackend.defaultBackends,
@@ -86,6 +94,11 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     );
 
     updateModelList(local: false);
+  }
+
+  Future updateModelConfigUrl(String url) async {
+    _manager.setConfigProviderUrl(url);
+    await updateModelList(remote: false);
   }
 
   Future download(String id) async {
@@ -105,8 +118,15 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future delete(String id) async {
+    if (state.importedModels.any((e) => e.id == id)) {
+      await ModelFileBox.delete(id);
+      emit(
+        state.copyWith(importedModels: ModelFileBox.getAllModels().toList()),
+      );
+      return;
+    }
     await _manager.deleteLocalModelFiles(id);
-    emit(state.copyWith(models: _manager.models));
+    emit(state.copyWith(models: _getModelList()));
   }
 
   Future cancel(String id) async {
@@ -140,7 +160,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     if (local && !kIsWeb) {
       models.removeWhere((e) => !e.isRemote);
       await _manager.updateConfig();
-      models = [...models, ..._manager.models];
+      models = [...models, ..._getModelList()];
     }
 
     if (!kIsWeb) {
@@ -156,20 +176,21 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     emit(state.copyWith(downloadSource: source));
   }
 
-  void onImportModel(ModelInfo model) {
-    // TODO persist
+  Future onImportModel(ModelInfo model) async {
+    await ModelFileBox.put(model);
+
     emit(
       state.copyWith(
         models: [
           model.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString()),
-          ..._manager.models,
+          ..._getModelList(),
         ],
       ),
     );
   }
 
   ModelInfo? findModelByMD5(String md5) {
-    return state.models.where((e) => e.md5 == md5).firstOrNull;
+    return state.allModels.where((e) => e.md5 == md5).firstOrNull;
   }
 
   void _emitTaskUpdate({
@@ -180,7 +201,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     logd(
       'download update: ${update.state}, ${update.progress.toStringAsFixed(2)}',
     );
-    final m = update.isCompleted ? _manager.models : null;
+    final m = update.isCompleted ? _getModelList() : null;
     emit(
       state.copyWith(
         models: m,
@@ -192,5 +213,14 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         }..removeWhere((k, v) => v == null || v.update.isCompleted),
       ),
     );
+  }
+
+  List<ModelInfo> _getModelList() {
+    return _manager.models.where((e) {
+      if (e.groups.contains('othello') || e.groups.contains('sudoku')) {
+        return false;
+      }
+      return true;
+    }).toList();
   }
 }

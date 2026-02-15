@@ -47,8 +47,9 @@ class ImportModelDropArea extends StatelessWidget {
     if (model == null || !context.mounted) {
       return;
     }
-    context.modelManage.onImportModel(model);
-    context.toast('导入成功');
+    context.modelManage
+        .onImportModel(model)
+        .withToast(context, success: '导入成功');
   }
 
   @override

@@ -142,11 +142,18 @@ Widget _buildStateSyncListeners(Widget child) {
         },
         child: const SizedBox(),
       ),
+      BlocListener<SettingCubit, SettingState>(
+        listenWhen: (p, c) => p.model.modelListUrl != c.model.modelListUrl,
+        listener: (context, state) async {
+          context.modelManage.updateModelConfigUrl(state.model.modelListUrl);
+        },
+        child: const SizedBox(),
+      ),
       BlocListener<ModelManageCubit, ModelManageState>(
-        listenWhen: (p, c) => p.models != c.models,
+        listenWhen: (p, c) => p.shouldModelListUpdate(p),
         listener: (context, state) {
           logd(
-            'model-list changed: ${state.models.length} models, '
+            'model-list changed: ${state.allModels.length} models, '
             '${state.availableModels.length} available',
           );
         },

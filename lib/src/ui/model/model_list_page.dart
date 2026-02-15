@@ -55,7 +55,7 @@ class _ModelListPageState extends State<ModelListPage> {
         });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _allModels = context.modelManage.state.models;
+      _allModels = context.modelManage.state.allModels;
       _showModels = _allModels;
       sortModel();
     });
@@ -180,8 +180,13 @@ class _ModelListPageState extends State<ModelListPage> {
           },
         ),
         IconButton(
-          onPressed: () {
-            context.modelManage.updateModelList().withToast(context);
+          onPressed: () async {
+            await context.modelManage.updateModelList().withToast(
+              context,
+              success: '更新列表成功',
+            );
+            filterByFilters(_filters);
+            sortModel();
           },
           icon: const Row(
             children: [
@@ -197,9 +202,9 @@ class _ModelListPageState extends State<ModelListPage> {
     return Column(
       children: [
         BlocListener<ModelManageCubit, ModelManageState>(
-          listenWhen: (p, c) => p.models != c.models,
+          listenWhen: (p, c) => c.shouldModelListUpdate(p),
           listener: (context, state) {
-            _allModels = state.models;
+            _allModels = state.allModels;
             _controllerSearch.text = '';
             _showModels = _allModels;
             sortModel();
@@ -272,7 +277,7 @@ class _ModelListPageState extends State<ModelListPage> {
                         ModelManageState,
                         ModelInfo?
                       >(
-                        selector: (state) => state.models
+                        selector: (state) => state.allModels
                             .where((m) => m.id == _selectedModelId)
                             .firstOrNull,
                         builder: (context, state) {
@@ -467,7 +472,7 @@ class _FilterButton extends StatelessWidget {
                     runSpacing: 4,
                     spacing: 8,
                     children: [
-                      for (final g in managerState.groups)
+                      for (final g in managerState.getDisplayGroups())
                         Checkbox(
                           checked: filters.contains(g.name),
                           onChanged: (e) {
@@ -492,7 +497,7 @@ class _FilterButton extends StatelessWidget {
                     runSpacing: 4,
                     spacing: 8,
                     children: [
-                      for (final tag in managerState.tags)
+                      for (final tag in managerState.getDisplayTags())
                         Checkbox(
                           checked: filters.contains(tag.name),
                           content: Text(tag.name),

@@ -43,8 +43,8 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       backends = [ModelBackend.unknown, ...context.modelManage.state.backends];
-      tags = context.modelManage.state.tags;
-      groups = context.modelManage.state.groups;
+      tags = context.modelManage.state.getDisplayTags();
+      groups = context.modelManage.state.getDisplayGroups();
       setState(() {
         message = '正在解析模型信息...';
       });
@@ -97,7 +97,7 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
     final md5 = ''; //await file.md5();
 
     model = ModelInfo.base(
-      id: sha256,
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: file.name,
       url: '',
       fileSize: size,

@@ -137,6 +137,7 @@ class _TableHeader extends StatelessWidget {
         SizedBox(width: 12),
         Expanded(flex: 2, child: Text('服务名称')),
         Expanded(flex: 2, child: Text('地址', textAlign: .start)),
+        Expanded(flex: 2, child: Text('API Key', textAlign: .start)),
         SizedBox(width: 12),
         Row(
           mainAxisSize: .min,
@@ -198,6 +199,13 @@ class _ServiceItem extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(flex: 2, child: Text(service.name)),
           Expanded(flex: 2, child: Text(service.url, textAlign: .start)),
+          Expanded(
+            flex: 2,
+            child: Text(
+              service.apiKey.isEmpty ? '-' : ('*' * service.apiKey.length),
+              textAlign: .start,
+            ),
+          ),
           const SizedBox(width: 12),
           Row(
             mainAxisSize: .min,

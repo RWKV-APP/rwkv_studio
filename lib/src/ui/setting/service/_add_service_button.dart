@@ -12,6 +12,7 @@ class _AddButton extends StatefulWidget {
 class _AddButtonState extends State<_AddButton> {
   bool _isAdding = false;
   final _nameController = TextEditingController();
+  final _apiKeyController = TextEditingController();
   final _urlController = TextEditingController(text: 'http://127.0.0.1:8000');
 
   bool _enabled = true;
@@ -19,11 +20,13 @@ class _AddButtonState extends State<_AddButton> {
   void onTapAddService() async {
     final name = _nameController.text.trim();
     final url = _urlController.text.trim();
+    final apiKey = _apiKeyController.text.trim();
     if (name.isEmpty || url.isEmpty) {
       return;
     }
     _nameController.clear();
     _urlController.clear();
+    _apiKeyController.clear();
     setState(() {
       _isAdding = false;
     });
@@ -33,6 +36,7 @@ class _AddButtonState extends State<_AddButton> {
         name: name,
         url: url,
         enabled: _enabled,
+        apiKey: apiKey,
       ),
     );
   }
@@ -60,12 +64,23 @@ class _AddButtonState extends State<_AddButton> {
           ),
           Expanded(
             flex: 2,
+            child: Padding(
+              padding: const .only(right: 16),
+              child: TextBox(
+                controller: _urlController,
+                placeholder: '请输入服务地址',
+                onSubmitted: (v) {
+                  onTapAddService();
+                },
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
             child: TextBox(
-              controller: _urlController,
-              placeholder: '请输入服务地址',
-              onSubmitted: (v) {
-                onTapAddService();
-              },
+              controller: _apiKeyController,
+              maxLines: 1,
+              placeholder: 'API 密钥',
             ),
           ),
           const SizedBox(width: 12),
@@ -114,11 +129,7 @@ class _AddButtonState extends State<_AddButton> {
     return IconButton(
       icon: const Row(
         mainAxisSize: .min,
-        children: [
-          Icon(FluentIcons.add),
-          SizedBox(width: 8),
-          Text('添加服务'),
-        ],
+        children: [Icon(FluentIcons.add), SizedBox(width: 8), Text('添加服务')],
       ),
       onPressed: () {
         setState(() {
