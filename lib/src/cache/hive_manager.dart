@@ -6,8 +6,8 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 
 import 'conversation_box.dart';
-import 'model_file_box.dart';
 import 'message_box.dart';
+import 'model_file_box.dart';
 import 'preferences_box.dart';
 
 class HiveManager {
@@ -15,7 +15,6 @@ class HiveManager {
 
   static Box<PreferencesBox>? _preferencesBox;
   static Box<ConversationBox>? _conversationBox;
-  static Box<MessageBox>? _messageBox;
   static Box<ModelFileBox>? _modelFileBox;
 
   /// Initialize Hive and register adapters
@@ -36,16 +35,6 @@ class HiveManager {
     Hive.registerAdapter(MessageBoxAdapter());
     Hive.registerAdapter(ModelFileBoxAdapter());
     logd('hive initialized');
-  }
-
-  /// Open all boxes
-  static Future<void> openBoxes() async {
-    await Future.wait([
-      openPreferencesBox(),
-      openConversationBox(),
-      openMessageBox(),
-      openModelFileBox(),
-    ]);
   }
 
   /// Get preferences box
@@ -74,21 +63,6 @@ class HiveManager {
     return _conversationBox!;
   }
 
-  /// Get message box
-  static Box<MessageBox> get messageBox {
-    assert(
-      _messageBox != null,
-      'Message box not opened. Call openMessageBox() first.',
-    );
-    return _messageBox!;
-  }
-
-  /// Open message box
-  static Future<Box<MessageBox>> openMessageBox() async {
-    _messageBox ??= await Hive.openBox<MessageBox>('messages');
-    return _messageBox!;
-  }
-
   /// Get model file box
   static Box<ModelFileBox> get modelFileBox {
     assert(
@@ -108,11 +82,9 @@ class HiveManager {
   static Future<void> close() async {
     await _preferencesBox?.close();
     await _conversationBox?.close();
-    await _messageBox?.close();
     await _modelFileBox?.close();
     _preferencesBox = null;
     _conversationBox = null;
-    _messageBox = null;
     _modelFileBox = null;
   }
 
@@ -120,7 +92,6 @@ class HiveManager {
   static Future<void> clear() async {
     await _preferencesBox?.clear();
     await _conversationBox?.clear();
-    await _messageBox?.clear();
     await _modelFileBox?.clear();
   }
 }

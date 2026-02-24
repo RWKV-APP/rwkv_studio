@@ -15,6 +15,7 @@ class MessageState {
   final String convId;
   final String text;
   final int thinkEndAt;
+  final DateTime createAt;
   final DateTime updateAt;
   final String role;
   final String error;
@@ -50,6 +51,7 @@ class MessageState {
     required this.updateAt,
     required this.role,
     required this.modelName,
+    required this.createAt,
     this.thinkEndAt = 0,
     this.stopReason = StopReason.none,
     this.error = '',
@@ -70,6 +72,7 @@ class MessageState {
   }) {
     final id = _newId();
     return MessageState._(
+      createAt: DateTime.now(),
       id: '$convId-$id-${_incrementalId++}',
       convId: convId,
       text: text ?? '',
@@ -86,6 +89,7 @@ class MessageState {
     String? id,
     String? convId,
     String? text,
+    DateTime? createAt,
     DateTime? updateAt,
     String? role,
     String? error,
@@ -96,6 +100,7 @@ class MessageState {
   }) {
     return MessageState._(
       id: id ?? this.id,
+      createAt: createAt ?? this.createAt,
       convId: convId ?? this.convId,
       text: text ?? this.text,
       updateAt: updateAt ?? this.updateAt,

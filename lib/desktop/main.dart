@@ -19,7 +19,7 @@ void main() async {
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
-      await Window.setEffect(effect: WindowEffect.mica, dark: false);
+      //await Window.setEffect(effect: WindowEffect.mica, dark: false);
     });
   }
   runApp(const RWKVApp());

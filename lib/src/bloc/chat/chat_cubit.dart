@@ -6,6 +6,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/cache/conversation_box.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/cache/message_box.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/diff_utils.dart';
@@ -14,7 +15,9 @@ import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'chat_state.dart';
+
 part 'conversation_state.dart';
+
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -32,10 +35,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     emit(state.copyWith(initialized: true));
 
     final convBox = await HiveManager.openConversationBox();
-    final msgBox = await HiveManager.openMessageBox();
 
     final convs = convBox.values.map((e) => e.toChat()).toList();
-    final msgs = msgBox.values
+    final msgs = (await MessageBox.getAll())
         .map((e) => e.toMessage())
         .groupBy((e) => e.convId)
         .map((k, v) {
@@ -45,9 +47,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         });
 
     convs.sort((a, b) => a.updateAt.compareTo(b.updateAt));
-    logd(
-      'restored conversations: ${convs.length}, messages: ${msgBox.values.length}',
-    );
+    logd('restored conversations: ${convs.length}, messages: ${msgs.length}');
     emit(state.copyWith(conversations: convs, messages: msgs));
 
     if (state.messages.isEmpty) {
@@ -178,6 +178,11 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         ),
       ),
     );
+  }
+
+  Future clear() async {
+    await MessageBox.clear();
+    emit(state.copyWith(messages: {}));
   }
 
   Future newChat() async {
@@ -368,98 +373,104 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         },
       ),
     );
-    rwkv
-        .chat(
-          messages,
-          state.modelInstanceId,
-          conv.decodeParmaId,
-          state.generationConfig.copyWith(prompt: systemPrompt),
-        )
-        .listen(
-          (resp) {
-            int? thinkEndAt;
-            final content = (assistant.text + resp.text).trimLeft();
-            if (!thinkResolved) {
-              if (!content.startsWith('<')) {
-                thinkEndAt = 0;
-                thinkResolved = true;
-                logd('think resolved, no think tag');
-              } else {
-                final index = content.indexOf('</think>');
-                thinkEndAt = content.length;
-                if (index != -1) {
-                  thinkEndAt = index;
-                  thinkResolved = true;
-                  logd('think resolved: $thinkEndAt');
-                  assistant.thinkEndTime =
-                      DateTime.now().millisecondsSinceEpoch;
-                }
-              }
-            }
+    final stream = rwkv.chat(
+      messages,
+      state.modelInstanceId,
+      conv.decodeParmaId,
+      state.generationConfig.copyWith(prompt: systemPrompt),
+    );
 
-            if (assistant.firstTokenTime <= 0) {
-              assistant.firstTokenTime = DateTime.now().millisecondsSinceEpoch;
+    try {
+      await for (final resp in stream) {
+        if (isClosed) {
+          return;
+        }
+        int? thinkEndAt;
+        final content = (assistant.text + resp.text).trimLeft();
+        if (!thinkResolved) {
+          if (!content.startsWith('<')) {
+            thinkEndAt = 0;
+            thinkResolved = true;
+            logd('think resolved, no think tag');
+          } else {
+            final index = content.indexOf('</think>');
+            thinkEndAt = content.length;
+            if (index != -1) {
+              thinkEndAt = index;
+              thinkResolved = true;
+              logd('think resolved: $thinkEndAt');
+              assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
             }
-            assistant = assistant.copyWith(
-              text: content,
-              stopReason: resp.stopReason,
-              thinkEndAt: thinkEndAt,
-            );
-            emit(
-              state.copyWith(
-                generating: true,
-                messages: {
-                  ...state.messages,
-                  conversationId: [...history, assistant],
-                },
-              ),
-            );
-          },
-          onDone: () {
-            updateConversation(
-              conversationId,
-              (c) => c.copyWith(updateAt: DateTime.now()),
-            );
-            var ns = state.copyWith(generating: false);
-            if (assistant.stopReason == StopReason.none) {
-              assistant = assistant.copyWith(stopReason: StopReason.unknown);
-              if (assistant.thinkEndTime <= 0) {
-                assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
-              }
-              ns = ns.copyWith(
-                messages: {
-                  ...state.messages,
-                  conversationId: [...history, assistant],
-                },
-              );
-            }
-            logd('chat generation done: ${assistant.stopReason}');
-            emit(ns);
-          },
-          onError: (e, s) {
-            if (isCanceledException(e)) {
-              assistant = assistant.copyWith(stopReason: StopReason.canceled);
-            } else {
-              loge(e, s);
-              assistant = assistant.copyWith(
-                error: "$e",
-                stopReason: StopReason.error,
-              );
-            }
-            updateConversation(
-              conversationId,
-              (c) => c.copyWith(updateAt: DateTime.now()),
-            );
-            emit(
-              state.copyWith(
-                generating: false,
-                messages: {
-                  ...state.messages,
-                  conversationId: [...history, assistant],
-                },
-              ),
-            );
+          }
+        }
+
+        if (assistant.firstTokenTime <= 0) {
+          assistant.firstTokenTime = DateTime.now().millisecondsSinceEpoch;
+        }
+        assistant = assistant.copyWith(
+          text: content,
+          stopReason: resp.stopReason,
+          thinkEndAt: thinkEndAt,
+        );
+        emit(
+          state.copyWith(
+            generating: true,
+            messages: {
+              ...state.messages,
+              conversationId: [...history, assistant],
+            },
+          ),
+        );
+      }
+
+      /// done
+      updateConversation(
+        conversationId,
+        (c) => c.copyWith(updateAt: DateTime.now()),
+      );
+      var ns = state.copyWith(generating: false);
+      if (assistant.stopReason == StopReason.none) {
+        assistant = assistant.copyWith(stopReason: StopReason.unknown);
+        if (assistant.thinkEndTime <= 0) {
+          assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+        }
+        ns = ns.copyWith(
+          messages: {
+            ...state.messages,
+            conversationId: [...history, assistant],
           },
         );
+      }
+      logd('chat generation done: ${assistant.stopReason}');
+      emit(ns);
+    } catch (e, s) {
+      assistant = assistant.copyWith(updateAt: DateTime.now());
+      if (isCanceledException(e)) {
+        assistant = assistant.copyWith(stopReason: StopReason.canceled);
+      } else {
+        assistant = assistant.copyWith(
+          error: "$e",
+          stopReason: StopReason.error,
+        );
+      }
+      updateConversation(
+        conversationId,
+        (c) => c.copyWith(updateAt: DateTime.now()),
+      );
+      emit(
+        state.copyWith(
+          generating: false,
+          messages: {
+            ...state.messages,
+            conversationId: [...history, assistant],
+          },
+        ),
+      );
+      throw AppException('generate error', cause: e, stackTrace: s);
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(generating: false));
+      }
+    }
   }
 }

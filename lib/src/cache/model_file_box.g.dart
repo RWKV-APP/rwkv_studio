@@ -8,7 +8,7 @@ part of 'model_file_box.dart';
 
 class ModelFileBoxAdapter extends TypeAdapter<ModelFileBox> {
   @override
-  final int typeId = 5;
+  final typeId = 5;
 
   @override
   ModelFileBox read(BinaryReader reader) {
@@ -30,7 +30,7 @@ class ModelFileBoxAdapter extends TypeAdapter<ModelFileBox> {
       groups: (fields[10] as List).cast<String>(),
       decodeParams: (fields[11] as List).cast<String>(),
       isDebug: fields[12] as bool,
-      updatedAt: fields[13] as int,
+      updatedAt: (fields[13] as num).toInt(),
       description: fields[14] as String,
       vocabUrl: fields[15] as String,
       vocabId: fields[16] as String,

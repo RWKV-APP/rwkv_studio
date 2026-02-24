@@ -5,13 +5,17 @@
 import 'package:hive_ce/hive_ce.dart';
 import 'package:rwkv_studio/src/cache/conversation_box.dart';
 import 'package:rwkv_studio/src/cache/message_box.dart';
+import 'package:rwkv_studio/src/cache/model_file_box.dart';
 import 'package:rwkv_studio/src/cache/preferences_box.dart';
+import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(ConversationBoxAdapter());
     registerAdapter(MessageBoxAdapter());
+    registerAdapter(ModelFileBoxAdapter());
     registerAdapter(PreferencesBoxAdapter());
+    registerAdapter(StateCacheBoxAdapter());
   }
 }
 
@@ -19,6 +23,8 @@ extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
     registerAdapter(ConversationBoxAdapter());
     registerAdapter(MessageBoxAdapter());
+    registerAdapter(ModelFileBoxAdapter());
     registerAdapter(PreferencesBoxAdapter());
+    registerAdapter(StateCacheBoxAdapter());
   }
 }

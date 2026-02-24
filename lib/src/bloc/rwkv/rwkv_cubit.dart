@@ -107,7 +107,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   ) async* {
     final instance = state.models[instanceId];
     if (instance == null) throw "Model not found";
-    final param = state.decodeParams[decodeParamId];
+    final param = decodeParamId.isEmpty
+        ? DecodeParam.initial()
+        : state.decodeParams[decodeParamId];
     if (param == null) throw "decode param preset not found: $decodeParamId";
     await _syncModelConfig(instanceId, param, config);
     try {
@@ -141,7 +143,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
         );
         yield* stream;
       } else {
-        throw AppException('fim only supported by albatross');
+        throw const AppException('fim only supported by albatross');
       }
     }
 

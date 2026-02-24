@@ -77,3 +77,23 @@ extension DateUtils on DateTime {
     return '刚刚';
   }
 }
+
+extension DurationUtils on Duration {
+  String get displayDuration {
+    if (inHours > 1) {
+      return '$inHours hours';
+    }
+    if (inMinutes > 1) {
+      final m = inSeconds / 60;
+      return '${m.toStringAsFixed(1)}min';
+    }
+    if (inSeconds > 1) {
+      final s = inMilliseconds / 1000;
+      return '${s.toStringAsFixed(1)}sec';
+    }
+    if (inMilliseconds > 1) {
+      return '$inMilliseconds ms';
+    }
+    return 'just now';
+  }
+}

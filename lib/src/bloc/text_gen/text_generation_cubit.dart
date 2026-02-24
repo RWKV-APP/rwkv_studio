@@ -4,7 +4,6 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'text_generation_state.dart';
@@ -69,41 +68,44 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     if (fim) {
       offset = state.controllerText.selection.baseOffset;
       if (offset == prompt.length) {
-        throw AppException('fim suffix is empty');
+        throw const AppException('fim suffix is empty');
+      }
+      if (offset == 0) {
+        throw const AppException('fim prefix is empty');
       }
       prefix = prompt.substring(0, offset);
       suffix = prompt.substring(offset);
       result = '';
     }
-    final sp = rwkv
-        .generate(
-          prompt,
-          state.modelInstanceId,
-          state.decodeParam,
-          fimSuffix: fim ? suffix : null,
-        )
-        .listen(
-          (e) {
-            if (fim) {
-              result += e.text;
-              final r = prefix + result + suffix;
-              state.controllerText.text = r;
-            } else {
-              result += e.text;
-              state.controllerText.text = result.substring(prompt.length);
-            }
-            if (!state.generating) {
-              emit(state.copyWith(generating: true));
-            }
-          },
-          onError: (e, s) {
-            loge(e, s);
-            emit(state.copyWith(generating: false));
-          },
-          onDone: () {
-            emit(state.copyWith(generating: false));
-          },
-        );
-    addSubscription(sp);
+    final stream = rwkv.generate(
+      prompt,
+      state.modelInstanceId,
+      state.decodeParam,
+      fimSuffix: fim ? suffix : null,
+    );
+    try {
+      await for (final e in stream) {
+        if (isClosed) {
+          return;
+        }
+        if (fim) {
+          result += e.text;
+          final r = prefix + result + suffix;
+          state.controllerText.text = r;
+        } else {
+          result += e.text;
+          state.controllerText.text = result.substring(prompt.length);
+        }
+        if (!state.generating) {
+          emit(state.copyWith(generating: true));
+        }
+      }
+    } catch (e) {
+      throw AppException('generate error', cause: e);
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(generating: false));
+      }
+    }
   }
 }

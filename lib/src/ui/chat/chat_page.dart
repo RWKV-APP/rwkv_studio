@@ -19,6 +19,8 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  final _moreMenuController = FlyoutController();
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +30,28 @@ class _ChatPageState extends State<ChatPage> {
   void deactivate() {
     context.chat.mayPause(context.rwkv);
     super.deactivate();
+  }
+
+  void _showMoreMenu() async {
+    _moreMenuController.showFlyout(
+      autoModeConfiguration: FlyoutAutoConfiguration(
+        preferredMode: FlyoutPlacementMode.bottomCenter,
+      ),
+      barrierDismissible: true,
+      dismissOnPointerMoveAway: false,
+      dismissWithEsc: true,
+      builder: (ctx) {
+        return MenuFlyout(
+          items: [
+            MenuFlyoutItem(
+              leading: const WindowsIcon(WindowsIcons.delete),
+              text: const Text('清空对话'),
+              onPressed: () => context.chat.clear(),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -49,9 +73,15 @@ class _ChatPageState extends State<ChatPage> {
                     const Expanded(child: Text('对话')),
                     IconButton(
                       icon: const Icon(FluentIcons.add),
-                      onPressed: () {
-                        context.chat.newChat();
-                      },
+                      onPressed: () => context.chat.newChat(),
+                    ),
+                    const SizedBox(width: 6),
+                    FlyoutTarget(
+                      controller: _moreMenuController,
+                      child: IconButton(
+                        icon: const Icon(FluentIcons.more_vertical),
+                        onPressed: _showMoreMenu,
+                      ),
                     ),
                   ],
                 ),
