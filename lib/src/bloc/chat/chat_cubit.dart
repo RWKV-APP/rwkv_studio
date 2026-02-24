@@ -355,15 +355,20 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     if (assistant.text.isNotEmpty) {
       messages.add(assistant.text);
     }
-    bool thinkResolved = assistant.thinkEndAt < assistant.text.length;
-    if (assistant.text.isNotEmpty && !assistant.text.startsWith('<')) {
-      thinkResolved = true;
+    if (assistant.text.startsWith('<') &&
+        !assistant.text.contains('</think>')) {
       assistant = assistant.copyWith(thinkEndAt: assistant.text.length);
     }
     final conv = state.conversations.firstWhere((e) => e.id == conversationId);
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
 
     assistant = assistant.copyWith(stopReason: StopReason.none);
+    final stream = rwkv.chat(
+      messages,
+      state.modelInstanceId,
+      conv.decodeParmaId,
+      state.generationConfig.copyWith(prompt: systemPrompt),
+    );
     emit(
       state.copyWith(
         generating: true,
@@ -373,104 +378,125 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         },
       ),
     );
-    final stream = rwkv.chat(
-      messages,
-      state.modelInstanceId,
-      conv.decodeParmaId,
-      state.generationConfig.copyWith(prompt: systemPrompt),
-    );
-
     try {
       await for (final resp in stream) {
         if (isClosed) {
           return;
         }
-        int? thinkEndAt;
-        final content = (assistant.text + resp.text).trimLeft();
-        if (!thinkResolved) {
-          if (!content.startsWith('<')) {
-            thinkEndAt = 0;
-            thinkResolved = true;
-            logd('think resolved, no think tag');
-          } else {
-            final index = content.indexOf('</think>');
-            thinkEndAt = content.length;
-            if (index != -1) {
-              thinkEndAt = index;
-              thinkResolved = true;
-              logd('think resolved: $thinkEndAt');
-              assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
-            }
-          }
-        }
-
-        if (assistant.firstTokenTime <= 0) {
-          assistant.firstTokenTime = DateTime.now().millisecondsSinceEpoch;
-        }
-        assistant = assistant.copyWith(
-          text: content,
-          stopReason: resp.stopReason,
-          thinkEndAt: thinkEndAt,
-        );
-        emit(
-          state.copyWith(
-            generating: true,
-            messages: {
-              ...state.messages,
-              conversationId: [...history, assistant],
-            },
-          ),
+        _onGenerateResponse(
+          conversationId: conversationId,
+          history: history,
+          resp: resp,
         );
       }
-
-      /// done
-      updateConversation(
-        conversationId,
-        (c) => c.copyWith(updateAt: DateTime.now()),
-      );
-      var ns = state.copyWith(generating: false);
-      if (assistant.stopReason == StopReason.none) {
-        assistant = assistant.copyWith(stopReason: StopReason.unknown);
-        if (assistant.thinkEndTime <= 0) {
-          assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
-        }
-        ns = ns.copyWith(
-          messages: {
-            ...state.messages,
-            conversationId: [...history, assistant],
-          },
-        );
-      }
-      logd('chat generation done: ${assistant.stopReason}');
-      emit(ns);
+      _onGenerateDone(conversationId: conversationId, history: history);
     } catch (e, s) {
-      assistant = assistant.copyWith(updateAt: DateTime.now());
-      if (isCanceledException(e)) {
-        assistant = assistant.copyWith(stopReason: StopReason.canceled);
-      } else {
-        assistant = assistant.copyWith(
-          error: "$e",
-          stopReason: StopReason.error,
-        );
-      }
-      updateConversation(
-        conversationId,
-        (c) => c.copyWith(updateAt: DateTime.now()),
-      );
-      emit(
-        state.copyWith(
-          generating: false,
-          messages: {
-            ...state.messages,
-            conversationId: [...history, assistant],
-          },
-        ),
-      );
+      _onGenerateError(conversationId: conversationId, history: history, e: e);
       throw AppException('generate error', cause: e, stackTrace: s);
     } finally {
       if (!isClosed) {
         emit(state.copyWith(generating: false));
       }
     }
+  }
+
+  void _onGenerateResponse({
+    required String conversationId,
+    required List<MessageState> history,
+    required GenerationResponse resp,
+  }) {
+    var assistant = state.messages[conversationId]!.last;
+    final thinkResolved =
+        assistant.thinkEndAt == -1 ||
+        assistant.thinkEndAt < assistant.text.length;
+    int? thinkEndAt;
+    final content = (assistant.text + resp.text).trimLeft();
+    if (!thinkResolved) {
+      if (!content.startsWith('<')) {
+        thinkEndAt = -1;
+        logd('think resolved, no think tag');
+      } else {
+        final index = content.indexOf('</think>');
+        thinkEndAt = content.length;
+        if (index != -1) {
+          thinkEndAt = index;
+          logd('think resolved: $thinkEndAt');
+          assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+        }
+      }
+    }
+
+    if (assistant.firstTokenTime <= 0) {
+      assistant.firstTokenTime = DateTime.now().millisecondsSinceEpoch;
+    }
+    assistant = assistant.copyWith(
+      text: content,
+      stopReason: resp.stopReason,
+      thinkEndAt: thinkEndAt,
+    );
+    emit(
+      state.copyWith(
+        generating: true,
+        messages: {
+          ...state.messages,
+          conversationId: [...history, assistant],
+        },
+      ),
+    );
+  }
+
+  void _onGenerateDone({
+    required String conversationId,
+    required List<MessageState> history,
+  }) {
+    var assistant = state.messages[conversationId]!.last;
+    updateConversation(
+      conversationId,
+      (c) => c.copyWith(updateAt: DateTime.now()),
+    );
+    var ns = state.copyWith(generating: false);
+    if (assistant.stopReason == StopReason.none) {
+      assistant = assistant.copyWith(stopReason: StopReason.unknown);
+    }
+    if (assistant.thinkEndTime <= 0) {
+      assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+    }
+    assistant = assistant.copyWith(updateAt: DateTime.now());
+    ns = ns.copyWith(
+      messages: {
+        ...state.messages,
+        conversationId: [...history, assistant],
+      },
+    );
+
+    logd('chat generation done: ${assistant.stopReason}');
+    emit(ns);
+  }
+
+  void _onGenerateError({
+    required String conversationId,
+    required List<MessageState> history,
+    required dynamic e,
+  }) {
+    var assistant = state.messages[conversationId]!.last;
+    assistant = assistant.copyWith(updateAt: DateTime.now());
+    if (isCanceledException(e)) {
+      assistant = assistant.copyWith(stopReason: StopReason.canceled);
+    } else {
+      assistant = assistant.copyWith(error: "$e", stopReason: StopReason.error);
+    }
+    updateConversation(
+      conversationId,
+      (c) => c.copyWith(updateAt: DateTime.now()),
+    );
+    emit(
+      state.copyWith(
+        generating: false,
+        messages: {
+          ...state.messages,
+          conversationId: [...history, assistant],
+        },
+      ),
+    );
   }
 }

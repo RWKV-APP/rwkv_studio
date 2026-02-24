@@ -21,12 +21,23 @@ class MessageListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget content;
+    if (message.isUser) {
+      return _ContextMenu(
+        message: message,
+        child: _MessageBox(
+          alignmentRight: true,
+          child: TextMessageContent(content: message.text),
+        ),
+      );
+    }
+
+    Widget content = const SizedBox();
 
     final response = message.bodyContent;
+
     if (message.error.isNotEmpty) {
       final error = SelectableText(
-        message.error.trim(),
+        "错误: ${message.error.trim()}",
         style: const TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
       );
       if (message.text.isEmpty) {
@@ -42,7 +53,18 @@ class MessageListItem extends StatelessWidget {
         );
       }
     } else {
-      content = TextMessageContent(content: response);
+      if (response.isEmpty && message.stopped && !message.paused) {
+        content = const Text(
+          '模型没有生成任何内容...',
+          style: TextStyle(
+            fontStyle: FontStyle.italic,
+            fontSize: 12,
+            color: Colors.errorPrimaryColor,
+          ),
+        );
+      } else if (response.isNotEmpty) {
+        content = TextMessageContent(content: response);
+      }
     }
 
     final prefilling =
@@ -74,7 +96,7 @@ class MessageListItem extends StatelessWidget {
             ),
           if (message.hasThinkContent && response.isNotEmpty)
             const SizedBox(height: 6),
-          if (response.isNotEmpty || message.error.isNotEmpty) content,
+          content,
         ],
       ),
     );

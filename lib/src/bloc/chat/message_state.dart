@@ -25,6 +25,8 @@ class MessageState {
 
   bool get stopped => stopReason != StopReason.none;
 
+  bool get paused => stopReason == StopReason.canceled;
+
   bool get isUser => role == 'user';
 
   bool get hasThinkContent => thinkEndAt > 8;
@@ -41,6 +43,9 @@ class MessageState {
   }
 
   String get bodyContent {
+    if (thinkEndAt <= 0) {
+      return text;
+    }
     return text.substring(thinkEndAt).replaceAll('</think>', '').trim();
   }
 

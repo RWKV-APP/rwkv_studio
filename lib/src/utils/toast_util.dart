@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 
 extension FutureExt<T> on Future<T> {
   Future<T> withToast(
@@ -15,6 +16,9 @@ extension FutureExt<T> on Future<T> {
       }
       return r;
     } catch (e) {
+      if (e is AppException && !e.shouldToast()) {
+        rethrow;
+      }
       if (context.mounted) {
         context.toast("${error ?? ''} $e".trim());
       }

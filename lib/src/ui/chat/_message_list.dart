@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list_item.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/widget/measure_size.dart';
 
 class ChatMessageList extends StatefulWidget {
@@ -33,25 +34,26 @@ class _ChatMessageListState extends State<ChatMessageList> {
     final auto = (max - _scrollController.position.pixels) < 40;
     if (auto != _autoScrolling) {
       _autoScrolling = auto;
-      // logd('auto scrolling=$auto');
+      logd('auto scrolling=$auto');
     }
   }
 
   void _onConversationChanged(ChatState state) {
     _chatScrollOffsets[chatId] = _scrollController.position.pixels;
     final list = state.messages[state.selected.id] ?? [];
-    setState(() {
+    _messages = list;
+    if (chatId != state.selected.id) {
       chatId = state.selected.id;
-      _messages = list;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(
-          _chatScrollOffsets[chatId] ??
-              _scrollController.position.maxScrollExtent,
-        );
-      }
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(
+            _chatScrollOffsets[chatId] ??
+                _scrollController.position.maxScrollExtent,
+          );
+        }
+      });
+    }
+    setState(() {});
   }
 
   @override
@@ -65,8 +67,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
         controller: _scrollController,
         itemCount: _messages.length,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        itemBuilder: (context, i) {
-          final index = i;
+        itemBuilder: (context, index) {
           final isLast = index == _messages.length - 1;
           final item = MessageListItem(
             message: _messages[index],
@@ -77,10 +78,8 @@ class _ChatMessageListState extends State<ChatMessageList> {
             return MeasureSize(
               onChange: (v) {
                 if (_autoScrolling && context.chat.state.generating) {
-                  Scrollable.ensureVisible(
-                    context,
-                    duration: const Duration(milliseconds: 200),
-                    alignmentPolicy: .keepVisibleAtEnd,
+                  _scrollController.jumpTo(
+                    _scrollController.position.maxScrollExtent,
                   );
                 }
               },
