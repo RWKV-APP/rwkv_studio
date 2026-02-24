@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -70,8 +71,8 @@ class ServiceSettingCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 12),
-        _WebUI(),
+        if (!kIsWeb) const SizedBox(height: 12),
+        if (!kIsWeb) _WebUI(),
       ],
     );
   }

@@ -38,10 +38,9 @@ class PythonSettingState extends Equatable {
 
   factory PythonSettingState.initial() => PythonSettingState(
     selected: '',
-    albatrossPath: pathJoin(
-      appExecutableDir.path,
-      'rwkv_lightning'.joinPath('app.py'),
-    ),
+    albatrossPath: kIsWeb
+        ? ''
+        : pathJoin(appExecutableDir.path, 'rwkv_lightning'.joinPath('app.py')),
   );
 
   @override

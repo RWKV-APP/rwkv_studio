@@ -7,15 +7,14 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
 import 'package:rwkv_studio/src/ui/common/logcat_panel.dart';
-import 'package:rwkv_studio/src/ui/common/theme_preview_page.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
 import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
-
 part 'navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
@@ -26,7 +25,7 @@ class MainPage extends StatelessWidget {
     final dark = context.fluent.brightness == Brightness.dark;
     return ImportModelDropArea(
       child: BlocBuilder<AppCubit, AppState>(
-        buildWhen: (p, c) => p.pane != c.pane,
+        buildWhen: (p, c) => p.pane != c.pane || p.navBarItems != c.navBarItems,
         builder: (context, state) {
           return _buildContent(context, dark, state);
         },
@@ -72,13 +71,15 @@ class MainPage extends StatelessWidget {
         selected: state.pane,
         displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {
-          if ({12, 7, 4}.contains(i)) {
+          final flatten = state.expandedItems();
+          logd('onItemPressed: ${flatten[i].type}');
+          if (flatten[i].subitems != null) {
             return;
           }
           context.app.setPane(i);
         },
-        items: buildNavItems(context),
-        footerItems: buildNavFooterItems(context),
+        items: buildNavItems(context, state),
+        footerItems: buildNavFooterItems(context, state),
       ),
     );
   }

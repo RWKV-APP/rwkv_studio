@@ -85,10 +85,7 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
       _syncRemoteServiceList(context, setting.state.model.remoteServices);
     }
     _syncAppearance(setting.state.appearance);
-    app.init(
-      selectedPythonId: setting.state.python.selected,
-      albatrossPath: setting.state.python.albatrossPath,
-    );
+    app.init(settings: setting.state);
   }
 
   @override
@@ -116,14 +113,15 @@ Widget _buildStateSyncListeners(Widget child) {
         listener: (context, state) {
           _syncAppearance(state.appearance);
         },
-        child: Container(),
+        child: const SizedBox(),
       ),
       BlocListener<SettingCubit, SettingState>(
-        listenWhen: (p, c) => p.appearance != c.appearance,
+        listenWhen: (p, c) => p.appearance.userType != c.appearance.userType,
         listener: (context, state) {
           UserType.current = state.appearance.userType;
+          context.app.onUserTypeChanged(state.appearance.userType);
         },
-        child: Container(),
+        child: const SizedBox(),
       ),
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.model.remoteServices != c.model.remoteServices,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
@@ -76,13 +77,17 @@ void logd(dynamic msg) {
 void logw(dynamic msg) {
   _listenToLogs();
   _logger.warning(msg);
-  _logger.warning(StackTrace.current.toString().split('\n')[1].trim());
+  if (!kIsWeb) {
+    _logger.warning(StackTrace.current.toString().split('\n')[1].trim());
+  }
 }
 
 void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
   _listenToLogs();
   _logger.severe(msg, error, stackTrace);
-  _logger.severe(StackTrace.current.toString().split('\n')[1].trim());
+  if (!kIsWeb) {
+    _logger.severe(StackTrace.current.toString().split('\n')[1].trim());
+  }
 }
 
 void logwtf(dynamic msg) {

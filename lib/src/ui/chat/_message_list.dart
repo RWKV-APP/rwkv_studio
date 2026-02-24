@@ -45,10 +45,12 @@ class _ChatMessageListState extends State<ChatMessageList> {
       _messages = list;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.jumpTo(
-        _chatScrollOffsets[chatId] ??
-            _scrollController.position.maxScrollExtent,
-      );
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(
+          _chatScrollOffsets[chatId] ??
+              _scrollController.position.maxScrollExtent,
+        );
+      }
     });
   }
 

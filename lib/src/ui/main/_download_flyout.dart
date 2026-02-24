@@ -1,32 +1,5 @@
 part of 'main_page.dart';
 
-NavigationPaneItem buildDownloadPaneItem() {
-  return PaneItem(
-    icon: FlyoutTarget(
-      controller: _flyoutController,
-      child: const WindowsIcon(WindowsIcons.download),
-    ),
-    infoBadge: _DownloadInfoBadge(),
-    title: const Text('下载任务'),
-    onTap: () {
-      _flyoutController.showFlyout<void>(
-        autoModeConfiguration: FlyoutAutoConfiguration(
-          preferredMode: FlyoutPlacementMode.topCenter,
-        ),
-        barrierDismissible: true,
-        dismissOnPointerMoveAway: false,
-        dismissWithEsc: true,
-        builder: (context) {
-          return const _DownloadTaskFlyout();
-        },
-      );
-    },
-    body: const SizedBox(),
-  );
-}
-
-final _flyoutController = FlyoutController();
-
 class _DownloadTaskFlyout extends StatelessWidget {
   const _DownloadTaskFlyout();
 

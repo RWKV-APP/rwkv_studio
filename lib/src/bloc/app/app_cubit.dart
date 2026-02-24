@@ -1,6 +1,10 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
+import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'app_state.dart';
@@ -12,9 +16,16 @@ extension Ext on BuildContext {
 class AppCubit extends Cubit<AppState> {
   AppCubit() : super(AppState.initial());
 
-  void init({required String selectedPythonId, required String albatrossPath}) {
+  void init({required SettingState settings}) {
+    final albatrossPath = settings.python.albatrossPath;
+    final selectedPythonId = settings.python.selected;
+
+    final userType = settings.appearance.userType;
     emit(
       state.copyWith(
+        navBarItems: userType == UserType.developer
+            ? NavBarItem.devNavItems()
+            : NavBarItem.defaultNavItems(),
         albatrossPath: albatrossPath,
         selectedPythonId: selectedPythonId,
       ),
@@ -45,6 +56,16 @@ class AppCubit extends Cubit<AppState> {
         .firstOrNull;
   }
 
+  void onUserTypeChanged(UserType userType) {
+    final navItems = userType == UserType.developer
+        ? NavBarItem.devNavItems()
+        : NavBarItem.defaultNavItems();
+    final expand = navItems.flatten(
+      (e) => <NavBarItem>[e, ...(e.subitems ?? [])],
+    );
+    emit(state.copyWith(navBarItems: navItems, pane: expand.length - 1));
+  }
+
   void onPythonSelected({required String id, String? albatrossPath}) {
     logd('on python interpreter selected: $id');
     emit(state.copyWith(selectedPythonId: id, albatrossPath: albatrossPath));
@@ -54,7 +75,7 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(pane: 2));
   }
 
-  void jump2PythonSettings(){
+  void jump2PythonSettings() {
     emit(state.copyWith(pane: 5));
   }
 }

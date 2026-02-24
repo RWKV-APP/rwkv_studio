@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
@@ -64,37 +66,40 @@ class _SettingBody extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const BehaviorSetting(),
-        const SizedBox(height: 12),
-        BlocBuilder<SettingCubit, SettingState>(
-          buildWhen: (p, c) => p.cache != c.cache,
-          builder: (context, state) {
-            return CacheSettingsCard(cache: state.cache);
-          },
-        ),
-        const SizedBox(height: 12),
-        BlocBuilder<SettingCubit, SettingState>(
-          buildWhen: (p, c) => p.model != c.model,
-          builder: (context, state) {
-            return ModelSettings(
-              settings: state.model,
-              onChanged: (v) {
-                context.settings.setServiceSetting(v);
-              },
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        BlocBuilder<SettingCubit, SettingState>(
-          buildWhen: (p, c) => p.python != c.python,
-          builder: (context, state) {
-            return PythonSettings(
-              state: state.python,
-              onChanged: (v) {
-                context.settings.setPythonSetting(v);
-              },
-            );
-          },
-        ),
+        if (!kIsWeb) const SizedBox(height: 12),
+        if (!kIsWeb)
+          BlocBuilder<SettingCubit, SettingState>(
+            buildWhen: (p, c) => p.cache != c.cache,
+            builder: (context, state) {
+              return CacheSettingsCard(cache: state.cache);
+            },
+          ),
+        if (!kIsWeb) const SizedBox(height: 12),
+        if (!kIsWeb)
+          BlocBuilder<SettingCubit, SettingState>(
+            buildWhen: (p, c) => p.model != c.model,
+            builder: (context, state) {
+              return ModelSettings(
+                settings: state.model,
+                onChanged: (v) {
+                  context.settings.setServiceSetting(v);
+                },
+              );
+            },
+          ),
+        if (!kIsWeb) const SizedBox(height: 12),
+        if (!kIsWeb)
+          BlocBuilder<SettingCubit, SettingState>(
+            buildWhen: (p, c) => p.python != c.python,
+            builder: (context, state) {
+              return PythonSettings(
+                state: state.python,
+                onChanged: (v) {
+                  context.settings.setPythonSetting(v);
+                },
+              );
+            },
+          ),
         const SizedBox(height: 12),
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.model != c.model,
