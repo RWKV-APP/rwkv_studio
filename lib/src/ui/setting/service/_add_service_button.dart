@@ -140,10 +140,86 @@ class _AddButtonState extends State<_AddButton> {
   }
 }
 
-class _ServiceStatus extends StatelessWidget {
+class _ServiceStatus extends StatefulWidget {
+  final RemoteService service;
+
+  const _ServiceStatus({required this.service});
+
+  @override
+  State<_ServiceStatus> createState() => _ServiceStatusState();
+}
+
+class _ServiceStatusState extends State<_ServiceStatus> {
+  bool loading = true;
+  List<RemoteModelInfo> models = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _test();
+    });
+  }
+
+  void _test() async {
+    setState(() {
+      loading = true;
+      models = [];
+    });
+    final t = DateTime.now();
+    try {
+      final client = RwkvServiceClient(
+        name: '',
+        id: '',
+        url: widget.service.url,
+        accessKey: widget.service.apiKey,
+      );
+      final r = await ModelListProvider.fromService(
+        client,
+      ).getModelList().wrapError();
+      models = r;
+    } catch (e) {
+      models = [];
+    } finally {
+      final span = DateTime.now().difference(t).inMilliseconds;
+      if (span < 1000) {
+        await Future.delayed(Duration(milliseconds: 1000 - span));
+      }
+      loading = false;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ServiceStatus oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.service != oldWidget.service) {
+      _test();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Icon(WindowsIcons.status_circle_question_mark);
-    return Icon(WindowsIcons.network_connected_checkmark, color: Colors.green);
+    if (!widget.service.enabled) {
+      return const Icon(WindowsIcons.unknown);
+    }
+    Widget body;
+    if (loading) {
+      body = const SizedBox(
+        height: 16,
+        width: 16,
+        child: ProgressRing(strokeWidth: 2),
+      );
+    } else {
+      if (models.isEmpty) {
+        body = const Icon(WindowsIcons.error, color: Colors.errorPrimaryColor);
+      } else {
+        body = Icon(WindowsIcons.check_mark, color: Colors.green);
+      }
+    }
+    return body;
   }
 }

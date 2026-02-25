@@ -5,6 +5,7 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/cache/model_file_box.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -149,7 +150,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       models.removeWhere((e) => e.isRemote);
       final providers = state.remoteModelProviders;
       for (final provider in providers) {
-        final list = await provider.getModelList();
+        final list = await provider.getModelList().wrapError();
         models = [...list, ...models];
       }
     }

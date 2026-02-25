@@ -251,8 +251,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
     Map<String, ModelInstanceState> instances = {};
     for (final service in services) {
-      await service.status();
-      final ms = await service.getLoadedModels();
+      final ms = await service.getLoadedModels().wrapError();
       for (final m in ms) {
         instances[m.info.instanceId] = ModelInstanceState(
           rwkv: m.rwkv,
