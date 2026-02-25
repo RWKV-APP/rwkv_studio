@@ -70,7 +70,7 @@ class _Item extends StatelessWidget {
                 ),
               ),
               trailing: Text(
-                conversation.updateAt.displayTime,
+                conversation.updateAt.prettyDataTime,
                 style: context.fluent.typography.caption,
               ),
               onSelectionChange: (selected) {

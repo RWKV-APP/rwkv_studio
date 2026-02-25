@@ -53,18 +53,7 @@ extension DateUtils on DateTime {
     }
     if (difference.inMinutes > 60) {
       if (difference.inHours > now.hour) {
-        final n =
-            {
-              hour > 0: '凌晨',
-              hour > 6: '早上',
-              hour > 8: '上午',
-              hour > 11: '中午',
-              hour > 13: '下午',
-              hour > 17: '傍晚',
-              hour > 19: '晚上',
-            }[true] ??
-            '';
-        return '昨天$n';
+        return '昨天';
       }
       return '${difference.inHours}小时前';
     }

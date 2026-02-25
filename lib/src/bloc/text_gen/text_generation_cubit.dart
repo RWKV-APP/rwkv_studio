@@ -1,9 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
 part 'text_generation_state.dart';
@@ -60,7 +62,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
 
   Future generate(RwkvInterface rwkv, {bool fim = false}) async {
     final prompt = state.controllerText.text.trim();
-    String result = state.controllerText.text;
+    String result = '';
 
     String prefix = '';
     String suffix = '';
@@ -94,13 +96,20 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
           state.controllerText.text = r;
         } else {
           result += e.text;
-          state.controllerText.text = result.substring(prompt.length);
+          if (!result.startsWith(prompt)) {
+            result = prompt + result;
+          }
+          state.controllerText.text = result;
         }
         if (!state.generating) {
           emit(state.copyWith(generating: true));
         }
       }
     } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.cancel) {
+        logd('generate canceled');
+        return;
+      }
       throw AppException('generate error', cause: e);
     } finally {
       if (!isClosed) {

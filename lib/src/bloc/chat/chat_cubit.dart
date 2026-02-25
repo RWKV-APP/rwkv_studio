@@ -46,7 +46,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
           return MapEntry(k, ms);
         });
 
-    convs.sort((a, b) => a.updateAt.compareTo(b.updateAt));
+    convs.sort((a, b) => b.updateAt.compareTo(a.updateAt));
     logd('restored conversations: ${convs.length}, messages: ${msgs.length}');
     emit(state.copyWith(conversations: convs, messages: msgs));
 
