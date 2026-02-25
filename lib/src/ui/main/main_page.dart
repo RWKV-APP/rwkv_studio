@@ -6,7 +6,6 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
-import 'package:rwkv_studio/src/ui/common/logcat_panel.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
@@ -35,28 +34,6 @@ class MainPage extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, bool dark, AppState state) {
     return NavigationView(
-      appBar: NavigationAppBar(
-        leading: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text('RWKV Studio', style: context.typography.bodyStrong),
-        ),
-        actions: SizedBox(
-          height: double.infinity,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Spacer(),
-              IconButton(
-                icon: const Icon(FluentIcons.print),
-                onPressed: () {
-                  LogcatPanel.attachToRootOverlay(context);
-                },
-              ),
-              const SizedBox(width: 16),
-            ],
-          ),
-        ),
-      ),
       paneBodyBuilder: (item, child) {
         return ColoredBox(
           color: dark
@@ -67,7 +44,7 @@ class MainPage extends StatelessWidget {
       },
       pane: NavigationPane(
         // header: const Text('RWKV Studio'),
-        size: const NavigationPaneSize(openWidth: 220, openMinWidth: 120),
+        size: const NavigationPaneSize(openWidth: 160, openMinWidth: 120),
         selected: state.pane,
         displayMode: PaneDisplayMode.compact,
         onItemPressed: (i) {

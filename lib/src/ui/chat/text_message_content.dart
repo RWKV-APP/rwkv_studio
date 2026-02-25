@@ -10,7 +10,7 @@ class TextMessageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return GptMarkdown(
       content,
-      style: const TextStyle(height: 1.6, letterSpacing: 0.6),
+      style: const TextStyle(height: 1.6, letterSpacing: 1.4),
     );
   }
 }

@@ -100,6 +100,7 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: file.name,
       url: '',
+      groups: ['chat'],
       fileSize: size,
       backend: ModelBackend.conjecture(file.extension) ?? ModelBackend.unknown,
       sha256: sha256,
@@ -258,27 +259,27 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
           children: [
             const SizedBox(width: 70, child: Text('推理后端')),
             Expanded(
-              child: Wrap(
-                runSpacing: 6,
-                spacing: 8,
-                children: [
-                  for (final backend in backends)
-                    RadioButton(
-                      checked: model.backend == backend,
-                      onChanged: (v) {
-                        if (v == true) {
-                          this.model = model.copyWith(backend: backend);
-                          setState(() {});
-                        }
-                      },
-                      content: Text(backend.displayName),
+              child: RadioGroup(
+                groupValue: model.backend,
+                onChanged: (v) {
+                  this.model = model.copyWith(backend: v);
+                  setState(() {});
+                },
+                child: Wrap(
+                  runSpacing: 6,
+                  spacing: 8,
+                  children: [
+                    for (final backend in backends)
+                      RadioButton(
+                        value: backend,
+                        content: Text(backend.displayName),
+                      ),
+                    const RadioButton(
+                      value: ModelBackend.pytorch,
+                      content: Text('PyTorch'),
                     ),
-                  const RadioButton(
-                    checked: false,
-                    onChanged: null,
-                    content: Text('PyTorch'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -290,22 +291,20 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
           children: [
             const SizedBox(width: 70, child: Text('模型分组')),
             Expanded(
-              child: Wrap(
-                runSpacing: 6,
-                spacing: 8,
-                children: [
-                  for (final group in groups)
-                    RadioButton(
-                      checked: model.groups.contains(group.name),
-                      onChanged: (v) {
-                        if (v == true) {
-                          this.model = model.copyWith(groups: [group.name]);
-                          setState(() {});
-                        }
-                      },
-                      content: Text(group.name),
-                    ),
-                ],
+              child: RadioGroup(
+                groupValue: model.groups.firstOrNull ?? '',
+                onChanged: (v) {
+                  this.model = model.copyWith(groups: [v ?? '']);
+                  setState(() {});
+                },
+                child: Wrap(
+                  runSpacing: 6,
+                  spacing: 8,
+                  children: [
+                    for (final group in groups)
+                      RadioButton(value: group.name, content: Text(group.name)),
+                  ],
+                ),
               ),
             ),
           ],

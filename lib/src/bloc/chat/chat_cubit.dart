@@ -53,6 +53,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     if (state.messages.isEmpty) {
       await newChat();
     }
+    selectConversation(state.conversations.first);
 
     _initStatePersistence();
   }
@@ -197,6 +198,25 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
   void selectConversation(ConversationState conv) {
     emit(state.copyWith(selected: conv));
+  }
+
+  Future updateMessageContent(String id, String content) async {
+    final convId = state.selected.id;
+    final messages = state.messages[convId] ?? [];
+    final msgs = messages.map((e) {
+      if (e.id == id) {
+        return e.copyWith(text: content);
+      }
+      return e;
+    }).toList();
+    emit(state.copyWith(messages: {...state.messages, convId: msgs}));
+  }
+
+  Future deleteMessage(String id) async {
+    final convId = state.selected.id;
+    final messages = state.messages[convId] ?? [];
+    final msgs = messages.where((e) => e.id != id).toList();
+    emit(state.copyWith(messages: {...state.messages, convId: msgs}));
   }
 
   Future deleteConversation(String id) async {
@@ -434,6 +454,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       stopReason: resp.stopReason,
       thinkEndAt: thinkEndAt,
     );
+    assistant.tokenCount += resp.tokenCount;
     emit(
       state.copyWith(
         generating: true,

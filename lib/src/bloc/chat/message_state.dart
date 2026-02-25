@@ -8,6 +8,10 @@ extension MessageExtras on MessageState {
   int get thinkEndTime => extra['think_end_time'] ?? 0;
 
   set thinkEndTime(int value) => extra['think_end_time'] = value;
+
+  set tokenCount(int value) => extra['token_count'] = value;
+
+  int get tokenCount => extra['token_count'] ?? -1;
 }
 
 class MessageState {

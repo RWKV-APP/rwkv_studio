@@ -6,7 +6,6 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/text_message_content.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class MessageListItem extends StatelessWidget {
@@ -166,7 +165,7 @@ class _MessageItemFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final eos = message.stopReason == StopReason.eos;
     final paused = message.stopReason == StopReason.canceled;
-    final generating = message.stopReason == StopReason.none;
+    final generating = !message.stopped;
     final completed = !{
       StopReason.none,
       StopReason.canceled,
@@ -202,6 +201,12 @@ class _MessageItemFooter extends StatelessWidget {
             '· ${message.updateAt.difference(message.createAt).displayDuration}',
             style: TextStyle(fontSize: 10, color: Colors.grey[80]),
           ),
+        if (completed && message.tokenCount > 0) const SizedBox(width: 4),
+        if (completed && message.tokenCount > 0)
+          Text(
+            '· ${message.tokenCount} tokens',
+            style: TextStyle(fontSize: 10, color: Colors.grey[80]),
+          ),
       ],
     );
   }
@@ -224,6 +229,68 @@ class _ContextMenu extends StatelessWidget {
     );
   }
 
+  void _onEditTap() async {
+    _contextController.close();
+    await Future.delayed(const Duration(milliseconds: 100));
+    final controller = TextEditingController(text: message.text);
+    _contextController.showFlyout<void>(
+      autoModeConfiguration: FlyoutAutoConfiguration(
+        preferredMode: FlyoutPlacementMode.topCenter,
+      ),
+      barrierDismissible: true,
+      dismissOnPointerMoveAway: false,
+      dismissWithEsc: true,
+      builder: (context) {
+        return FlyoutContent(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 200),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('编辑内容'),
+              const SizedBox(height: 12.0),
+              Flexible(
+                child: TextBox(
+                  controller: controller,
+                  maxLines: 10000,
+                  minLines: 3,
+                  placeholder: '请输入内容',
+                ),
+              ),
+              const SizedBox(height: 12.0),
+              Row(
+                children: [
+                  const Spacer(),
+                  Button(
+                    child: const Text('取消'),
+                    onPressed: () {
+                      _contextController.close();
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  FilledButton(
+                    child: const Text('确定'),
+                    onPressed: () {
+                      final v = controller.text.trim();
+                      if (v.isEmpty) {
+                        context.toast('内容不能为空');
+                      } else {
+                        context.chat
+                            .updateMessageContent(message.id, v)
+                            .withToast(context);
+                        _contextController.close();
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showMenu(BuildContext ctx, TapUpDetails d, MessageState message) {
     final box = ctx.findRenderObject() as RenderBox;
     final position = box.localToGlobal(
@@ -240,9 +307,13 @@ class _ContextMenu extends StatelessWidget {
               leading: const WindowsIcon(WindowsIcons.copy),
               text: const Text('复制'),
               onPressed: () async {
-                logd(message.text);
                 Clipboard.setData(ClipboardData(text: message.text));
               },
+            ),
+            MenuFlyoutItem(
+              leading: const WindowsIcon(WindowsIcons.edit),
+              text: const Text('编辑'),
+              onPressed: _onEditTap,
             ),
             MenuFlyoutItem(
               leading: const WindowsIcon(
@@ -254,7 +325,7 @@ class _ContextMenu extends StatelessWidget {
                 style: TextStyle(color: Colors.errorPrimaryColor),
               ),
               onPressed: () async {
-                //
+                context.chat.deleteMessage(message.id).withToast(context);
               },
             ),
           ],
