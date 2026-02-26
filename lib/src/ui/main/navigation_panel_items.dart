@@ -30,6 +30,8 @@ String _itemTitle(NavBarItemType type) {
       return '微调';
     case NavBarItemType.convert:
       return '转换';
+    case NavBarItemType.batchInfer:
+      return '并行模式';
   }
 }
 
@@ -60,6 +62,9 @@ Widget _itemIcon(NavBarItemType type) {
       return const WindowsIcon(WindowsIcons.grid_view);
     case NavBarItemType.convert:
       return const WindowsIcon(WindowsIcons.refresh);
+    case NavBarItemType.batchInfer:
+      // return const WindowsIcon(FluentIcons.quad_column);
+      return const WindowsIcon(FluentIcons.waffle);
   }
 }
 
@@ -87,6 +92,8 @@ Widget? _itemBody(NavBarItemType type) {
       return todo();
     case NavBarItemType.convert:
       return todo();
+    case NavBarItemType.batchInfer:
+      return BatchInferPage.create();
   }
 }
 

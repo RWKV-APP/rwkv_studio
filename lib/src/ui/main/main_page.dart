@@ -8,12 +8,14 @@ import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
+import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
 import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
+
 part 'navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
@@ -24,7 +26,10 @@ class MainPage extends StatelessWidget {
     final dark = context.fluent.brightness == Brightness.dark;
     return ImportModelDropArea(
       child: BlocBuilder<AppCubit, AppState>(
-        buildWhen: (p, c) => p.pane != c.pane || p.navBarItems != c.navBarItems,
+        buildWhen: (p, c) =>
+            p.pane != c.pane ||
+            p.navBarItems != c.navBarItems ||
+            p.showNavBar != c.showNavBar,
         builder: (context, state) {
           return _buildContent(context, dark, state);
         },
@@ -46,11 +51,13 @@ class MainPage extends StatelessWidget {
         // header: const Text('RWKV Studio'),
         size: const NavigationPaneSize(openWidth: 160, openMinWidth: 120),
         selected: state.pane,
+        customPane: !state.showNavBar ? _HiddenNavPane() : null,
         displayMode: PaneDisplayMode.compact,
+        acrylicDisabled: false,
         onItemPressed: (i) {
           final flatten = state.expandedItems();
           logd('onItemPressed: ${flatten[i].type}');
-          if (flatten[i].subitems != null) {
+          if (flatten[i].subitems != null || !flatten[i].type.hasBody) {
             return;
           }
           context.app.setPane(i);
@@ -59,5 +66,12 @@ class MainPage extends StatelessWidget {
         footerItems: buildNavFooterItems(context, state),
       ),
     );
+  }
+}
+
+class _HiddenNavPane extends NavigationPaneWidget {
+  @override
+  Widget build(BuildContext context, NavigationPaneWidgetData data) {
+    return data.content;
   }
 }

@@ -2,6 +2,7 @@ part of 'app_cubit.dart';
 
 enum NavBarItemType {
   chat(title: '对话'),
+  batchInfer(title: '并行'),
   textGeneration(title: '文本生成'),
   modelManage(title: '模型管理'),
   musicGeneration(title: '音乐生成'),
@@ -12,13 +13,14 @@ enum NavBarItemType {
   convert(title: '转换'),
 
   /// footer
-  downloadTask(title: '下载任务', footer: true),
+  downloadTask(title: '下载任务', footer: true, hasBody: false),
   settings(title: '设置', footer: true);
 
   final String title;
   final bool footer;
+  final bool hasBody;
 
-  const NavBarItemType({required this.title, this.footer = false});
+  const NavBarItemType({required this.title, this.footer = false, this.hasBody = true});
 }
 
 class NavBarItem {
@@ -30,6 +32,7 @@ class NavBarItem {
       : [
           NavBarItem(type: NavBarItemType.chat),
           NavBarItem(type: NavBarItemType.textGeneration),
+          NavBarItem(type: NavBarItemType.batchInfer),
           NavBarItem(type: NavBarItemType.modelManage),
           NavBarItem(type: NavBarItemType.downloadTask),
           NavBarItem(type: NavBarItemType.settings),
@@ -38,12 +41,14 @@ class NavBarItem {
   static List<NavBarItem> defaultNavItemsWeb() => [
     NavBarItem(type: NavBarItemType.chat),
     NavBarItem(type: NavBarItemType.textGeneration),
+    NavBarItem(type: NavBarItemType.batchInfer),
     NavBarItem(type: NavBarItemType.settings),
   ];
 
   static List<NavBarItem> devNavItems() => [
     NavBarItem(type: NavBarItemType.chat),
     NavBarItem(type: NavBarItemType.textGeneration),
+    NavBarItem(type: NavBarItemType.batchInfer),
     NavBarItem(type: NavBarItemType.modelManage),
     NavBarItem(type: NavBarItemType.musicGeneration),
     NavBarItem(type: NavBarItemType.workFlow),
@@ -85,6 +90,8 @@ class AppState {
   final String selectedPythonId;
   final String albatrossPath;
   final List<NavBarItem> navBarItems;
+  final bool fullScreen;
+  final bool showNavBar;
 
   List<NavBarItem> expandedItems() {
     return navBarItems
@@ -98,6 +105,8 @@ class AppState {
     required this.selectedPythonId,
     required this.albatrossPath,
     required this.navBarItems,
+    required this.fullScreen,
+    required this.showNavBar,
   });
 
   factory AppState.initial() {
@@ -107,6 +116,8 @@ class AppState {
       selectedPythonId: '',
       albatrossPath: 'app.py',
       navBarItems: NavBarItem.defaultNavItems(),
+      fullScreen: false,
+      showNavBar: true,
     );
   }
 
@@ -116,6 +127,8 @@ class AppState {
     String? selectedPythonId,
     String? albatrossPath,
     List<NavBarItem>? navBarItems,
+    bool? fullScreen,
+    bool? showNavBar,
   }) {
     return AppState(
       pane: pane ?? this.pane,
@@ -123,6 +136,8 @@ class AppState {
       selectedPythonId: selectedPythonId ?? this.selectedPythonId,
       albatrossPath: albatrossPath ?? this.albatrossPath,
       navBarItems: navBarItems ?? this.navBarItems,
+      fullScreen: fullScreen ?? this.fullScreen,
+      showNavBar: showNavBar ?? this.showNavBar,
     );
   }
 }

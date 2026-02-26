@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
@@ -69,6 +70,24 @@ class AppCubit extends Cubit<AppState> {
   void onPythonSelected({required String id, String? albatrossPath}) {
     logd('on python interpreter selected: $id');
     emit(state.copyWith(selectedPythonId: id, albatrossPath: albatrossPath));
+  }
+
+  void setShowNavBar(bool show) {
+    emit(state.copyWith(showNavBar: show));
+  }
+
+  void toggleFullScreen() async {
+    final fullScreen = !state.fullScreen;
+    if (!kIsWeb) {
+      if (fullScreen) {
+        await Window.enterFullscreen();
+        Window.removeToolbar();
+      } else {
+        await Window.exitFullscreen();
+        Window.addToolbar();
+      }
+    }
+    emit(state.copyWith(fullScreen: fullScreen, showNavBar: !fullScreen));
   }
 
   void jump2ModelManage() {

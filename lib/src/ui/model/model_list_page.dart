@@ -215,7 +215,7 @@ class _ModelListPageState extends State<ModelListPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Text('浏览模型', style: AppTextStyle.heading),
+              Text('浏览模型', style: context.typography.subtitle),
               const Spacer(),
               searchBar,
               const SizedBox(width: 16),
