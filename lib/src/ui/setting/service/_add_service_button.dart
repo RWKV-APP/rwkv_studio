@@ -151,7 +151,7 @@ class _ServiceStatus extends StatefulWidget {
 
 class _ServiceStatusState extends State<_ServiceStatus> {
   bool loading = true;
-  List<RemoteModelInfo> models = [];
+  ModelService? service;
 
   @override
   void initState() {
@@ -165,22 +165,17 @@ class _ServiceStatusState extends State<_ServiceStatus> {
   void _test() async {
     setState(() {
       loading = true;
-      models = [];
+      service = null;
     });
     final t = DateTime.now();
     try {
-      final client = RwkvServiceClient(
-        name: '',
-        id: '',
+      service = await ModelService.create(
         url: widget.service.url,
+        id: widget.service.id,
         accessKey: widget.service.apiKey,
       );
-      final r = await ModelListProvider.fromService(
-        client,
-      ).getModelList().wrapError();
-      models = r;
-    } catch (e) {
-      models = [];
+    } catch (_) {
+      //
     } finally {
       final span = DateTime.now().difference(t).inMilliseconds;
       if (span < 1000) {
@@ -214,7 +209,7 @@ class _ServiceStatusState extends State<_ServiceStatus> {
         child: ProgressRing(strokeWidth: 2),
       );
     } else {
-      if (models.isEmpty) {
+      if (service == null) {
         body = const Icon(WindowsIcons.error, color: Colors.errorPrimaryColor);
       } else {
         body = Icon(WindowsIcons.check_mark, color: Colors.green);

@@ -129,6 +129,12 @@ class GridTailParagraphPainter extends CustomPainter {
       textStyle,
       innerWidth,
     );
+    final int tailCharBudget = _estimateTailCharBudget(
+      innerWidth: innerWidth,
+      innerHeight: innerHeight,
+      style: textStyle,
+    );
+    final bool useCache = cellCount <= _ParagraphCache.maxCacheFriendlyCells;
 
     for (int r = 0; r < rows; r++) {
       for (int c = 0; c < cols; c++) {
@@ -142,12 +148,13 @@ class GridTailParagraphPainter extends CustomPainter {
           continue;
         }
 
-        final String text = cells[idx];
+        final String text = _takeTailText(cells[idx], tailCharBudget);
         final ui.Paragraph paragraph = _ParagraphCache.instance.getOrBuild(
           styleKey,
           text,
           _pStyle,
           _uiStyle,
+          cacheable: useCache,
         );
         final double dy = top + innerHeight - paragraph.height;
 
@@ -161,6 +168,33 @@ class GridTailParagraphPainter extends CustomPainter {
         }
       }
     }
+  }
+
+  int _estimateTailCharBudget({
+    required double innerWidth,
+    required double innerHeight,
+    required TextStyle style,
+  }) {
+    final double fontSize = style.fontSize ?? 14;
+    final double lineHeight = fontSize * (style.height ?? 1.2);
+    final double letterSpacing = style.letterSpacing ?? 0;
+
+    // Character width approximation for mixed latin/cjk text.
+    final double charWidth = (fontSize * 0.58 + letterSpacing)
+        .clamp(1.0, 1024.0)
+        .toDouble();
+    final int lines = (innerHeight / lineHeight).floor().clamp(1, 1000);
+    final int charsPerLine = (innerWidth / charWidth).floor().clamp(1, 10000);
+
+    // Keep an extra line as buffer so bottom alignment remains stable.
+    return ((lines + 1) * charsPerLine).clamp(32, 1200);
+  }
+
+  String _takeTailText(String text, int maxChars) {
+    if (text.length <= maxChars) {
+      return text;
+    }
+    return text.substring(text.length - maxChars);
   }
 
   @override
@@ -193,7 +227,7 @@ class _ParagraphStyleKey {
       fontWeight: style.fontWeight,
       letterSpacing: style.letterSpacing,
       color: style.color,
-      maxWidth: maxWidth,
+      maxWidth: (maxWidth * 100).roundToDouble() / 100,
     );
   }
 
@@ -237,6 +271,7 @@ class _ParagraphCache {
 
   static final _ParagraphCache instance = _ParagraphCache._();
 
+  static const int maxCacheFriendlyCells = 2048;
   static const int _maxEntries = 512;
   static final RegExp _asciiWordPattern = RegExp(r'[A-Za-z0-9_]{2,}');
   final LinkedHashMap<String, ui.Paragraph> _cache =
@@ -246,8 +281,19 @@ class _ParagraphCache {
     _ParagraphStyleKey key,
     String text,
     ui.ParagraphStyle paragraphStyle,
-    ui.TextStyle textStyle,
-  ) {
+    ui.TextStyle textStyle, {
+    required bool cacheable,
+  }) {
+    final String breakableText = _insertWordBreakOpportunities(text);
+    if (!cacheable) {
+      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(paragraphStyle)
+        ..pushStyle(textStyle)
+        ..addText(breakableText);
+      final ui.Paragraph paragraph = builder.build();
+      paragraph.layout(ui.ParagraphConstraints(width: key.maxWidth));
+      return paragraph;
+    }
+
     final String cacheKey = '${key.hashCode}\u0000$text';
     final ui.Paragraph? existed = _cache.remove(cacheKey);
     if (existed != null) {
@@ -255,7 +301,6 @@ class _ParagraphCache {
       return existed;
     }
 
-    final String breakableText = _insertWordBreakOpportunities(text);
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(paragraphStyle)
       ..pushStyle(textStyle)
       ..addText(breakableText);

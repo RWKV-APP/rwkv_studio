@@ -36,27 +36,23 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   Future setModelDownloadDir(String path, {bool migration = false}) async {
     await _manager.setModelDownloadDir(path, migration: migration);
-    await _manager.init();
     await updateModelList(remote: false);
   }
 
-  Future init({required String modelDir, required String configUrl}) async {
+  Future init() async {
     if (state.initialized) {
       logw('ModelManageCubit already initialized');
       return;
     }
-    logi('ModelManageCubit init, modelDir: $modelDir, configUrl: $configUrl');
-
     if (kIsWeb) {
       return;
     }
 
     _manager = ModelManager(
       downloadSource: DownloadSource.aiFastHub,
-      configProviderUrl: configUrl,
-      modelDownloadDir: modelDir,
+      configProviderUrl: '',
+      modelDownloadDir: './models',
     );
-    final tasks = await _manager.init();
 
     _manager.downloadUpdateEvents().listen((event) {
       _emitTaskUpdate(
@@ -65,9 +61,6 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         error: event.error,
       );
     });
-
-    final models = _getModelList();
-
     List<ModelInfo> importedModels = [];
     try {
       await HiveManager.openModelFileBox();
@@ -78,23 +71,11 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     emit(
       state.copyWith(
         initialized: true,
-        models: models,
         importedModels: importedModels,
-        tags: _manager.modelConfig.tags,
-        groups: _manager.modelConfig.groups,
         backends: ModelBackend.defaultBackends,
         downloadSource: _manager.downloadSource,
-        modelStates: {
-          for (final entry in tasks.entries)
-            entry.key: ModelDownloadState(
-              update: entry.value.update,
-              error: null,
-            ),
-        },
       ),
     );
-
-    updateModelList(local: false);
   }
 
   Future updateModelConfigUrl(String url) async {
@@ -157,10 +138,18 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
     List<ModelTag> tags = [];
     List<ModelGroup> groups = [];
+    Map<String, ModelDownloadState>? modelStates;
 
     if (local && !kIsWeb) {
       models.removeWhere((e) => !e.isRemote);
-      await _manager.updateConfig();
+      final tasks = await _manager.init();
+      modelStates = {
+        for (final entry in tasks.entries)
+          entry.key: ModelDownloadState(
+            update: entry.value.update,
+            error: null,
+          ),
+      };
       models = [...models, ..._getModelList()];
     }
 
@@ -169,7 +158,14 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       groups = _manager.modelConfig.groups;
     }
 
-    emit(state.copyWith(models: models, tags: tags, groups: groups));
+    emit(
+      state.copyWith(
+        models: models,
+        tags: tags,
+        groups: groups,
+        modelStates: modelStates,
+      ),
+    );
   }
 
   void setDownloadSource(DownloadSource source) {

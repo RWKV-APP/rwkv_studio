@@ -78,7 +78,7 @@ class ModelInstanceState {
 
 class RwkvState {
   final Map<InstanceId, ModelInstanceState> models;
-  final List<RwkvServiceClient> services;
+  final List<ModelService> services;
   final Map<String, DecodeParam> decodeParams;
 
   RwkvState({
@@ -97,7 +97,7 @@ class RwkvState {
 
   RwkvState copyWith({
     Map<InstanceId, ModelInstanceState>? models,
-    List<RwkvServiceClient>? services,
+    List<ModelService>? services,
     Map<String, DecodeParam>? decodeParams,
   }) {
     return RwkvState(

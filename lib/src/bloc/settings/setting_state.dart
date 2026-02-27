@@ -23,7 +23,7 @@ class SettingState extends Equatable {
     return SettingState(
       appearance: AppearanceSettingState.initial(),
       cache: CacheSettingState.initial(),
-      model: ModelSettingState.initial,
+      model: ModelSettingState.initial(),
       python: PythonSettingState.initial(),
       initialized: false,
     );

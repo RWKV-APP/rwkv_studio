@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_acrylic/window.dart';
 import 'package:flutter_acrylic/window_effect.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
@@ -35,8 +36,6 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         await _init();
-        await _syncSetting2AppState();
-        await context.chat.init();
       } catch (e) {
         logw(e);
       }
@@ -49,50 +48,48 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
     if (_initialized) {
       return;
     }
-    await AppAssets.init().withToast(
-      context,
-      error: 'Assets initialization failed',
-    );
-    if (!mounted) return;
-    await HiveManager.init().withToast(
-      context,
-      error: 'Database initialization failed',
-    );
-    await HiveManager.openPreferencesBox();
-  }
 
-  Future _syncSetting2AppState() async {
+    try {
+      await AppAssets.init().withToast(
+        context,
+        error: 'Assets initialization failed',
+      );
+      if (!mounted) return;
+      await HiveManager.init().withToast(
+        context,
+        error: 'Database initialization failed',
+      );
+      await HiveManager.openPreferencesBox();
+    } catch (e) {
+      logw(e);
+    }
+    if (!mounted) return;
+
     final setting = context.settings;
     final app = context.app;
-    if (setting.state.initialized) {
-      return;
-    }
-
-    UserType.current = setting.state.appearance.userType;
+    final chat = context.chat;
+    final rwkv = context.rwkv;
     final modelManage = context.modelManage;
 
-    await setting.init();
-    if (mounted) {
-      await context.rwkv.init();
-    }
+    await app.init();
+    await rwkv.init();
+    await chat.init();
+    await modelManage.init();
 
-    modelManage.init(
-      modelDir: setting.state.cache.modelDownloadDir,
-      configUrl: setting.state.model.modelListUrl,
-    );
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      setting.init();
+    });
 
-    if (mounted) {
-      _syncRemoteServiceList(context, setting.state.model.remoteServices);
-    }
-    _syncAppearance(setting.state.appearance);
-    app.init(settings: setting.state);
+    //
+    // _syncAppearance(setting.state.appearance);
+    //
+    // if (mounted) {
+    //   context.rwkv.setRemoteServiceList(app.state.modelServices);
+    // }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) {
-      return widget.child;
-    }
     return Directionality(
       textDirection: TextDirection.ltr,
       child: _buildStateSyncListeners(widget.child),
@@ -111,6 +108,7 @@ Widget _buildStateSyncListeners(Widget child) {
         listenWhen: (p, c) =>
             p.appearance.theme.brightness != c.appearance.theme.brightness,
         listener: (context, state) {
+          logd('appearance changed: ${state.appearance.theme.brightness}');
           _syncAppearance(state.appearance);
         },
         child: const SizedBox(),
@@ -118,7 +116,7 @@ Widget _buildStateSyncListeners(Widget child) {
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.appearance.userType != c.appearance.userType,
         listener: (context, state) {
-          UserType.current = state.appearance.userType;
+          logd('user-type changed: ${state.appearance.userType}');
           context.app.onUserTypeChanged(state.appearance.userType);
         },
         child: const SizedBox(),
@@ -126,13 +124,17 @@ Widget _buildStateSyncListeners(Widget child) {
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.model.remoteServices != c.model.remoteServices,
         listener: (context, state) async {
-          _syncRemoteServiceList(context, state.model.remoteServices);
+          logd(
+            'model-service changed: ${state.model.remoteServices.length} services',
+          );
+          context.app.updateModelServices(state.model.remoteServices);
         },
         child: const SizedBox(),
       ),
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.python != c.python,
         listener: (context, state) async {
+          logd('python changed: ${state.python.selected}');
           context.app.onPythonSelected(
             id: state.python.selected,
             albatrossPath: state.python.albatrossPath,
@@ -143,6 +145,7 @@ Widget _buildStateSyncListeners(Widget child) {
       BlocListener<SettingCubit, SettingState>(
         listenWhen: (p, c) => p.model.modelListUrl != c.model.modelListUrl,
         listener: (context, state) async {
+          logd('model-list-url changed: ${state.model.modelListUrl}');
           context.modelManage.updateModelConfigUrl(state.model.modelListUrl);
         },
         child: const SizedBox(),
@@ -158,6 +161,19 @@ Widget _buildStateSyncListeners(Widget child) {
         child: const SizedBox(),
       ),
 
+      BlocListener<AppCubit, AppState>(
+        listenWhen: (p, c) => p.modelServices != c.modelServices,
+        listener: (context, state) async {
+          logd('model-service changed: ${state.modelServices.length} services');
+          final services = state.modelServices;
+          final providers = services
+              .map(ModelListProvider.fromService)
+              .toList();
+          context.modelManage.setModelProviders(providers);
+          await context.rwkv.setRemoteServiceList(services);
+        },
+        child: const SizedBox(),
+      ),
       BlocListener<RwkvCubit, RwkvState>(
         listenWhen: (p, c) => p.models.length != c.models.length,
         listener: (context, state) {
@@ -175,21 +191,6 @@ Widget _buildStateSyncListeners(Widget child) {
       ),
     ],
   );
-}
-
-Future _syncRemoteServiceList(
-  BuildContext context,
-  List<RemoteService> remoteServices,
-) async {
-  final services = remoteServices.where((e) => e.enabled);
-  final rwkvCubit = context.rwkv;
-  await rwkvCubit.setRemoteServiceList({
-    for (final service in services) service.id: service.url,
-  });
-  final providers = rwkvCubit.state.services
-      .map(ModelListProvider.fromService)
-      .toList();
-  if (context.mounted) context.modelManage.setModelProviders(providers);
 }
 
 void _syncAppearance(AppearanceSettingState appearance) {

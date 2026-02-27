@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
@@ -17,7 +18,11 @@ extension Ext on BuildContext {
 class AppCubit extends Cubit<AppState> {
   AppCubit() : super(AppState.initial());
 
-  void init({required SettingState settings}) {
+  Future init() async {
+    //
+  }
+
+  Future init2({required SettingState settings}) async {
     final albatrossPath = settings.python.albatrossPath;
     final selectedPythonId = settings.python.selected;
 
@@ -31,6 +36,11 @@ class AppCubit extends Cubit<AppState> {
         selectedPythonId: selectedPythonId,
       ),
     );
+
+    final serviceConfig = settings.model.remoteServices
+        .where((e) => e.enabled)
+        .toList();
+    updateModelServices(serviceConfig);
   }
 
   void setPane(int pane) {
@@ -76,8 +86,23 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(showNavBar: show));
   }
 
-  void toggleFullScreen() async {
-    final fullScreen = !state.fullScreen;
+  Future updateModelServices(List<RemoteService> configs) async {
+    List<ModelService> services = [];
+    for (final config in configs.where((e) => e.enabled)) {
+      final s = await ModelService.create(
+        url: config.url,
+        accessKey: config.apiKey,
+        id: config.id,
+      );
+      services.add(s);
+    }
+    emit(state.copyWith(modelServices: services));
+  }
+
+  Future setFullScreen(bool fullScreen) async {
+    if (state.fullScreen == fullScreen) {
+      return;
+    }
     if (!kIsWeb) {
       if (fullScreen) {
         await Window.enterFullscreen();
@@ -90,11 +115,22 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(fullScreen: fullScreen, showNavBar: !fullScreen));
   }
 
+  void toggleFullScreen() async {
+    final fullScreen = !state.fullScreen;
+    setFullScreen(fullScreen);
+  }
+
   void jump2ModelManage() {
-    emit(state.copyWith(pane: 2));
+    final i = state.expandedItems().indexWhere(
+      (e) => e.type == NavBarItemType.modelManage,
+    );
+    emit(state.copyWith(pane: i));
   }
 
   void jump2PythonSettings() {
-    emit(state.copyWith(pane: 5));
+    final i = state.expandedItems().indexWhere(
+      (e) => e.type == NavBarItemType.settings,
+    );
+    emit(state.copyWith(pane: i));
   }
 }

@@ -8,13 +8,21 @@ class ModelSettingState extends Equatable {
   @override
   List<Object?> get props => [remoteServices, modelListUrl, enabledBackends];
 
-  ModelSettingState({
+  const ModelSettingState({
     required this.remoteServices,
     required this.modelListUrl,
     required this.enabledBackends,
   });
 
-  static final initial = ModelSettingState(
+  factory ModelSettingState.initial() {
+    return const ModelSettingState(
+      enabledBackends: [],
+      remoteServices: [],
+      modelListUrl: '',
+    );
+  }
+
+  static final default_ = ModelSettingState(
     enabledBackends: ModelBackend.defaultBackends,
     remoteServices: [],
     modelListUrl:
@@ -31,7 +39,7 @@ class ModelSettingState extends Equatable {
 
   factory ModelSettingState.fromMap(dynamic map) {
     if (map == null) {
-      return ModelSettingState.initial;
+      return ModelSettingState.default_;
     }
     return ModelSettingState(
       remoteServices:
@@ -39,7 +47,7 @@ class ModelSettingState extends Equatable {
               ?.map(RemoteService.fromMap)
               .toList() ??
           [],
-      modelListUrl: map['modelListUrl'] ?? initial.modelListUrl,
+      modelListUrl: map['modelListUrl'] ?? default_.modelListUrl,
       enabledBackends: ModelBackend.fromJson(map['enabledBackends']),
     );
   }

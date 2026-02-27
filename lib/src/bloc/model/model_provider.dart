@@ -10,31 +10,32 @@ abstract class ModelListProvider {
 
   const ModelListProvider();
 
-  factory ModelListProvider.fromService(RwkvServiceClient service) {
+  factory ModelListProvider.fromService(ModelService service) {
     return _ServiceModelListProvider(service);
   }
 }
 
 class _ServiceModelListProvider extends ModelListProvider {
-  final RwkvServiceClient service;
+  final ModelService service;
 
   _ServiceModelListProvider(this.service);
 
   @override
   Future<List<RemoteModelInfo>> getModelList() async {
     try {
-      final list = await service.getModels();
+      await service.refresh();
+      final list = service.models;
       final r = list
           .map(
-            (e) => RemoteModelInfo.fromMap(e.toJson())
+            (e) => RemoteModelInfo.fromMap(e.info.toJson())
               ..serviceId = service.id
-              ..providerName = service.name,
+              ..providerName = service.id,
           )
           .toList();
-      logd('synced ${r.length} models from ${service.name} (${service.url})');
+      logd('synced ${r.length} models from ${service.id} (${service.url})');
       return r;
     } on TimeoutException {
-      logw('timeout fetching models from ${service.name} (${service.url})');
+      logw('timeout fetching models from ${service.id} (${service.url})');
       return [];
     } catch (_) {
       rethrow;

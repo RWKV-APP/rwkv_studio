@@ -105,7 +105,7 @@ class ModelListFlyout extends StatelessWidget {
             MenuFlyoutItem(
               text: const Text('导入本地模型'),
               onPressed: () {
-                //
+                context.toast('请将模型文件拖拽到应用窗口');
               },
             ),
           ],
@@ -148,15 +148,34 @@ class ModelListFlyout extends StatelessWidget {
     final backend = model.tags.contains('albatross')
         ? ModelBackend.albatross
         : model.backend;
+
+    Widget icon;
+
+    bool attachLink = false;
+
+    if (model.isRemote) {
+      if (model.backend != ModelBackend.unknown) {
+        attachLink = true;
+        icon = ModelBackendBadge(backend: backend);
+      } else {
+        icon = const Icon(FluentIcons.link12);
+      }
+    } else {
+      icon = ModelBackendBadge(backend: backend);
+    }
+
     return ToggleMenuFlyoutItem(
       text: Tooltip(
         message: tooltips,
         child: Row(
           children: [
-            model.isRemote
-                ? const Icon(FluentIcons.link12)
-                : ModelBackendBadge(backend: backend),
+            icon,
             const SizedBox(width: 8),
+            if (attachLink)
+              const Padding(
+                padding: .only(right: 4),
+                child: Icon(FluentIcons.link12, size: 12),
+              ),
             Text(name),
           ],
         ),

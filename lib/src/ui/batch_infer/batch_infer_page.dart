@@ -1,4 +1,5 @@
 ﻿import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
@@ -18,7 +19,21 @@ class BatchInferPage extends StatelessWidget {
 
   static Widget create() => BlocProvider<BatchInferCubit>(
     create: (context) => BatchInferCubit(),
-    child: const BatchInferPage._(),
+    child: LayoutBuilder(
+      builder: (ctx, _) {
+        return KeyboardListener(
+          focusNode: FocusNode(),
+          autofocus: true,
+          onKeyEvent: (event) {
+            if (event is KeyDownEvent &&
+                event.physicalKey == PhysicalKeyboardKey.escape) {
+              ctx.app.setFullScreen(false);
+            }
+          },
+          child: const BatchInferPage._(),
+        );
+      },
+    ),
   );
 
   @override

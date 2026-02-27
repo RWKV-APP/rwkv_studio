@@ -59,12 +59,12 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     final size = state.setting;
     List<String> cells = [for (var i = 0; i < size.size; i++) ''];
     int len = 1000;
-    if (size.size >= 64) {
-      len = 500;
+    if (size.size > 600) {
+      len = 50;
     } else if (size.size > 100) {
       len = 100;
-    } else if (size.size > 600) {
-      len = 50;
+    } else if (size.size >= 64) {
+      len = 500;
     }
     int index = 0;
     String str = '';
