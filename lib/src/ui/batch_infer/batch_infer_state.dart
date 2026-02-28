@@ -10,11 +10,13 @@ class BatchSizeState {
     return [
       const BatchSizeState(row: 4, col: 4),
       const BatchSizeState(row: 8, col: 12),
+      const BatchSizeState(row: 12, col: 20),
       const BatchSizeState(row: 16, col: 30),
-      const BatchSizeState(row: 32, col: 56),
-      const BatchSizeState(row: 64, col: 90),
-      const BatchSizeState(row: 80, col: 80),
-      const BatchSizeState(row: 90, col: 90),
+      const BatchSizeState(row: 22, col: 34),
+      const BatchSizeState(row: 32, col: 42),
+      // const BatchSizeState(row: 64, col: 90),
+      // const BatchSizeState(row: 80, col: 80),
+      // const BatchSizeState(row: 90, col: 90),
     ];
   }
 

@@ -50,6 +50,7 @@ mixin class RwkvInterface {
     String prompt,
     String instanceId,
     DecodeParam decodeParam, {
+    int batch = 1,
     String? fimSuffix,
   }) async* {
     throw UnimplementedError();

@@ -79,7 +79,7 @@ class BatchInferPage extends StatelessWidget {
                         : const Text('提交'),
                     onPressed: () {
                       if (!state.isRunning) {
-                        context.cubit.submit();
+                        context.cubit.submit(context.rwkv);
                       } else {
                         context.cubit.stop();
                       }

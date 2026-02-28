@@ -117,17 +117,32 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     String prompt,
     String instanceId,
     DecodeParam decodeParam, {
+    int batch = 1,
     String? fimSuffix,
   }) async* {
-    final instance = state.models[instanceId];
+    final instance = state.models[instanceId]?.rwkv;
     if (instance == null) throw AppException('model not found $instanceId');
     await _syncModelConfig(instanceId, decodeParam, null);
-    await instance.rwkv.clearState();
+    await instance.clearState();
+
+    if (batch > 1) {
+      if (instance is AlbatrossClient) {
+        yield* instance.chatV2Stream(
+          ChatRequest(
+            contents: [for (int i = 0; i < batch; i++) prompt],
+            maxTokens: 4000,
+            stopTokens: [],
+          ),
+        );
+        return;
+      } else {
+        throw const AppException('batch only implemented by albatross');
+      }
+    }
 
     if (fimSuffix != null) {
-      if (instance.rwkv is AlbatrossClient) {
-        final ac = instance.rwkv as AlbatrossClient;
-        final stream = ac.fimBatchStream(
+      if (instance is AlbatrossClient) {
+        final stream = instance.fimBatchStream(
           FimRequest(prefix: [prompt], suffix: [fimSuffix]),
         );
         yield* stream;
@@ -137,7 +152,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     }
 
     try {
-      yield* instance.rwkv.generate(
+      yield* instance.generate(
         GenerationParam(prompt: prompt, model: instanceId),
       );
     } catch (e, s) {

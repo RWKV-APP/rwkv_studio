@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'batch_infer_state.dart';
@@ -13,7 +13,17 @@ part 'batch_infer_state.dart';
 class BatchInferCubit extends Cubit<BatchInferState> {
   StreamSubscription? _subscription;
 
-  BatchInferCubit() : super(BatchInferState.empty());
+  final StreamController<String> _speedSampler = StreamController<String>();
+
+  BatchInferCubit() : super(BatchInferState.empty()) {
+    _speedSampler
+        .stream //
+        .where((v) => v.isNotEmpty)
+        .windowTime(const Duration(milliseconds: 1000))
+        .listen((v) {
+          //
+        });
+  }
 
   Future loadModel(
     BuildContext context,
@@ -39,51 +49,61 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     emit(state.copyWith(isRunning: false));
   }
 
-  Future submit() async {
-    _subscription = _startBatchInfer()
+  Future submit(RwkvInterface rwkv) async {
+    _subscription?.cancel();
+    emit(state.copyWith(isRunning: true));
+    _subscription = _startBatchInfer(rwkv)
         .throttleTime(const Duration(milliseconds: 60))
         .listen(
           (cells) {
             emit(state.copyWith(cells: cells.toList(), isRunning: true));
           },
           onDone: () {
+            logd('batch infer done');
             emit(state.copyWith(isRunning: false));
           },
           onError: (e) {
+            logd('batch infer error: $e');
             emit(state.copyWith(isRunning: false));
           },
         );
   }
 
-  Stream<List<String>> _startBatchInfer() async* {
+  Stream<List<String>> _startBatchInfer(RwkvInterface rwkv) async* {
     final size = state.setting;
     List<String> cells = [for (var i = 0; i < size.size; i++) ''];
-    int len = 1000;
+    int len;
     if (size.size > 600) {
       len = 50;
     } else if (size.size > 100) {
       len = 100;
     } else if (size.size >= 64) {
       len = 500;
+    } else {
+      len = 1000;
     }
-    int index = 0;
+    final prompt = state.textController.text.trim();
+
+    final stream = rwkv.generate(
+      prompt,
+      state.modelState.instanceId,
+      DecodeParam.initial(),
+      batch: size.size,
+    );
+
     String str = '';
-    final rnd = Random();
-    for (var i = 0; i < 500; i++) {
-      for (var r = 0; r < size.row; r++) {
-        for (var c = 0; c < size.col; c++) {
-          index = r * size.col + c;
-          str = cells[index];
-          if (str.length > (len + 40)) {
-            str = str.substring(str.length - len);
-          }
-          cells[index] = str + String.fromCharCode(47 + rnd.nextInt(80));
+    await for (var res in stream) {
+      for (final (index, choice) in res.choices!.indexed) {
+        str = cells[index];
+        if (str.length > (len + 40)) {
+          str = str.substring(str.length - len);
         }
+        _speedSampler.add(choice);
+        cells[index] = str + choice;
       }
-      if (isClosed) {
+      if (isClosed || state.isRunning == false) {
         return;
       }
-      await Future.delayed(const Duration(milliseconds: 30));
       yield cells;
     }
   }
