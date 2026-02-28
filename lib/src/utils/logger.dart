@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
 final _logger = Logger('rwkv-studio');
@@ -48,6 +47,7 @@ void _listenToLogs() {
   _loggerInitialized = true;
   Logger.root.clearListeners();
   Logger.root.level = Level.ALL;
+
   Logger.root.onRecord.listen((record) {
     final log = Log(
       tag: record.loggerName,
@@ -71,7 +71,7 @@ void logi(dynamic msg) {
 
 void logd(dynamic msg) {
   _listenToLogs();
-  _logger.config(msg);
+  _logger.config("${_fileName()}$msg");
 }
 
 void logw(dynamic msg) {
@@ -93,4 +93,10 @@ void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
 void logwtf(dynamic msg) {
   _listenToLogs();
   _logger.shout(msg);
+}
+
+String _fileName() {
+  return '';
+  final line = StackTrace.current.toString().split('\n')[2].trim();
+  return "${line.substring(line.indexOf('(') + 1, line.indexOf(')'))}\n";
 }

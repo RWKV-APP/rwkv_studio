@@ -42,7 +42,6 @@ class SettingCubit extends Cubit<SettingState> {
 
   Future init() async {
     try {
-      emit(state.copyWith(model: ModelSettingState.default_));
       final ns = await PreferencesBox.getRaw();
       if (ns != null) {
         /// avoid theme apply not work
@@ -53,6 +52,7 @@ class SettingCubit extends Cubit<SettingState> {
     } catch (e, s) {
       loge(e, s);
     }
+    emit(state.copyWith(initialized: true));
   }
 
   void setAppearance(AppearanceSettingState appearance) {

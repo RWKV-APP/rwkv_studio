@@ -2,7 +2,6 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/cache/model_file_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
@@ -17,17 +16,63 @@ extension Ext on BuildContext {
   ModelManageCubit get modelManage => read<ModelManageCubit>();
 }
 
+extension Ext2 on ModelManager {
+  List<ModelInfo> get enabledModels => models.where((e) {
+    if (e.groups.contains('othello') || e.groups.contains('sudoku')) {
+      return false;
+    }
+    return true;
+  }).toList();
+}
+
 class ModelManageCubit extends Cubit<ModelManageState> {
   late final ModelManager _manager;
+  bool _managerInitialized = false;
 
   ModelManageCubit() : super(ModelManageState.initial());
 
-  // TODO optimize
-  Iterable<ModelInfo> get availableTextModels => state.models.where(
-    (e) =>
-        (e.localPath.isNotEmpty || e.isRemote) &&
-        (e.groups.overlaps({'chat', 'albatross', 'roleplay'}) || e.isRemote),
-  );
+  Iterable<ModelInfo> get availableTextModels => [
+    ...state.remoteModels,
+    ...state.models.where(
+      (e) =>
+          (e.localPath.isNotEmpty) &&
+          (e.groups.overlaps({'chat', 'albatross', 'roleplay'})),
+    ),
+  ];
+
+  Future initManager({
+    required String modelDownloadDir,
+    required String configProviderUrl,
+  }) async {
+    _manager = ModelManager(
+      downloadSource: state.downloadSource,
+      configProviderUrl: configProviderUrl,
+      modelDownloadDir: modelDownloadDir,
+    );
+    _manager.downloadUpdateEvents().listen((event) {
+      _emitTaskUpdate(
+        modelId: event.model.id,
+        update: event.update,
+        error: event.error,
+      );
+    });
+    await _manager.init();
+    emit(
+      state.copyWith(
+        models: _manager.enabledModels,
+        tags: _manager.modelConfig.tags,
+        groups: _manager.modelConfig.groups,
+        modelStates: {
+          for (final entry in _manager.downloadTasks.entries)
+            entry.key: ModelDownloadState(
+              update: entry.value.update,
+              error: null,
+            ),
+        },
+      ),
+    );
+    _managerInitialized = true;
+  }
 
   void setModelProviders(List<ModelListProvider> providers) {
     emit(state.copyWith(remoteModelProviders: providers));
@@ -35,7 +80,18 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future setModelDownloadDir(String path, {bool migration = false}) async {
+    if (!_managerInitialized) {
+      return;
+    }
     await _manager.setModelDownloadDir(path, migration: migration);
+    await updateModelList(remote: false);
+  }
+
+  Future updateModelConfigUrl(String url) async {
+    if (!_managerInitialized) {
+      return;
+    }
+    _manager.setConfigProviderUrl(url);
     await updateModelList(remote: false);
   }
 
@@ -48,19 +104,6 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       return;
     }
 
-    _manager = ModelManager(
-      downloadSource: DownloadSource.aiFastHub,
-      configProviderUrl: '',
-      modelDownloadDir: './models',
-    );
-
-    _manager.downloadUpdateEvents().listen((event) {
-      _emitTaskUpdate(
-        modelId: event.model.id,
-        update: event.update,
-        error: event.error,
-      );
-    });
     List<ModelInfo> importedModels = [];
     try {
       await HiveManager.openModelFileBox();
@@ -73,14 +116,8 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         initialized: true,
         importedModels: importedModels,
         backends: ModelBackend.defaultBackends,
-        downloadSource: _manager.downloadSource,
       ),
     );
-  }
-
-  Future updateModelConfigUrl(String url) async {
-    _manager.setConfigProviderUrl(url);
-    await updateModelList(remote: false);
   }
 
   Future download(String id) async {
@@ -108,7 +145,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       return;
     }
     await _manager.deleteLocalModelFiles(id);
-    emit(state.copyWith(models: _getModelList()));
+    emit(state.copyWith(models: _manager.enabledModels));
   }
 
   Future cancel(String id) async {
@@ -126,46 +163,33 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future updateModelList({bool local = true, bool remote = true}) async {
-    List<ModelInfo> models = state.models.toList();
     if (remote) {
-      models.removeWhere((e) => e.isRemote);
+      List<ModelInfo> models = [];
       final providers = state.remoteModelProviders;
       for (final provider in providers) {
         final list = await provider.getModelList().wrapError();
         models = [...list, ...models];
       }
+      emit(state.copyWith(remoteModels: models));
     }
-
-    List<ModelTag> tags = [];
-    List<ModelGroup> groups = [];
-    Map<String, ModelDownloadState>? modelStates;
 
     if (local && !kIsWeb) {
-      models.removeWhere((e) => !e.isRemote);
-      final tasks = await _manager.init();
-      modelStates = {
-        for (final entry in tasks.entries)
-          entry.key: ModelDownloadState(
-            update: entry.value.update,
-            error: null,
-          ),
-      };
-      models = [...models, ..._getModelList()];
+      await _manager.updateConfig();
+      emit(
+        state.copyWith(
+          models: _manager.enabledModels,
+          tags: _manager.modelConfig.tags,
+          groups: _manager.modelConfig.groups,
+          modelStates: {
+            for (final entry in _manager.downloadTasks.entries)
+              entry.key: ModelDownloadState(
+                update: entry.value.update,
+                error: null,
+              ),
+          },
+        ),
+      );
     }
-
-    if (!kIsWeb) {
-      tags = _manager.modelConfig.tags;
-      groups = _manager.modelConfig.groups;
-    }
-
-    emit(
-      state.copyWith(
-        models: models,
-        tags: tags,
-        groups: groups,
-        modelStates: modelStates,
-      ),
-    );
   }
 
   void setDownloadSource(DownloadSource source) {
@@ -180,7 +204,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       state.copyWith(
         models: [
           model.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString()),
-          ..._getModelList(),
+          ..._manager.enabledModels,
         ],
       ),
     );
@@ -198,7 +222,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     logd(
       'download update: ${update.state}, ${update.progress.toStringAsFixed(2)}',
     );
-    final m = update.isCompleted ? _getModelList() : null;
+    final m = update.isCompleted ? _manager.enabledModels : null;
     emit(
       state.copyWith(
         models: m,
@@ -210,14 +234,5 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         }..removeWhere((k, v) => v == null || v.update.isCompleted),
       ),
     );
-  }
-
-  List<ModelInfo> _getModelList() {
-    return _manager.models.where((e) {
-      if (e.groups.contains('othello') || e.groups.contains('sudoku')) {
-        return false;
-      }
-      return true;
-    }).toList();
   }
 }

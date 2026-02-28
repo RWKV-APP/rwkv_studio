@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -67,7 +68,7 @@ mixin class RwkvInterface {
       yield ModelLoadState.loaded(modelInfo.id, name, loaded.first);
       return;
     }
-    if (modelInfo.backend == ModelBackend.albatross) {
+    if (modelInfo.backend == ModelBackend.albatross && !modelInfo.isRemote) {
       if (!context.mounted) {
         yield ModelLoadState.error(modelInfo.id, 'context not mounted');
         return;

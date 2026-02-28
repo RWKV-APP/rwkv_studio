@@ -4,8 +4,10 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
+import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -19,7 +21,11 @@ class AppCubit extends Cubit<AppState> {
   AppCubit() : super(AppState.initial());
 
   Future init() async {
-    //
+    detectPythonInterpreters();
+
+    await AppAssets.init().catchError((e) => loge(e));
+    await HiveManager.init().catchError((e) => loge(e));
+    await HiveManager.openPreferencesBox().catchError((e) => loge(e));
   }
 
   Future init2({required SettingState settings}) async {
@@ -78,7 +84,6 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void onPythonSelected({required String id, String? albatrossPath}) {
-    logd('on python interpreter selected: $id');
     emit(state.copyWith(selectedPythonId: id, albatrossPath: albatrossPath));
   }
 

@@ -280,7 +280,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       return;
     }
     if (state.modelInstanceId.isEmpty) {
-      throw 'Model not loaded';
+      throw '请选择模型';
     }
     final convId = state.selected.id;
 

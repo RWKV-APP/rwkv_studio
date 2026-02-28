@@ -11,6 +11,7 @@ class ModelManageState {
   final bool initialized;
 
   final List<ModelInfo> models;
+  final List<ModelInfo> remoteModels;
   final List<ModelInfo> importedModels;
   final Map<String, ModelDownloadState?> modelStates;
   final DownloadSource downloadSource;
@@ -20,10 +21,11 @@ class ModelManageState {
   final List<ModelBackend> backends;
   final List<ModelListProvider> remoteModelProviders;
 
-  Iterable<ModelInfo> get availableModels =>
-      models.where((e) => e.localPath.isNotEmpty || e.isRemote);
-
-  List<ModelInfo> get allModels => [...models, ...importedModels];
+  List<ModelInfo> get allModels => [
+    ...remoteModels,
+    ...models,
+    ...importedModels,
+  ];
 
   List<ModelTag> getDisplayTags() {
     return tags.where((e) => e.name != 'mlx' && e.name != 'coreml').toList();
@@ -37,7 +39,8 @@ class ModelManageState {
 
   bool shouldModelListUpdate(ModelManageState other) {
     return other.models.length != models.length ||
-        other.importedModels.length != importedModels.length;
+        other.importedModels.length != importedModels.length ||
+        remoteModels.length != other.remoteModels.length;
   }
 
   ModelManageState._({
@@ -51,6 +54,7 @@ class ModelManageState {
     required this.backends,
     required this.remoteModelProviders,
     required this.importedModels,
+    required this.remoteModels,
   });
 
   factory ModelManageState.initial() {
@@ -65,6 +69,7 @@ class ModelManageState {
       backends: [],
       remoteModelProviders: [],
       importedModels: [],
+      remoteModels: [],
     );
   }
 
@@ -80,6 +85,7 @@ class ModelManageState {
     List<ModelBackend>? backends,
     List<ModelListProvider>? remoteModelProviders,
     List<ModelInfo>? importedModels,
+    List<ModelInfo>? remoteModels,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
@@ -92,6 +98,7 @@ class ModelManageState {
       backends: backends ?? this.backends,
       remoteModelProviders: remoteModelProviders ?? this.remoteModelProviders,
       importedModels: importedModels ?? this.importedModels,
+      remoteModels: remoteModels ?? this.remoteModels,
     );
   }
 }

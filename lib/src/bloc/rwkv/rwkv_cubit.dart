@@ -33,16 +33,17 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     emit(state.copyWith(decodeParams: params));
   }
 
-  Future setRemoteServiceList(List<ModelService> services) async {
+  void setRemoteServiceList(List<ModelService> services) {
     Map<String, ModelInstanceState> instances = {};
     for (final service in services) {
       final ms = service.models;
       for (final m in ms) {
-        instances[m.info.id] = ModelInstanceState(
+        final modelId = m.info.id;
+        instances[modelId] = ModelInstanceState(
           rwkv: m.rwkv,
-          id: m.info.id,
+          id: modelId,
           info: ModeBaseInfo(
-            id: m.info.id,
+            id: modelId,
             name: m.info.name,
             providerName: service.id,
             serviceId: service.id,
@@ -54,6 +55,8 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     if (instances.isNotEmpty) {
       logd('connected ${instances.length} instances from remote service');
       emit(state.copyWith(models: {...instances, ...state.models}));
+    } else {
+      logd('no instances from remote service');
     }
   }
 
