@@ -1,11 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
-import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
-import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
@@ -13,14 +10,19 @@ class ModelListFlyout extends StatelessWidget {
   final String? modelInstanceId;
   final Function(ModelInfo info) onModelSelected;
 
+  final List<ModelInfo> models;
+  final Map<String, ModelInstanceState> id2instance;
+
   const ModelListFlyout({
     super.key,
     this.modelInstanceId,
     required this.onModelSelected,
+    required this.models,
+    required this.id2instance,
   });
 
   Future _onModelSelected(BuildContext context, ModelInfo info) async {
-    if (info.backend == ModelBackend.albatross) {
+    if (info.backend == ModelBackend.albatross && !info.isRemote) {
       if (context.app.getSelectedPython() == null) {
         showDialog(
           context: context,
@@ -57,90 +59,52 @@ class ModelListFlyout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modelSetting = context.settings.state.model;
-    final availableModels = context.modelManage.availableTextModels.where(
-      (e) =>
-          !e.tags.contains('translate') &&
-          (modelSetting.enabledBackends.contains(e.backend) || e.isRemote),
-    );
-    final modelIds = availableModels.map((e) => e.id).toList();
-
-    ModelInstanceState? selectedInstance = context.rwkv.getModelInstance(
-      modelInstanceId,
-    );
-    return BlocBuilder<RwkvCubit, RwkvState>(
-      buildWhen: (p, c) => p.models != c.models,
-      builder: (context, state) {
-        final loadedModels = state.models.map((k, v) => MapEntry(v.info.id, v));
-
-        final additional = loadedModels.values.where(
-          (e) => !modelIds.contains(e.info.id),
-        );
-
-        return MenuFlyout(
-          items: [
-            for (final model in additional)
-              _buildMenuItem(
-                context: context,
-                model: model.info.toModelInfo(),
-                selectedInstance: selectedInstance,
-                instanceId: model.id,
-                modelSetting: modelSetting,
-              ),
-            for (final model in availableModels)
-              _buildMenuItem(
-                context: context,
-                model: model,
-                selectedInstance: selectedInstance,
-                instanceId: loadedModels[model.id]?.id,
-                modelSetting: modelSetting,
-              ),
-            const MenuFlyoutSeparator(),
-            MenuFlyoutItem(
-              text: const Text('模型管理'),
-              onPressed: () {
-                context.app.jump2ModelManage();
-              },
-            ),
-            MenuFlyoutItem(
-              text: const Text('导入本地模型'),
-              onPressed: () {
-                context.toast('请将模型文件拖拽到应用窗口');
-              },
-            ),
-          ],
-        );
-      },
+    return MenuFlyout(
+      items: [
+        for (final model in models)
+          _buildMenuItem(context: context, model: model),
+        const MenuFlyoutSeparator(),
+        MenuFlyoutItem(
+          text: const Text('模型管理'),
+          onPressed: () {
+            context.app.jump2ModelManage();
+          },
+        ),
+        MenuFlyoutItem(
+          text: const Text('导入本地模型'),
+          onPressed: () {
+            context.toast('请将模型文件拖拽到应用窗口');
+          },
+        ),
+      ],
     );
   }
 
   MenuFlyoutItem _buildMenuItem({
     required BuildContext context,
     required ModelInfo model,
-    required ModelInstanceState? selectedInstance,
-    required String? instanceId,
-    required ModelSettingState modelSetting,
   }) {
     Widget? trailing;
     String name = model.name;
-    bool isRemote = model.isRemote;
     String tooltips = '';
 
-    if (instanceId != null && model.localPath.isNotEmpty) {
+    final selectedInstance = id2instance[modelInstanceId];
+
+    final inst = id2instance.values
+        .where((e) => e.info.id == model.id)
+        .firstOrNull;
+
+    if (inst != null && model.localPath.isNotEmpty) {
       trailing = Button(
         onPressed: selectedInstance?.info.id == model.id
             ? null
-            : () => _onModelReleased(context, instanceId),
+            : () => _onModelReleased(context, inst.id),
         child: const Text('释放', style: TextStyle(fontSize: 13, height: 1.1)),
       );
     }
 
-    if (isRemote) {
-      final s = modelSetting.remoteServices
-          .where((e) => e.id == model.serviceId)
-          .firstOrNull;
-      tooltips =
-          '${s?.name ?? model.providerName} 远程模型, instanceId: $instanceId';
+    if (model.isRemote) {
+      tooltips = '模型来自 ${model.providerName}';
     } else {
       tooltips = model.fileName;
     }

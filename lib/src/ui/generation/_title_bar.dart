@@ -29,6 +29,7 @@ class _TitleBar extends StatelessWidget {
                   : (model) {
                       context.cubit.loadModel(context, context.rwkv, model);
                     },
+              filter: (model) => !model.name.toLowerCase().contains('neko'),
             ),
             const SizedBox(width: 8),
             FilledButton(

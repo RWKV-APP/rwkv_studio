@@ -1,14 +1,26 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/model_list_flyout.dart';
+
+typedef ModelFilter = bool Function(ModelInfo model);
 
 class ModelSelector extends StatelessWidget {
   final ModelLoadState modelState;
   final Function(ModelInfo modelInfo)? onModelSelected;
   final _itemsController = FlyoutController();
+  final ModelFilter? filter;
 
-  ModelSelector({super.key, required this.modelState, this.onModelSelected});
+  ModelSelector({
+    super.key,
+    required this.modelState,
+    this.onModelSelected,
+    this.filter,
+  });
 
   void _showMenu() async {
     _itemsController.showFlyout(
@@ -19,9 +31,23 @@ class ModelSelector extends StatelessWidget {
       dismissOnPointerMoveAway: false,
       dismissWithEsc: true,
       builder: (ctx) {
+        final modelSetting = ctx.settings.state.model;
+        final availableModels = ctx.modelManage.availableTextModels
+            .where(
+              (e) =>
+                  !e.tags.contains('translate') &&
+                  (modelSetting.enabledBackends.contains(e.backend) ||
+                      e.isRemote),
+            )
+            .where((e) {
+              return filter == null || filter!(e);
+            });
+
         return ModelListFlyout(
           modelInstanceId: modelState.instanceId,
           onModelSelected: (info) => onModelSelected?.call(info),
+          models: availableModels.toList(),
+          id2instance: ctx.rwkv.state.models,
         );
       },
     );
@@ -54,7 +80,10 @@ class ModelSelector extends StatelessWidget {
               preferBelow: true,
               waitDuration: Duration.zero,
             ),
-            child: const Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
+            child: const Icon(
+              FluentIcons.error,
+              color: Colors.errorPrimaryColor,
+            ),
           ),
           const SizedBox(width: 8),
           const Text('加载失败'),
@@ -66,7 +95,10 @@ class ModelSelector extends StatelessWidget {
         children: [
           const Icon(WindowsIcons.task_view, size: 14),
           const SizedBox(width: 6),
-          Text(name.isNotEmpty ? name : '选择模型', style: const TextStyle(fontSize: 13)),
+          Text(
+            name.isNotEmpty ? name : '选择模型',
+            style: const TextStyle(fontSize: 13),
+          ),
         ],
       );
     }

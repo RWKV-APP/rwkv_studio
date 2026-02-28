@@ -32,7 +32,7 @@ class _AddButtonState extends State<_AddButton> {
     });
     widget.onAdd?.call(
       RemoteService(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: url,
         name: name,
         url: url,
         enabled: _enabled,
