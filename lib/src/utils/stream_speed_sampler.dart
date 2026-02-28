@@ -18,7 +18,7 @@ class SpeedMetrics {
   });
 }
 
-typedef Sampler<T> = double Function(T);
+typedef Sampler<T> = num Function(T);
 
 class StreamSpeedSampler {
   static StreamTransformer<T, SpeedMetrics> createTransformer<T>({
@@ -138,7 +138,7 @@ class StreamSpeedSampler {
               final DateTime now = DateTime.now();
               double value;
               try {
-                value = counter(event);
+                value = counter(event).toDouble();
               } catch (e, st) {
                 controller.addError(e, st);
                 return;

@@ -31,7 +31,14 @@ class BatchSizeState {
   }
 }
 
+class PerformanceState {
+  final double tps;
+
+  const PerformanceState({required this.tps});
+}
+
 class BatchInferState {
+  final PerformanceState performance;
   final BatchSizeState setting;
   final ModelLoadState modelState;
   final TextEditingController textController;
@@ -44,6 +51,7 @@ class BatchInferState {
     required this.textController,
     required this.cells,
     required this.isRunning,
+    required this.performance,
   });
 
   factory BatchInferState.empty() {
@@ -51,9 +59,10 @@ class BatchInferState {
     return BatchInferState(
       setting: setting,
       modelState: ModelLoadState.empty(),
-      textController: TextEditingController(),
+      textController: TextEditingController(text: '在很久很久以前'),
       cells: [for (var i = 0; i < setting.size; i++) '-'],
       isRunning: false,
+      performance: const PerformanceState(tps: 0.0),
     );
   }
 
@@ -62,6 +71,7 @@ class BatchInferState {
     BatchSizeState? setting,
     TextEditingController? textController,
     List<String>? cells,
+    PerformanceState? performance,
     bool? isRunning,
   }) {
     return BatchInferState(
@@ -70,6 +80,7 @@ class BatchInferState {
       textController: textController ?? this.textController,
       cells: cells ?? this.cells,
       isRunning: isRunning ?? this.isRunning,
+      performance: performance ?? this.performance,
     );
   }
 }

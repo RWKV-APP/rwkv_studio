@@ -130,7 +130,6 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
         yield* instance.chatV2Stream(
           ChatRequest(
             contents: [for (int i = 0; i < batch; i++) prompt],
-            maxTokens: 4000,
             stopTokens: [],
           ),
         );

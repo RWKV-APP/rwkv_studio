@@ -6,6 +6,8 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
+import 'package:rwkv_studio/src/utils/stream_speed_sampler.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'batch_infer_state.dart';
@@ -13,17 +15,9 @@ part 'batch_infer_state.dart';
 class BatchInferCubit extends Cubit<BatchInferState> {
   StreamSubscription? _subscription;
 
-  final StreamController<String> _speedSampler = StreamController<String>();
+  StreamController<String> _speedSampler = StreamController<String>();
 
-  BatchInferCubit() : super(BatchInferState.empty()) {
-    _speedSampler
-        .stream //
-        .where((v) => v.isNotEmpty)
-        .windowTime(const Duration(milliseconds: 1000))
-        .listen((v) {
-          //
-        });
-  }
+  BatchInferCubit() : super(BatchInferState.empty());
 
   Future loadModel(
     BuildContext context,
@@ -46,12 +40,41 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
   Future stop() async {
     _subscription?.cancel();
+    _speedSampler.close();
     emit(state.copyWith(isRunning: false));
   }
 
   Future submit(RwkvInterface rwkv) async {
+    _speedSampler.close();
+    _speedSampler = StreamController<String>();
+    _speedSampler.stream
+        .transform(
+          StreamSpeedSampler.createTransformer(
+            window: const Duration(seconds: 5),
+            maxSampleRate: const Duration(milliseconds: 500),
+            enableSmoothing: true,
+            smoothingAlpha: 0.5,
+            counter: (v) => RwkvTokenizer.tokenCountEstimate(v),
+          ),
+        )
+        .listen((v) {
+          emit(state.copyWith(performance: PerformanceState(tps: v.speed)));
+        });
+
     _subscription?.cancel();
     emit(state.copyWith(isRunning: true));
+    Stream<List<String>> stream = _startBatchInfer(rwkv);
+
+    if (state.setting.size > 200) {
+      stream = stream.asyncExpand((e) async* {
+        yield [for (final c in e) c.length > 14 ? c.substring(0, 14) : c];
+        await Future.delayed(const Duration(milliseconds: 200));
+        yield [
+          for (final c in e) c.length > 14 ? c.substring(c.length - 14) : c,
+        ];
+      });
+    }
+
     _subscription = _startBatchInfer(rwkv)
         .throttleTime(const Duration(milliseconds: 60))
         .listen(
@@ -60,10 +83,12 @@ class BatchInferCubit extends Cubit<BatchInferState> {
           },
           onDone: () {
             logd('batch infer done');
+            _speedSampler.close();
             emit(state.copyWith(isRunning: false));
           },
-          onError: (e) {
-            logd('batch infer error: $e');
+          onError: (e, s) {
+            logd('batch infer error: $e, $s');
+            _speedSampler.close();
             emit(state.copyWith(isRunning: false));
           },
         );
@@ -87,7 +112,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     final stream = rwkv.generate(
       prompt,
       state.modelState.instanceId,
-      DecodeParam.initial(),
+      DecodeParam.initial().copyWith(maxTokens: 20000),
       batch: size.size,
     );
 
@@ -98,7 +123,9 @@ class BatchInferCubit extends Cubit<BatchInferState> {
         if (str.length > (len + 40)) {
           str = str.substring(str.length - len);
         }
-        _speedSampler.add(choice);
+        if (!_speedSampler.isClosed) {
+          _speedSampler.add(choice);
+        }
         cells[index] = str + choice;
       }
       if (isClosed || state.isRunning == false) {

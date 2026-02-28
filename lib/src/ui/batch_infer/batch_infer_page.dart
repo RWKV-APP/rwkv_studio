@@ -132,7 +132,22 @@ class _ToolBar extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text('并行模式', style: context.fluent.typography.subtitle),
+          child: BlocBuilder<BatchInferCubit, BatchInferState>(
+            buildWhen: (prev, cur) => cur.performance != prev.performance,
+            builder: (context, state) {
+              return Row(
+                crossAxisAlignment: .end,
+                children: [
+                  Text('并行推理', style: context.fluent.typography.subtitle),
+                  const SizedBox(width: 16),
+                  Text(
+                    '${state.performance.tps.toInt()} tokens/s',
+                    style: const TextStyle(height: 2, fontSize: 10),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
         SizedBox(
           height: 34,
