@@ -22,7 +22,7 @@ class AppearanceSettingState extends Equatable {
   factory AppearanceSettingState.initial() {
     return AppearanceSettingState(
       theme: AppearanceSettingState.lightTheme,
-      fontFamily: 'Microsoft YaHei',
+      fontFamily: 'NotoSansSC',
       fontSize: 16,
       userType: UserType.user,
     );

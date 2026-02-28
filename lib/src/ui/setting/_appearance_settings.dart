@@ -62,6 +62,10 @@ class AppearanceSettings extends StatelessWidget {
                 items: [
                   const ComboBoxItem(value: '', child: Text('默认')),
                   const ComboBoxItem(
+                    value: 'NotoSansSC',
+                    child: Text('NotoSansSC'),
+                  ),
+                  const ComboBoxItem(
                     value: 'Microsoft YaHei',
                     child: Text('Microsoft YaHei'),
                   ),

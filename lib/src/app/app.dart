@@ -15,8 +15,7 @@ class RWKVApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return WithGlobalProviders(
       child: BlocBuilder<SettingCubit, SettingState>(
-        buildWhen: (p, c) =>
-            p.appearance != c.appearance || p.initialized != c.initialized,
+        buildWhen: (p, c) => p.appearance != c.appearance,
         builder: (context, state) {
           final appearance = state.appearance;
           final theme = appearance.theme.custom(
