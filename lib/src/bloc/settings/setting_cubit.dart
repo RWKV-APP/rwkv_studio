@@ -52,6 +52,11 @@ class SettingCubit extends Cubit<SettingState> {
     } catch (e, s) {
       loge(e, s);
     }
+
+    if (state.model.modelListUrl.isEmpty) {
+      emit(state.copyWith(model: ModelSettingState.default_));
+    }
+
     emit(state.copyWith(initialized: true));
   }
 
@@ -76,7 +81,8 @@ class SettingCubit extends Cubit<SettingState> {
     logi('settings persisted');
   }
 
-  Future _checkCacheDirAvailable(CacheSettingState cache, [
+  Future _checkCacheDirAvailable(
+    CacheSettingState cache, [
     CacheSettingState? reset,
   ]) async {
     final initial = reset ?? CacheSettingState.initial();

@@ -70,7 +70,10 @@ class Python {
       return [];
     }
     final json = jsonDecode(res.stdout.toString());
-    final details = json['envs_details'] as Map;
+    final details = json['envs_details'] as Map?;
+    if (details == null) {
+      return [];
+    }
     return [
       for (final e in details.entries)
         CondaEnv(name: e.value['name'], path: e.key),
