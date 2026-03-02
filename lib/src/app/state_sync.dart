@@ -43,10 +43,10 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
     final rwkv = context.rwkv;
     final modelManage = context.modelManage;
 
-    await app.init();
-    await rwkv.init();
-    await chat.init();
-    await modelManage.init();
+    await app.init().catchError((e, s) => loge(e, s));
+    await rwkv.init().catchError((e, s) => loge(e, s));
+    await chat.init().catchError((e, s) => loge(e, s));
+    await modelManage.init().catchError((e, s) => loge(e, s));
 
     Future.delayed(const Duration(milliseconds: 500), () async {
       await setting.init();

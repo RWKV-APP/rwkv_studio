@@ -3,6 +3,14 @@ extension CollectionExtensions<T> on Iterable<T> {
     return any((e) => other.contains(e));
   }
 
+  Map<K, V> associate<K, V>(K Function(T) key, V Function(T) value) {
+    Map<K, V> result = {};
+    for (final e in this) {
+      result[key(e)] = value(e);
+    }
+    return result;
+  }
+
   Map<K, List<T>> groupBy<K>(K Function(T) key) {
     Map<K, List<T>> result = {};
     for (final e in this) {

@@ -17,16 +17,28 @@ class StateCacheBoxAdapter extends TypeAdapter<StateCacheBox> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return StateCacheBox(
-      decodeParamPresets: (fields[0] as Map).cast<String, dynamic>(),
+      key: fields[0] as String,
+      value: fields[1] as String,
+      updateAt: (fields[3] as num).toInt(),
+      type: fields[2] as String,
+      nameSpace: fields[4] == null ? '' : fields[4] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, StateCacheBox obj) {
     writer
-      ..writeByte(1)
+      ..writeByte(5)
       ..writeByte(0)
-      ..write(obj.decodeParamPresets);
+      ..write(obj.key)
+      ..writeByte(1)
+      ..write(obj.value)
+      ..writeByte(2)
+      ..write(obj.type)
+      ..writeByte(3)
+      ..write(obj.updateAt)
+      ..writeByte(4)
+      ..write(obj.nameSpace);
   }
 
   @override

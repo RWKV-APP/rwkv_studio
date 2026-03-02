@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 import 'package:rwkv_studio/src/utils/stream_speed_sampler.dart';
@@ -55,6 +56,10 @@ class BatchInferCubit extends Cubit<BatchInferState> {
   }
 
   Future submit(RwkvInterface rwkv) async {
+    if (state.modelState.instanceId.isEmpty) {
+      throw const AppException('请先选择模型');
+    }
+
     _speedSampler.close();
     _speedSampler = StreamController<String>();
     _speedSampler.stream
@@ -85,6 +90,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
       });
     }
 
+    Completer completer = Completer();
     _subscription = stream
         .throttleTime(const Duration(milliseconds: 60))
         .listen(
@@ -93,15 +99,18 @@ class BatchInferCubit extends Cubit<BatchInferState> {
           },
           onDone: () {
             logd('batch infer done');
+            completer.complete();
             _speedSampler.close();
             emit(state.copyWith(isRunning: false));
           },
           onError: (e, s) {
+            completer.completeError(e);
             logd('batch infer error: $e, $s');
             _speedSampler.close();
             emit(state.copyWith(isRunning: false));
           },
         );
+    await completer.future;
   }
 
   Stream<List<String>> _startBatchInfer(RwkvInterface rwkv) async* {

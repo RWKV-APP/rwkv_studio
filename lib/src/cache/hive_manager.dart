@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
+import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 
@@ -34,6 +35,7 @@ class HiveManager {
     Hive.registerAdapter(ConversationBoxAdapter());
     Hive.registerAdapter(MessageBoxAdapter());
     Hive.registerAdapter(ModelFileBoxAdapter());
+    Hive.registerAdapter(StateCacheBoxAdapter());
     logd('hive initialized');
   }
 

@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
+import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'rwkv_state.dart';
@@ -21,15 +25,37 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   Future init() async {
     logd('init rwkv');
+
+    final s = await StateCacheBox.getAll(
+      nameSpace: StateCacheBox.nsSpaceDecodeParam,
+    );
+
+    final decodeParams = s.associate(
+      (e) => e.key,
+      (e) => DecodeParam.fromMap(jsonDecode(e.value)),
+    );
+    logi('restore decode params: ${decodeParams.keys.join(',')}');
+    emit(
+      state.copyWith(
+        decodeParams: {'default': DecodeParam.initial(), ...decodeParams},
+      ),
+    );
   }
 
   void setOrPutDecodeParam(String id, DecodeParam param) {
+    StateCacheBox.put(
+      id,
+      param.toMap(),
+      nameSpace: StateCacheBox.nsSpaceDecodeParam,
+    );
     emit(state.copyWith(decodeParams: {...state.decodeParams, id: param}));
   }
 
   void deleteDecodeParam(String id) {
+    logd('delete decode param $id');
     final params = {...state.decodeParams};
     params.remove(id);
+    StateCacheBox.delete(id, nameSpace: StateCacheBox.nsSpaceDecodeParam);
     emit(state.copyWith(decodeParams: params));
   }
 
