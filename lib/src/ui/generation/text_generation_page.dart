@@ -1,11 +1,12 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
+import 'package:rwkv_studio/src/ui/common/decode_param_preset_button.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
-import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
@@ -67,7 +68,6 @@ class TextGenerationPage extends StatelessWidget {
   }
 }
 
-
 class _TextBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -116,34 +116,40 @@ class _SettingPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Button(
-          child: const Text('重置'),
-          onPressed: () {
-            context.cubit.resetSettings();
-          },
-        ),
-        const SizedBox(height: 12),
         Expanded(
           child: SingleChildScrollView(
-            child: Column(
-              children: [
-                BlocBuilder<TextGenerationCubit, TextGenerationState>(
-                  buildWhen: (p, c) =>
-                      p.decodeParam != c.decodeParam ||
-                      p.generating != c.generating,
-                  builder: (context, state) {
-                    return DecodeParamForm(
-                      param: state.decodeParam,
-                      onChanged: state.generating
-                          ? null
-                          : (v) {
-                              context.cubit.setDecodeParam(v);
-                            },
-                    );
-                  },
-                ),
-                const SizedBox(height: 60),
-              ],
+            child: BlocBuilder<TextGenerationCubit, TextGenerationState>(
+              buildWhen: (p, c) =>
+                  p.decodeParamId != c.decodeParamId ||
+                  p.generating != c.generating,
+              builder: (context, state) {
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            '解码参数',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        DecodeParamPresetButton(
+                          currentId: state.decodeParamId,
+                          onChange: (v) {
+                            context.textGen.setDecodeParamId(v);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DecodeParamForm.createWithBloc(
+                      currentId: state.decodeParamId,
+                      editable: !state.generating,
+                    ),
+                    const SizedBox(height: 60),
+                  ],
+                );
+              },
             ),
           ),
         ),

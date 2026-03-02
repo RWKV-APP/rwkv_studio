@@ -116,12 +116,18 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   Stream<GenerationResponse> generate(
     String prompt,
     String instanceId,
-    DecodeParam decodeParam, {
+    String decodeParamId, {
     int batch = 1,
     String? fimSuffix,
   }) async* {
     final instance = state.models[instanceId]?.rwkv;
     if (instance == null) throw AppException('model not found $instanceId');
+    final decodeParam = decodeParamId.isEmpty
+        ? DecodeParam.initial()
+        : state.decodeParams[decodeParamId];
+    if (decodeParam == null) {
+      throw AppException('decode param not found $decodeParamId');
+    }
     await _syncModelConfig(instanceId, decodeParam, null);
     await instance.clearState();
 

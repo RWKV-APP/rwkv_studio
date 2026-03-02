@@ -2,9 +2,13 @@ import 'package:fluent_ui/fluent_ui.dart';
 
 extension CustomeFluent on FluentThemeData {
   FluentThemeData custom({String? fontFamily}) {
+    final textColor = brightness == Brightness.light
+        ? Colors.black
+        : Colors.grey[40];
+
     final defaultFontStyle = TextStyle(
       fontSize: 14,
-      color: Colors.black,
+      color: textColor,
       fontFamily: fontFamily,
       fontVariations: [
         const FontVariation.weight(400),
@@ -58,7 +62,9 @@ extension CustomeFluent on FluentThemeData {
           padding: WidgetStateProperty.all(
             const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           ),
-          textStyle: buttonTheme.defaultButtonStyle?.textStyle,
+          textStyle: WidgetStatePropertyAll(
+            defaultFontStyle.copyWith(fontWeight: FontWeight.w500),
+          ),
         ),
         iconButtonStyle: ButtonStyle(
           padding: WidgetStateProperty.all(
@@ -68,6 +74,9 @@ extension CustomeFluent on FluentThemeData {
         filledButtonStyle: ButtonStyle(
           padding: WidgetStateProperty.all(
             const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            defaultFontStyle.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
       ),

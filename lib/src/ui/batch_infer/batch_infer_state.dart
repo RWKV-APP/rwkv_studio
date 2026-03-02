@@ -44,14 +44,18 @@ class BatchInferState {
   final TextEditingController textController;
   final List<String> cells;
   final bool isRunning;
+  final bool showSettingPanel;
+  final String decodeParamId;
 
   const BatchInferState({
     required this.setting,
     required this.modelState,
+    required this.showSettingPanel,
     required this.textController,
     required this.cells,
     required this.isRunning,
     required this.performance,
+    required this.decodeParamId,
   });
 
   factory BatchInferState.empty() {
@@ -62,7 +66,9 @@ class BatchInferState {
       textController: TextEditingController(text: '在很久很久以前'),
       cells: [for (var i = 0; i < setting.size; i++) '-'],
       isRunning: false,
+      showSettingPanel: false,
       performance: const PerformanceState(tps: 0.0),
+      decodeParamId: '',
     );
   }
 
@@ -71,16 +77,20 @@ class BatchInferState {
     BatchSizeState? setting,
     TextEditingController? textController,
     List<String>? cells,
+    bool? showSettingPanel,
     PerformanceState? performance,
     bool? isRunning,
+    String? decodeParamId,
   }) {
     return BatchInferState(
       setting: setting ?? this.setting,
       modelState: modelState ?? this.modelState,
       textController: textController ?? this.textController,
+      showSettingPanel: showSettingPanel ?? this.showSettingPanel,
       cells: cells ?? this.cells,
       isRunning: isRunning ?? this.isRunning,
       performance: performance ?? this.performance,
+      decodeParamId: decodeParamId ?? this.decodeParamId,
     );
   }
 }

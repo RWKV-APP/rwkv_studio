@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -19,6 +18,9 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
   BatchInferCubit() : super(BatchInferState.empty());
 
+  static BatchInferCubit of(BuildContext context) =>
+      BlocProvider.of<BatchInferCubit>(context);
+
   Future loadModel(
     BuildContext context,
     RwkvInterface rwkv,
@@ -27,6 +29,14 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     await for (var s in rwkv.loadOrGetModelInstance(context, model)) {
       emit(state.copyWith(modelState: s));
     }
+  }
+
+  void toggleShowSettingPanel() {
+    emit(state.copyWith(showSettingPanel: !state.showSettingPanel));
+  }
+
+  void setDecodeParamId(String paramId) {
+    emit(state.copyWith(decodeParamId: paramId));
   }
 
   void setBatchSize(BatchSizeState size) {
@@ -68,14 +78,14 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     if (state.setting.size > 200) {
       stream = stream.asyncExpand((e) async* {
         yield [for (final c in e) c.length > 14 ? c.substring(0, 14) : c];
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(const Duration(milliseconds: 500));
         yield [
           for (final c in e) c.length > 14 ? c.substring(c.length - 14) : c,
         ];
       });
     }
 
-    _subscription = _startBatchInfer(rwkv)
+    _subscription = stream
         .throttleTime(const Duration(milliseconds: 60))
         .listen(
           (cells) {
@@ -112,7 +122,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     final stream = rwkv.generate(
       prompt,
       state.modelState.instanceId,
-      DecodeParam.initial().copyWith(maxTokens: 20000),
+      state.decodeParamId,
       batch: size.size,
     );
 

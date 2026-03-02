@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/widget/labeled_slider.dart';
 
 class DecodeParamForm extends StatelessWidget {
@@ -7,6 +9,24 @@ class DecodeParamForm extends StatelessWidget {
   final ValueChanged<DecodeParam>? onChanged;
 
   const DecodeParamForm({super.key, required this.param, this.onChanged});
+
+  static Widget createWithBloc({
+    required String currentId,
+    required bool editable,
+  }) {
+    return BlocBuilder<RwkvCubit, RwkvState>(
+      buildWhen: (p, c) => p.decodeParams != c.decodeParams,
+      builder: (context, state) {
+        final param = state.decodeParams[currentId];
+        return DecodeParamForm(
+          param: param ?? state.decodeParams.values.first,
+          onChanged: !editable
+              ? null
+              : (v) => context.rwkv.setOrPutDecodeParam(currentId, v),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -6,7 +6,7 @@ class ConversationState {
   final DateTime updateAt;
   final String systemPrompt;
   final String modelId;
-  final String decodeParmaId;
+  final String decodeParamId;
   final int pinned;
   final bool useGlobalSystemPrompt;
 
@@ -17,7 +17,7 @@ class ConversationState {
     systemPrompt: '',
     modelId: '',
     pinned: 0,
-    decodeParmaId: '',
+    decodeParamId: '',
     useGlobalSystemPrompt: true,
   );
 
@@ -28,7 +28,7 @@ class ConversationState {
     required this.systemPrompt,
     required this.modelId,
     required this.pinned,
-    required this.decodeParmaId,
+    required this.decodeParamId,
     required this.useGlobalSystemPrompt,
   });
 
@@ -39,7 +39,7 @@ class ConversationState {
       updateAt: DateTime.now(),
       systemPrompt: '',
       modelId: '',
-      decodeParmaId: '',
+      decodeParamId: '',
       pinned: 0,
       useGlobalSystemPrompt: true,
     );
@@ -62,7 +62,7 @@ class ConversationState {
       systemPrompt: systemPrompt ?? this.systemPrompt,
       modelId: modelId ?? this.modelId,
       pinned: pinned ?? this.pinned,
-      decodeParmaId: decodeParmaId ?? this.decodeParmaId,
+      decodeParamId: decodeParmaId ?? this.decodeParamId,
       useGlobalSystemPrompt:
       useGlobalSystemPrompt ?? this.useGlobalSystemPrompt,
     );

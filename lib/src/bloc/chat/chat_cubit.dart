@@ -386,7 +386,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final stream = rwkv.chat(
       messages,
       state.modelInstanceId,
-      conv.decodeParmaId,
+      conv.decodeParamId,
       state.generationConfig.copyWith(prompt: systemPrompt),
     );
     emit(

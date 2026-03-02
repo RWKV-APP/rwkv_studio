@@ -6,7 +6,7 @@ class TextGenerationState {
   final bool autoScrolling;
   final bool generating;
   final bool showSettingPane;
-  final DecodeParam decodeParam;
+  final String decodeParamId;
   final ModelLoadState modelState;
 
   String get modelInstanceId => modelState.instanceId;
@@ -16,7 +16,7 @@ class TextGenerationState {
     required this.controllerScroll,
     required this.generating,
     required this.autoScrolling,
-    required this.decodeParam,
+    required this.decodeParamId,
     required this.showSettingPane,
     required this.modelState,
   });
@@ -25,7 +25,7 @@ class TextGenerationState {
     return TextGenerationState(
       controllerScroll: ScrollController(),
       controllerText: TextEditingController(),
-      decodeParam: DecodeParam.initial(),
+      decodeParamId: '',
       generating: false,
       autoScrolling: true,
       showSettingPane: false,
@@ -38,7 +38,7 @@ class TextGenerationState {
     ScrollController? controllerScroll,
     bool? generating,
     bool? autoScrolling,
-    DecodeParam? decodeParam,
+    String? decodeParamId,
     bool? showSettingPane,
     ModelLoadState? modelState,
   }) {
@@ -47,7 +47,7 @@ class TextGenerationState {
       generating: generating ?? this.generating,
       controllerScroll: controllerScroll ?? this.controllerScroll,
       autoScrolling: autoScrolling ?? this.autoScrolling,
-      decodeParam: decodeParam ?? this.decodeParam,
+      decodeParamId: decodeParamId ?? this.decodeParamId,
       showSettingPane: showSettingPane ?? this.showSettingPane,
       modelState: modelState ?? this.modelState,
     );

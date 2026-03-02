@@ -48,7 +48,7 @@ class ConversationBox {
       updateAt: conv.updateAt,
       systemPrompt: conv.systemPrompt,
       modelId: conv.modelId,
-      decodeParmaId: conv.decodeParmaId,
+      decodeParmaId: conv.decodeParamId,
       pinned: conv.pinned,
       useGlobalSystemPrompt: conv.useGlobalSystemPrompt,
     );
@@ -76,7 +76,7 @@ class ConversationBox {
       updateAt: updateAt,
       systemPrompt: systemPrompt,
       modelId: modelId,
-      decodeParmaId: decodeParmaId,
+      decodeParamId: decodeParmaId,
       pinned: pinned,
       useGlobalSystemPrompt: useGlobalSystemPrompt,
     );

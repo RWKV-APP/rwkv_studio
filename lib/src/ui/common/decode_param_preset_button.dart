@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class DecodeParamPresetButton extends StatelessWidget {
@@ -110,7 +111,10 @@ class DecodeParamPresetButton extends StatelessWidget {
     return FlyoutTarget(
       controller: menuController,
       child: Button(
-        child: Text(currentId.isEmpty ? '默认' : currentId),
+        child: Text(
+          currentId.isEmpty ? 'default' : currentId,
+          style: const TextStyle(fontSize: 12),
+        ),
         onPressed: () => showPresetMenu(context),
       ),
     );

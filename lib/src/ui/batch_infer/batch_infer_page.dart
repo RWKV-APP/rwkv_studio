@@ -7,10 +7,12 @@ import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/ui/batch_infer/_setting_pannel.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_cubit.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/text_painter.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
+import 'package:rwkv_studio/src/widget/side_bar.dart';
 
 extension _ on BuildContext {
   BatchInferCubit get cubit => BlocProvider.of<BatchInferCubit>(this);
@@ -42,85 +44,96 @@ class BatchInferPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const .symmetric(horizontal: 12, vertical: 12),
-      child: Column(
-        mainAxisSize: .max,
-        crossAxisAlignment: .stretch,
-        children: [
-          _ToolBar(),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: BlocBuilder<BatchInferCubit, BatchInferState>(
-                  buildWhen: (prev, cur) =>
-                      cur.textController != prev.textController,
-                  builder: (context, state) {
-                    return TextBox(controller: state.textController);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              BlocBuilder<BatchInferCubit, BatchInferState>(
-                buildWhen: (prev, cur) => cur.isRunning != prev.isRunning,
-                builder: (context, state) {
-                  return FilledButton(
-                    child: state.isRunning
-                        ? const Row(
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: ProgressRing(strokeWidth: 2),
-                              ),
-                              SizedBox(width: 4),
-                              Text('停止'),
-                            ],
-                          )
-                        : const Text('提交'),
-                    onPressed: () {
-                      if (!state.isRunning) {
-                        context.cubit.submit(context.rwkv);
-                      } else {
-                        context.cubit.stop();
-                      }
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: RepaintBoundary(
-              child: BlocBuilder<BatchInferCubit, BatchInferState>(
-                buildWhen: (prev, cur) =>
-                    cur.cells != prev.cells || cur.setting != prev.setting,
-                builder: (context, state) {
-                  return CustomPaint(
-                    willChange: true,
-                    painter: GridBackgroundPainter(
-                      rows: state.setting.row,
-                      cols: state.setting.col,
-                    ),
-                    foregroundPainter: GridTailParagraphPainter(
-                      cells: state.cells,
-                      rows: state.setting.row,
-                      cols: state.setting.col,
-                      colSpacing: 2,
-                      rowSpacing: 2,
-                      textStyle: const TextStyle(
-                        fontSize: 10,
-                        height: 1,
-                        letterSpacing: 1,
-                        color: Colors.black,
+      child: BlocBuilder<BatchInferCubit, BatchInferState>(
+        buildWhen: (prev, cur) => cur.showSettingPanel != prev.showSettingPanel,
+        builder: (context, state) {
+          return CollapsibleSidebarLayout(
+            open: state.showSettingPanel,
+            sidebar: const BatchInferSettingPanel(),
+            content: Column(
+              mainAxisSize: .max,
+              crossAxisAlignment: .stretch,
+              children: [
+                _ToolBar(),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: BlocBuilder<BatchInferCubit, BatchInferState>(
+                        buildWhen: (prev, cur) =>
+                            cur.textController != prev.textController,
+                        builder: (context, state) {
+                          return TextBox(controller: state.textController);
+                        },
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(width: 8),
+                    BlocBuilder<BatchInferCubit, BatchInferState>(
+                      buildWhen: (prev, cur) => cur.isRunning != prev.isRunning,
+                      builder: (context, state) {
+                        return FilledButton(
+                          child: state.isRunning
+                              ? const Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: ProgressRing(strokeWidth: 2),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text('停止'),
+                                  ],
+                                )
+                              : const Text('提交'),
+                          onPressed: () {
+                            if (!state.isRunning) {
+                              context.cubit.submit(context.rwkv);
+                            } else {
+                              context.cubit.stop();
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(child: buildGrid()),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget buildGrid() {
+    return RepaintBoundary(
+      child: BlocBuilder<BatchInferCubit, BatchInferState>(
+        buildWhen: (prev, cur) =>
+            cur.cells != prev.cells || cur.setting != prev.setting,
+        builder: (context, state) {
+          return CustomPaint(
+            willChange: true,
+            painter: GridBackgroundPainter(
+              rows: state.setting.row,
+              cols: state.setting.col,
+            ),
+            foregroundPainter: GridTailParagraphPainter(
+              cells: state.cells,
+              rows: state.setting.row,
+              cols: state.setting.col,
+              colSpacing: 2,
+              rowSpacing: 2,
+              textStyle: const TextStyle(
+                fontSize: 10,
+                height: 1,
+                letterSpacing: 1,
+                color: Colors.black,
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -199,6 +212,22 @@ class _ToolBar extends StatelessWidget {
                 child: Text(state.fullScreen ? '退出全屏' : '全屏'),
                 onPressed: () async {
                   context.app.toggleFullScreen();
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 34,
+          child: BlocBuilder<BatchInferCubit, BatchInferState>(
+            buildWhen: (prev, cur) =>
+                cur.showSettingPanel != prev.showSettingPanel,
+            builder: (context, state) {
+              return Button(
+                child: const Text('解码参数'),
+                onPressed: () async {
+                  context.cubit.toggleShowSettingPanel();
                 },
               );
             },

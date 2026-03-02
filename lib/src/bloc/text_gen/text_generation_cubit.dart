@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
@@ -29,16 +28,12 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     emit(state.copyWith(modelState: ModelLoadState.empty()));
   }
 
-  void resetSettings() {
-    emit(state.copyWith(decodeParam: DecodeParam.initial()));
-  }
-
   void toggleSettingPane() {
     emit(state.copyWith(showSettingPane: !state.showSettingPane));
   }
 
-  void setDecodeParam(DecodeParam param) {
-    emit(state.copyWith(decodeParam: param));
+  void setDecodeParamId(String paramId) {
+    emit(state.copyWith(decodeParamId: paramId));
   }
 
   void loadModel(BuildContext context, RwkvInterface rwkv, ModelInfo model) {
@@ -82,7 +77,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     final stream = rwkv.generate(
       prompt,
       state.modelInstanceId,
-      state.decodeParam,
+      state.decodeParamId,
       fimSuffix: fim ? suffix : null,
     );
     try {

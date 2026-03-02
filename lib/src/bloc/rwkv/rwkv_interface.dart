@@ -49,7 +49,7 @@ mixin class RwkvInterface {
   Stream<GenerationResponse> generate(
     String prompt,
     String instanceId,
-    DecodeParam decodeParam, {
+    String decodeParamId, {
     int batch = 1,
     String? fimSuffix,
   }) async* {

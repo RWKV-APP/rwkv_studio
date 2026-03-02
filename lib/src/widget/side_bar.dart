@@ -6,12 +6,16 @@ class CollapsibleSidebarLayout extends StatefulWidget {
   final double sidebarWidth;
   final bool open;
   final Widget? divider;
+  final bool? showOverlay;
+  final double? spacing;
 
   const CollapsibleSidebarLayout({
     super.key,
     required this.sidebar,
     required this.content,
     this.sidebarWidth = 240,
+    this.spacing,
+    this.showOverlay,
     this.divider,
     this.open = true,
   });
@@ -42,7 +46,7 @@ class _CollapsibleSidebarLayoutState extends State<CollapsibleSidebarLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final showOverlay = isNarrow;
+    final showOverlay = widget.showOverlay ?? isNarrow;
     final width = widget.sidebarWidth;
 
     return Stack(
@@ -52,6 +56,7 @@ class _CollapsibleSidebarLayoutState extends State<CollapsibleSidebarLayout> {
           crossAxisAlignment: .stretch,
           children: [
             Expanded(child: widget.content),
+            if (widget.spacing != null) SizedBox(width: widget.spacing),
             if (widget.divider != null) widget.divider!,
             if (!showOverlay)
               AnimatedContainer(

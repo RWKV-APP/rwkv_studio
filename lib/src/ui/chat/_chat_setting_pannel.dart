@@ -35,9 +35,9 @@ class ChatSettingPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: BlocBuilder<ChatCubit, ChatState>(
               buildWhen: (p, c) =>
-                  p.selected.decodeParmaId != c.selected.decodeParmaId,
+                  p.selected.decodeParamId != c.selected.decodeParamId,
               builder: (context, state) {
-                final currentId = state.selected.decodeParmaId;
+                final currentId = state.selected.decodeParamId;
                 return Column(
                   mainAxisSize: .min,
                   crossAxisAlignment: .stretch,
