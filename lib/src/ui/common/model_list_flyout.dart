@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
@@ -63,19 +64,30 @@ class ModelListFlyout extends StatelessWidget {
       items: [
         for (final model in models)
           _buildMenuItem(context: context, model: model),
+        if (models.isEmpty)
+          MenuFlyoutItem(text: const Text('没有可用的模型'), onPressed: null),
         const MenuFlyoutSeparator(),
-        MenuFlyoutItem(
-          text: const Text('模型管理'),
-          onPressed: () {
-            context.app.jump2ModelManage();
-          },
-        ),
-        MenuFlyoutItem(
-          text: const Text('导入本地模型'),
-          onPressed: () {
-            context.toast('请将模型文件拖拽到应用窗口');
-          },
-        ),
+        if (kIsWeb)
+          MenuFlyoutItem(
+            text: const Text('模型服务设置'),
+            onPressed: () {
+              context.app.jump2ModelServiceSettings();
+            },
+          ),
+        if (!kIsWeb)
+          MenuFlyoutItem(
+            text: const Text('模型管理'),
+            onPressed: () {
+              context.app.jump2ModelManage();
+            },
+          ),
+        if (!kIsWeb)
+          MenuFlyoutItem(
+            text: const Text('导入本地模型'),
+            onPressed: () {
+              context.toast('请将模型文件拖拽到应用窗口');
+            },
+          ),
       ],
     );
   }

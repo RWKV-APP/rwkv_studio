@@ -44,6 +44,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     required String modelDownloadDir,
     required String configProviderUrl,
   }) async {
+    if (kIsWeb) {
+      return;
+    }
     _manager = ModelManager(
       downloadSource: state.downloadSource,
       configProviderUrl: configProviderUrl,
@@ -76,6 +79,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   void setModelProviders(List<ModelListProvider> providers) {
     emit(state.copyWith(remoteModelProviders: providers));
+    if (kIsWeb) {
+      return;
+    }
     updateModelList(local: false);
   }
 
@@ -88,7 +94,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future updateModelConfigUrl(String url) async {
-    if (!_managerInitialized) {
+    if (kIsWeb || !_managerInitialized) {
       return;
     }
     _manager.setConfigProviderUrl(url);

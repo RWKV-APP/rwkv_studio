@@ -85,6 +85,9 @@ class SettingCubit extends Cubit<SettingState> {
     CacheSettingState cache, [
     CacheSettingState? reset,
   ]) async {
+    if (kIsWeb) {
+      return;
+    }
     final initial = reset ?? CacheSettingState.initial();
     String? modelDir;
     String? cacheDir;

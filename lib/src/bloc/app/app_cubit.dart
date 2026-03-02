@@ -54,6 +54,9 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future<List<Python>> detectPythonInterpreters() async {
+    if (kIsWeb) {
+      return [];
+    }
     final python = await Python.findPythons();
     final conda = await Python.detectCondaEnv();
     emit(
@@ -133,6 +136,13 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void jump2PythonSettings() {
+    final i = state.expandedItems().indexWhere(
+      (e) => e.type == NavBarItemType.settings,
+    );
+    emit(state.copyWith(pane: i));
+  }
+
+  void jump2ModelServiceSettings() {
     final i = state.expandedItems().indexWhere(
       (e) => e.type == NavBarItemType.settings,
     );

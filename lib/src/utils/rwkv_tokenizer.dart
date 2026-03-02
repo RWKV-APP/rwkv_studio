@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/services.dart';
+
 import 'assets.dart';
 
 class RwkvTokenizer {
@@ -101,16 +104,22 @@ class _TokenizerData {
   });
 
   factory _TokenizerData.load(String path) {
-    final File file = File(path);
-    if (!file.existsSync()) {
-      throw FileSystemException('Tokenizer vocab file not found', path);
+    List<String> lines;
+
+    if (path.startsWith('assets/')) {
+      lines = AppAssets.rwkvVocab20230424Data;
+    } else {
+      final File file = File(path);
+      if (!file.existsSync()) {
+        throw FileSystemException('Tokenizer vocab file not found', path);
+      }
+      lines = file.readAsLinesSync();
     }
 
     final _TrieNode root = _TrieNode();
     final Map<int, List<int>> tokenToBytes = <int, List<int>>{};
     final Map<int, int> singleByteToken = <int, int>{};
 
-    final List<String> lines = file.readAsLinesSync();
     for (final String raw in lines) {
       final String line = raw.trim();
       if (line.isEmpty) {

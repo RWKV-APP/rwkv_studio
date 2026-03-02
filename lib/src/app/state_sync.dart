@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_acrylic/window.dart';
 import 'package:flutter_acrylic/window_effect.dart';
@@ -158,6 +159,9 @@ List<Widget> _buildStateSyncListeners() {
 }
 
 void _syncAppearance(AppearanceSettingState appearance) {
+  if (kIsWeb) {
+    return;
+  }
   final isLight = appearance.theme == AppearanceSettingState.lightTheme;
   if (isLight) {
     WindowManager.instance.setBrightness(Brightness.light);
