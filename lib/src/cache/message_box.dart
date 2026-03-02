@@ -41,6 +41,9 @@ class MessageBox {
   @HiveField(10)
   int createAt;
 
+  @HiveField(11)
+  String reasoning;
+
   MessageBox({
     required this.id,
     required this.convId,
@@ -53,6 +56,7 @@ class MessageBox {
     required this.extra,
     this.createAt = 0,
     this.updateAt = 0,
+    this.reasoning = '',
   });
 
   static Box<MessageBox>? _messageBox;
@@ -98,6 +102,7 @@ class MessageBox {
       stopReason: message.stopReason.index,
       createAt: message.createAt.millisecondsSinceEpoch,
       extra: Map<String, dynamic>.from(message.extra),
+      reasoning: message.reasoning.name,
     );
   }
 
@@ -107,6 +112,7 @@ class MessageBox {
       convId: convId,
       text: text,
       modelName: modelName,
+      reasoning: ReasoningEffort.fromName(reasoning),
     ).copyWith(
       id: id,
       thinkEndAt: thinkEndAt,

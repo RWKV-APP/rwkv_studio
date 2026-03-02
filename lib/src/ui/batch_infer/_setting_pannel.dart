@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_cubit.dart';
+import 'package:rwkv_studio/src/bloc/batch_infer/batch_infer_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_preset_button.dart';
 

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 import 'package:rwkv_studio/src/utils/stream_speed_sampler.dart';
@@ -69,7 +70,9 @@ class BatchInferCubit extends Cubit<BatchInferState> {
             maxSampleRate: const Duration(milliseconds: 500),
             enableSmoothing: true,
             smoothingAlpha: 0.5,
-            counter: (v) => RwkvTokenizer.tokenCountEstimate(v),
+            counter: (v) => RwkvTokenizer(
+              vocabPath: AppAssets.rwkvVocab20230424,
+            ).tokenCount(v),
           ),
         )
         .listen((v) {
@@ -80,19 +83,10 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     emit(state.copyWith(isRunning: true));
     Stream<List<String>> stream = _startBatchInfer(rwkv);
 
-    if (state.setting.size > 200) {
-      stream = stream.asyncExpand((e) async* {
-        yield [for (final c in e) c.length > 14 ? c.substring(0, 14) : c];
-        await Future.delayed(const Duration(milliseconds: 500));
-        yield [
-          for (final c in e) c.length > 14 ? c.substring(c.length - 14) : c,
-        ];
-      });
-    }
-
     Completer completer = Completer();
     _subscription = stream
         .throttleTime(const Duration(milliseconds: 60))
+        .timeout(const Duration(seconds: 20))
         .listen(
           (cells) {
             emit(state.copyWith(cells: cells.toList(), isRunning: true));
@@ -137,13 +131,13 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
     String str = '';
     await for (var res in stream) {
+      if (!_speedSampler.isClosed) {
+        _speedSampler.add(res.choices!.join());
+      }
       for (final (index, choice) in res.choices!.indexed) {
         str = cells[index];
         if (str.length > (len + 40)) {
           str = str.substring(str.length - len);
-        }
-        if (!_speedSampler.isClosed) {
-          _speedSampler.add(choice);
         }
         cells[index] = str + choice;
       }

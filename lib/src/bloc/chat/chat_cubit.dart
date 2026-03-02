@@ -11,6 +11,7 @@ import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/diff_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -287,9 +288,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final history = state.messages[convId]!;
     history.removeAt(history.length - 1);
 
-    MessageState generated = MessageState.create(
+    MessageState assistant = MessageState.create(
       role: rwkv.roleAssistant,
       convId: convId,
+      reasoning: state.generationConfig.reasoningEffort,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
@@ -297,12 +299,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       state.copyWith(
         messages: {
           ...state.messages,
-          convId: [...history, generated],
+          convId: [...history, assistant],
         },
       ),
     );
 
-    await _sendInternal(rwkv, history, generated, convId);
+    await _sendInternal(rwkv, history, assistant, convId);
   }
 
   void updateConversation(
@@ -359,6 +361,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     MessageState assistant = MessageState.create(
       role: rwkv.roleAssistant,
       convId: convId,
+      reasoning: state.generationConfig.reasoningEffort,
       modelName: await rwkv.getModelName(state.modelInstanceId),
     );
 
@@ -369,7 +372,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     RwkvInterface rwkv,
     List<MessageState> history,
     MessageState assistant,
-    String conversationId,
+    String convId,
   ) async {
     final messages = history.map((e) => e.text).toList();
     if (assistant.text.isNotEmpty) {
@@ -379,7 +382,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         !assistant.text.contains('</think>')) {
       assistant = assistant.copyWith(thinkEndAt: assistant.text.length);
     }
-    final conv = state.conversations.firstWhere((e) => e.id == conversationId);
+    final conv = state.conversations.firstWhere((e) => e.id == convId);
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
 
     assistant = assistant.copyWith(stopReason: StopReason.none);
@@ -394,7 +397,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         generating: true,
         messages: {
           ...state.messages,
-          conversationId: [...history, assistant],
+          convId: [...history, assistant],
         },
       ),
     );
@@ -404,18 +407,29 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
           return;
         }
         _onGenerateResponse(
-          conversationId: conversationId,
+          conversationId: convId,
           history: history,
           resp: resp,
         );
       }
-      _onGenerateDone(conversationId: conversationId, history: history);
+      _onGenerateDone(conversationId: convId, history: history);
     } catch (e, s) {
-      _onGenerateError(conversationId: conversationId, history: history, e: e);
+      _onGenerateError(conversationId: convId, history: history, e: e);
       throw AppException('generate error', cause: e, stackTrace: s);
     } finally {
       if (!isClosed) {
-        emit(state.copyWith(generating: false));
+        var assistant = state.messages[convId]!.last;
+        final count = RwkvTokenizer.default_.tokenCount(assistant.text);
+        assistant = assistant.copyWithExtra(tokenCount: count);
+        emit(
+          state.copyWith(
+            generating: false,
+            messages: {
+              ...state.messages,
+              convId: [...history, assistant],
+            },
+          ),
+        );
       }
     }
   }
@@ -430,7 +444,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         assistant.thinkEndAt == -1 ||
         assistant.thinkEndAt < assistant.text.length;
     int? thinkEndAt;
-    final content = (assistant.text + resp.text).trimLeft();
+    String content = (assistant.text + resp.text).trimLeft();
+
+    /// NOTE: correct model output from rwkv_lightning
+    if (assistant.reasoningEnabled && content.startsWith('>')) {
+      content = "<think$content";
+    }
+
     if (!thinkResolved) {
       if (!content.startsWith('<')) {
         thinkEndAt = -1;
@@ -441,20 +461,24 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         if (index != -1) {
           thinkEndAt = index;
           logd('think resolved: $thinkEndAt');
-          assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+          assistant = assistant.copyWithExtra(
+            thinkEndTime: DateTime.now().millisecondsSinceEpoch,
+          );
         }
       }
     }
 
     if (assistant.firstTokenTime <= 0) {
-      assistant.firstTokenTime = DateTime.now().millisecondsSinceEpoch;
+      assistant = assistant.copyWithExtra(
+        firstTokenTime: DateTime.now().millisecondsSinceEpoch,
+      );
     }
     assistant = assistant.copyWith(
       text: content,
       stopReason: resp.stopReason,
       thinkEndAt: thinkEndAt,
     );
-    assistant.tokenCount += resp.tokenCount;
+    assistant = assistant.copyWithExtra(tokenCount: resp.tokenCount);
     emit(
       state.copyWith(
         generating: true,
@@ -480,7 +504,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       assistant = assistant.copyWith(stopReason: StopReason.unknown);
     }
     if (assistant.thinkEndTime <= 0) {
-      assistant.thinkEndTime = DateTime.now().millisecondsSinceEpoch;
+      assistant = assistant.copyWithExtra(
+        thinkEndTime: DateTime.now().millisecondsSinceEpoch,
+      );
     }
     assistant = assistant.copyWith(updateAt: DateTime.now());
     ns = ns.copyWith(

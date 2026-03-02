@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'assets.dart';
+
 class RwkvTokenizer {
   static final Map<String, _TokenizerData> _cache = <String, _TokenizerData>{};
 
@@ -8,16 +10,11 @@ class RwkvTokenizer {
 
   const RwkvTokenizer({required this.vocabPath});
 
-  static int tokenCountEstimate(String text) {
-    int tokenCount = 0;
-    for (final int code in utf8.encode(text)) {
-      if (code < 0x80) {
-        tokenCount += 1;
-      } else {
-        tokenCount += 2;
-      }
-    }
-    return tokenCount;
+  static RwkvTokenizer get default_ =>
+      RwkvTokenizer(vocabPath: AppAssets.rwkvVocab20230424);
+
+  int tokenCount(String text) {
+    return encode(text).length;
   }
 
   List<int> encode(String text) {

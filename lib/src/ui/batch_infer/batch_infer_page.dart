@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
+import 'package:rwkv_studio/src/bloc/batch_infer/batch_infer_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/_setting_pannel.dart';
-import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_cubit.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/text_painter.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -21,23 +21,20 @@ extension _ on BuildContext {
 class BatchInferPage extends StatelessWidget {
   const BatchInferPage._();
 
-  static Widget create() => BlocProvider<BatchInferCubit>(
-    create: (context) => BatchInferCubit(),
-    child: LayoutBuilder(
-      builder: (ctx, _) {
-        return KeyboardListener(
-          focusNode: FocusNode(),
-          autofocus: true,
-          onKeyEvent: (event) {
-            if (event is KeyDownEvent &&
-                event.physicalKey == PhysicalKeyboardKey.escape) {
-              ctx.app.setFullScreen(false);
-            }
-          },
-          child: const BatchInferPage._(),
-        );
-      },
-    ),
+  static Widget create() => LayoutBuilder(
+    builder: (ctx, _) {
+      return KeyboardListener(
+        focusNode: FocusNode(),
+        autofocus: true,
+        onKeyEvent: (event) {
+          if (event is KeyDownEvent &&
+              event.physicalKey == PhysicalKeyboardKey.escape) {
+            ctx.app.setFullScreen(false);
+          }
+        },
+        child: const BatchInferPage._(),
+      );
+    },
   );
 
   @override
@@ -87,7 +84,9 @@ class BatchInferPage extends StatelessWidget {
                               : const Text('提交'),
                           onPressed: () {
                             if (!state.isRunning) {
-                              context.cubit.submit(context.rwkv).withToast(context);
+                              context.cubit
+                                  .submit(context.rwkv)
+                                  .withToast(context);
                             } else {
                               context.cubit.stop();
                             }
@@ -188,6 +187,10 @@ class _ToolBar extends StatelessWidget {
             builder: (context, state) {
               return ComboBox(
                 onChanged: (v) {
+                  if (context.cubit.state.isRunning) {
+                    context.toast('请停止推理后修改');
+                    return;
+                  }
                   context.cubit.setBatchSize(v!);
                 },
                 items: [
