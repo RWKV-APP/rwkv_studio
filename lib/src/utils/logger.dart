@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
-final _logger = Logger('rwkv-studio');
+final _logger = Logger('RWKVStudio');
 
 bool _loggerInitialized = false;
 
@@ -20,6 +22,7 @@ class Log {
 
   @override
   String toString() {
+    return message;
     return '$level/$tag: $message';
   }
 }
@@ -30,12 +33,34 @@ class AppLog with ChangeNotifier {
   static final instance = AppLog();
 
   void _log(Log log) {
-    print(log);
     history.add(log);
     if (history.length > 100) {
       history.removeAt(0);
     }
     notifyListeners();
+  }
+
+  static void captureZone(Function() entry) {
+    runZonedGuarded(
+      entry,
+      (error, stackTrace) {
+        instance._log(
+          Log(
+            tag: '',
+            level: '',
+            message: error.toString(),
+            datetime: DateTime.now(),
+          ),
+        );
+      },
+      zoneSpecification: ZoneSpecification(
+        print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+          AppLog.instance._log(
+            Log(tag: '', level: '', message: line, datetime: DateTime.now()),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -55,7 +80,7 @@ void _listenToLogs() {
       message: record.message,
       datetime: record.time,
     );
-    AppLog.instance._log(log);
+    print(log.toString());
   });
 }
 

@@ -58,9 +58,10 @@ class _LogcatPanelState extends State<LogcatPanel> {
           top: _offset?.dy,
           right: _offset == null ? 0 : null,
           bottom: _offset == null ? 0 : null,
-          width: 400,
-          height: 200,
+          width: 800,
+          height: 400,
           child: DragEditable(
+            dragArea: const Rect.fromLTWH(0, 0, 800, 24),
             onStartUpdatePosition: (details) {
               _downOffset = details.localPosition;
             },
@@ -71,36 +72,45 @@ class _LogcatPanelState extends State<LogcatPanel> {
               });
             },
             handleRadius: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.grey,
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              clipBehavior: Clip.antiAlias,
+            child: Card(
+              padding: .zero,
+              backgroundColor: Colors.grey[140],
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    color: Colors.teal,
+                    color: Colors.grey[180],
                     child: Row(
                       children: [
-                        const Text('Logcat'),
+                        const Text(
+                          'Logcat',
+                          style: TextStyle(color: Colors.white),
+                        ),
                         const Spacer(),
                         IconButton(
                           style: const ButtonStyle(
                             padding: WidgetStatePropertyAll(EdgeInsets.zero),
                           ),
-                          icon: const Icon(FluentIcons.delete, size: 14),
+                          icon: const Icon(
+                            FluentIcons.delete,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                           onPressed: () {
                             AppLog.instance.history.clear();
                             setState(() {});
                           },
                         ),
+                        const SizedBox(width: 4),
                         IconButton(
                           style: const ButtonStyle(
                             padding: WidgetStatePropertyAll(EdgeInsets.zero),
                           ),
-                          icon: const Icon(FluentIcons.cancel, size: 14),
+                          icon: const Icon(
+                            FluentIcons.cancel,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                           onPressed: () {
                             LogcatPanel.attachToRootOverlay(context);
                           },
@@ -119,7 +129,7 @@ class _LogcatPanelState extends State<LogcatPanel> {
                           padding: const EdgeInsets.all(8),
                           reverse: true,
                           itemBuilder: (ctx, index) {
-                            return Text(
+                            return SelectableText(
                               logs[logs.length - index - 1].toString(),
                               style: const TextStyle(
                                 fontSize: 12,

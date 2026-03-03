@@ -163,17 +163,23 @@ class _ServiceStatusState extends State<_ServiceStatus> {
   }
 
   void _test() async {
+    if (!widget.service.enabled) {
+      return;
+    }
     setState(() {
       loading = true;
       service = null;
     });
     final t = DateTime.now();
     try {
-      service = await ModelService.create(
+      final s = await ModelService.create(
         url: widget.service.url,
         id: widget.service.id,
         accessKey: widget.service.apiKey,
       );
+      if (s.available) {
+        service = s;
+      }
     } catch (_) {
       //
     } finally {

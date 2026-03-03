@@ -37,7 +37,7 @@ class DecodeParamForm extends StatelessWidget {
       children: [
         LabeledSlider(
           title: '最大长度',
-          max: 4000,
+          max: 20000,
           min: 50,
           value: param.maxTokens,
           onChanged: (v) {
@@ -49,7 +49,7 @@ class DecodeParamForm extends StatelessWidget {
           title: 'Temperature',
           value: param.temperature,
           max: 3,
-          min: 0.2,
+          min: 0,
           divisions: 28,
           onChanged: (v) {
             onChanged?.call(param.copyWith(temperature: v));

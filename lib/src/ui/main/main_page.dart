@@ -8,6 +8,7 @@ import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_page.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
+import 'package:rwkv_studio/src/ui/main/_bottom_bar.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
 import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
@@ -38,11 +39,18 @@ class MainPage extends StatelessWidget {
   Widget _buildContent(BuildContext context, bool dark, AppState state) {
     return NavigationView(
       paneBodyBuilder: (item, child) {
-        return ColoredBox(
-          color: dark
-              ? Colors.black.withAlpha(100)
-              : Colors.white.withAlpha(100),
-          child: child ?? const SizedBox(),
+        return Column(
+          children: [
+            Expanded(
+              child: ColoredBox(
+                color: dark
+                    ? Colors.black.withAlpha(100)
+                    : Colors.white.withAlpha(100),
+                child: child ?? const SizedBox(),
+              ),
+            ),
+            const BottomBar(),
+          ],
         );
       },
       pane: NavigationPane(

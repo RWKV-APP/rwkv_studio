@@ -274,10 +274,6 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
                         value: backend,
                         content: Text(backend.displayName),
                       ),
-                    const RadioButton(
-                      value: ModelBackend.pytorch,
-                      content: Text('PyTorch'),
-                    ),
                   ],
                 ),
               ),

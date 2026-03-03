@@ -185,7 +185,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     try {
       yield* instance.generate(
         GenerationParam(prompt: prompt, model: instanceId),
-      );
+      ).timeout(const Duration(seconds: 30));
     } catch (e, s) {
       loge(e);
       loge(s);

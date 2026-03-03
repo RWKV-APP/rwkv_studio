@@ -81,6 +81,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
       fimSuffix: fim ? suffix : null,
     );
     try {
+      emit(state.copyWith(generating: true));
       await for (final e in stream) {
         if (isClosed) {
           return;

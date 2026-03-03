@@ -79,9 +79,6 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   void setModelProviders(List<ModelListProvider> providers) {
     emit(state.copyWith(remoteModelProviders: providers));
-    if (kIsWeb) {
-      return;
-    }
     updateModelList(local: false);
   }
 
@@ -121,7 +118,12 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       state.copyWith(
         initialized: true,
         importedModels: importedModels,
-        backends: ModelBackend.defaultBackends,
+        backends: [
+          ModelBackend.albatross,
+          ModelBackend.llama_cpp,
+          ModelBackend.web_rwkv,
+          ModelBackend.pytorch,
+        ],
       ),
     );
   }
