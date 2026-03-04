@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/bloc/app/model_service_wrap.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/network/http.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -10,13 +10,13 @@ abstract class ModelListProvider {
 
   const ModelListProvider();
 
-  factory ModelListProvider.fromService(ModelService service) {
+  factory ModelListProvider.fromService(ModelServiceWrap service) {
     return _ServiceModelListProvider(service);
   }
 }
 
 class _ServiceModelListProvider extends ModelListProvider {
-  final ModelService service;
+  final ModelServiceWrap service;
 
   _ServiceModelListProvider(this.service);
 
@@ -29,7 +29,8 @@ class _ServiceModelListProvider extends ModelListProvider {
           .map(
             (e) => RemoteModelInfo.fromMap(e.info.toJson())
               ..serviceId = service.id
-              ..providerName = service.id,
+              ..providerName = service.sourceName
+              ..providerUrl = service.url,
           )
           .toList();
       logd('synced ${r.length} models from ${service.id} (${service.url})');

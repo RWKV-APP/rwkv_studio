@@ -1,8 +1,9 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -13,7 +14,7 @@ mixin class RwkvInterface {
   String roleAssistant = 'assistant';
   String roleUser = 'user';
 
-  Future<String> getModelName(String instanceId) async {
+  Future<ModelBaseInfo> getModelBaseInfo(String instanceId) async {
     throw UnimplementedError();
   }
 
@@ -31,8 +32,7 @@ mixin class RwkvInterface {
 
   Stream<ModelLoadState> onExternalRWKVLoaded(
     RWKV rwkv, {
-    required String id,
-    required String name,
+    required ModelInfo info,
   }) {
     throw UnimplementedError();
   }
@@ -65,8 +65,13 @@ mixin class RwkvInterface {
       'load or get model instance: ${modelInfo.id}, loaded: ${loaded.length}',
     );
     if (loaded.isNotEmpty) {
-      final name = await getModelName(loaded.first);
-      yield ModelLoadState.loaded(modelInfo.id, name, loaded.first);
+      final info = await getModelBaseInfo(loaded.first);
+      yield ModelLoadState.loaded(
+        modelInfo.id,
+        info.name,
+        loaded.first,
+        info.providerName,
+      );
       return;
     }
     if (modelInfo.backend == ModelBackend.albatross && !modelInfo.isRemote) {
@@ -77,7 +82,7 @@ mixin class RwkvInterface {
       try {
         yield ModelLoadState.loading(modelInfo.id);
         final r = await _loadAlbatross(context, modelInfo);
-        yield* onExternalRWKVLoaded(r, id: modelInfo.id, name: modelInfo.name);
+        yield* onExternalRWKVLoaded(r, info: modelInfo);
       } catch (e) {
         yield ModelLoadState.error(modelInfo.id, e);
       }

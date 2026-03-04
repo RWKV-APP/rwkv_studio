@@ -16,9 +16,7 @@ import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'chat_state.dart';
-
 part 'conversation_state.dart';
-
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -288,11 +286,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final history = state.messages[convId]!;
     history.removeAt(history.length - 1);
 
+    final model = await rwkv.getModelBaseInfo(state.modelInstanceId);
     MessageState assistant = MessageState.create(
       role: rwkv.roleAssistant,
       convId: convId,
       reasoning: state.generationConfig.reasoningEffort,
-      modelName: await rwkv.getModelName(state.modelInstanceId),
+      modelName: model.name,
     );
 
     emit(
@@ -342,11 +341,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     Future.delayed(const Duration(milliseconds: 50), () {
       state.inputController.clear();
     });
+    final model = await rwkv.getModelBaseInfo(state.modelInstanceId);
     final message = MessageState.create(
       role: rwkv.roleUser,
       convId: convId,
       text: text,
-      modelName: await rwkv.getModelName(state.modelInstanceId),
+      modelName: model.name,
     );
     final history = <MessageState>[...(state.messages[convId] ?? []), message];
 
@@ -362,7 +362,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       role: rwkv.roleAssistant,
       convId: convId,
       reasoning: state.generationConfig.reasoningEffort,
-      modelName: await rwkv.getModelName(state.modelInstanceId),
+      modelName: model.name,
     );
 
     await _sendInternal(rwkv, history, assistant, convId);

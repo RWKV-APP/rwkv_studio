@@ -91,7 +91,7 @@ class NavBarItem {
 class AppState {
   final int pane;
   final List<Python> pythons;
-  final List<ModelService> modelServices;
+  final List<ModelServiceWrap> modelServices;
   final String selectedPythonId;
   final String albatrossPath;
   final List<NavBarItem> navBarItems;
@@ -136,7 +136,7 @@ class AppState {
     List<NavBarItem>? navBarItems,
     bool? fullScreen,
     bool? showNavBar,
-    List<ModelService>? modelServices,
+    List<ModelServiceWrap>? modelServices,
   }) {
     return AppState(
       pane: pane ?? this.pane,

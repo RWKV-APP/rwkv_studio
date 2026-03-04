@@ -2,14 +2,19 @@ part of 'rwkv_interface.dart';
 
 class ModelLoadState {
   final String modelId;
-  final String displayName;
+  final String modelName;
+  final String providerName;
   final String instanceId;
   final bool loading;
   final String error;
 
+  String get displayName =>
+      [providerName, modelName].where((e) => e.isNotEmpty).join(': ').trim();
+
   ModelLoadState({
+    required this.providerName,
     required this.modelId,
-    required this.displayName,
+    required this.modelName,
     required this.loading,
     required this.error,
     required this.instanceId,
@@ -18,24 +23,27 @@ class ModelLoadState {
   factory ModelLoadState.loading(String modelId) {
     return ModelLoadState(
       modelId: modelId,
-      displayName: modelId,
+      modelName: modelId,
       loading: true,
       error: '',
       instanceId: '',
+      providerName: '',
     );
   }
 
   factory ModelLoadState.loaded(
     String modelId,
-    String displayName,
+    String name,
     String instanceId,
+    String providerName,
   ) {
     return ModelLoadState(
       modelId: modelId,
-      displayName: displayName,
+      modelName: name,
       loading: false,
       error: '',
       instanceId: instanceId,
+      providerName: providerName,
     );
   }
 
@@ -43,9 +51,10 @@ class ModelLoadState {
     return ModelLoadState(
       modelId: modelId,
       loading: false,
-      displayName: modelId,
+      modelName: modelId,
       error: error.toString(),
       instanceId: '',
+      providerName: '',
     );
   }
 
@@ -53,9 +62,10 @@ class ModelLoadState {
     return ModelLoadState(
       modelId: '',
       loading: false,
-      displayName: '',
+      modelName: '',
       error: '',
       instanceId: '',
+      providerName: '',
     );
   }
 }

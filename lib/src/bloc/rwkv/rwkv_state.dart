@@ -2,7 +2,7 @@ part of 'rwkv_cubit.dart';
 
 typedef InstanceId = String;
 
-class ModeBaseInfo {
+class ModelBaseInfo {
   final String id;
   final String name;
   final String providerName;
@@ -10,27 +10,42 @@ class ModeBaseInfo {
 
   bool get isRemote => providerName.isNotEmpty && serviceId.isNotEmpty;
 
-  ModeBaseInfo({
+  String get detailName =>
+      [providerName, name].where((e) => e.isNotEmpty).join(': ');
+
+  ModelBaseInfo._({
     required this.id,
     required this.name,
     required this.providerName,
     required this.serviceId,
   });
 
-  factory ModeBaseInfo.fromModelInfo(ModelInfo info) {
+  factory ModelBaseInfo.fromModelInfo(ModelInfo info) {
     if (info.isRemote) {
-      return ModeBaseInfo(
+      return ModelBaseInfo._(
         id: info.id,
         name: info.name,
         providerName: info.providerName,
         serviceId: info.serviceId,
       );
     }
-    return ModeBaseInfo(
+    return ModelBaseInfo._(
       id: info.id,
       name: info.name,
       providerName: '',
       serviceId: '',
+    );
+  }
+
+  factory ModelBaseInfo.fromRemoteService(
+    ModelServiceWrap service,
+    LoadedModel m,
+  ) {
+    return ModelBaseInfo._(
+      id: service.id,
+      name: m.info.name,
+      providerName: service.sourceName,
+      serviceId: service.id,
     );
   }
 
@@ -42,7 +57,7 @@ class ModeBaseInfo {
 class ModelInstanceState {
   final InstanceId id;
   final RWKV rwkv;
-  final ModeBaseInfo info;
+  final ModelBaseInfo info;
   final GenerationState state;
   final GenerationConfig config;
   final DecodeParam decodeParam;
@@ -60,7 +75,7 @@ class ModelInstanceState {
 
   ModelInstanceState copyWith({
     RWKV? rwkv,
-    ModeBaseInfo? info,
+    ModelBaseInfo? info,
     GenerationState? state,
     GenerationConfig? config,
     DecodeParam? decodeParam,

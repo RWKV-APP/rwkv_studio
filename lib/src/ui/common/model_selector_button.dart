@@ -39,9 +39,7 @@ class ModelSelector extends StatelessWidget {
                   (modelSetting.enabledBackends.contains(e.backend) ||
                       e.isRemote),
             )
-            .where((e) {
-              return filter == null || filter!(e);
-            });
+            .where((e) => filter == null || filter!(e));
 
         return ModelListFlyout(
           modelInstanceId: modelState.instanceId,

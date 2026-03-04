@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/app/model_service_wrap.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/cache/state_cache_box.dart';
@@ -59,7 +60,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     emit(state.copyWith(decodeParams: params));
   }
 
-  void setRemoteServiceList(List<ModelService> services) {
+  void setRemoteServiceList(List<ModelServiceWrap> services) {
     Map<String, ModelInstanceState> instances = {};
     for (final service in services) {
       final ms = service.models;
@@ -68,12 +69,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
         instances[modelId] = ModelInstanceState(
           rwkv: m.rwkv,
           id: modelId,
-          info: ModeBaseInfo(
-            id: modelId,
-            name: m.info.name,
-            providerName: service.id,
-            serviceId: service.id,
-          ),
+          info: ModelBaseInfo.fromRemoteService(service, m),
         );
       }
     }
@@ -183,9 +179,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     }
 
     try {
-      yield* instance.generate(
-        GenerationParam(prompt: prompt, model: instanceId),
-      ).timeout(const Duration(seconds: 30));
+      yield* instance
+          .generate(GenerationParam(prompt: prompt, model: instanceId))
+          .timeout(const Duration(seconds: 30));
     } catch (e, s) {
       loge(e);
       loge(s);
@@ -206,19 +202,16 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     RWKV rwkv;
     String? instanceId;
     if (modelInfo.isRemote) {
-      final service = state.services
-          .where((e) => e.id == modelInfo.serviceId)
-          .firstOrNull;
-      if (service == null) {
+      final model = state.models[modelInfo.id];
+      if (model == null) {
         yield ModelLoadState.error(
           modelInfo.id,
-          "no service found for ${modelInfo.providerName}",
+          "no model found from ${modelInfo.providerName}, id: ${modelInfo.id}",
         );
         return;
       }
-      final m = service.models.firstWhere((e) => e.info.id == modelInfo.id);
-      rwkv = m.rwkv;
-      instanceId = m.info.id;
+      rwkv = model.rwkv;
+      instanceId = model.info.id;
     } else {
       rwkv = RWKV.isolated();
     }
@@ -239,10 +232,15 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     final instance = ModelInstanceState(
       rwkv: rwkv,
       id: instanceId ?? "local_${modelInfo.id}",
-      info: ModeBaseInfo.fromModelInfo(modelInfo),
+      info: ModelBaseInfo.fromModelInfo(modelInfo),
     );
     emit(state.copyWith(models: {...state.models, instance.id: instance}));
-    yield ModelLoadState.loaded(modelInfo.id, modelInfo.name, instance.id);
+    yield ModelLoadState.loaded(
+      modelInfo.id,
+      modelInfo.name,
+      instance.id,
+      modelInfo.providerName,
+    );
     rwkv.generationStateStream().listen((e) {
       final inst = state.models[instance.id];
       if (inst?.state == e) {
@@ -282,24 +280,28 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   }
 
   @override
-  Future<String> getModelName(String instanceId) async {
+  Future<ModelBaseInfo> getModelBaseInfo(String instanceId) async {
     final model = state.models[instanceId];
     if (model == null) return throw "Model not found, instanceId: $instanceId";
-    return model.info.name;
+    return model.info;
   }
 
   @override
   Stream<ModelLoadState> onExternalRWKVLoaded(
     RWKV rwkv, {
-    required String id,
-    required String name,
+    required ModelInfo info,
   }) async* {
     final instance = ModelInstanceState(
       rwkv: rwkv,
-      id: id,
-      info: ModeBaseInfo(id: id, name: name, providerName: '', serviceId: ''),
+      id: info.id,
+      info: ModelBaseInfo.fromModelInfo(info),
     );
     emit(state.copyWith(models: {...state.models, instance.id: instance}));
-    yield ModelLoadState.loaded(id, name, instance.id);
+    yield ModelLoadState.loaded(
+      info.id,
+      info.name,
+      instance.id,
+      info.providerName,
+    );
   }
 }

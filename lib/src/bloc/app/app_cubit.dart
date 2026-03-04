@@ -11,6 +11,8 @@ import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
+import 'model_service_wrap.dart';
+
 part 'app_state.dart';
 
 extension Ext on BuildContext {
@@ -95,14 +97,14 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future updateModelServices(List<RemoteService> configs) async {
-    List<ModelService> services = [];
+    List<ModelServiceWrap> services = [];
     for (final config in configs.where((e) => e.enabled)) {
       final s = await ModelService.create(
         url: config.url,
         accessKey: config.apiKey,
         id: config.id,
       );
-      services.add(s);
+      services.add(ModelServiceWrap(s, name: config.name));
     }
     emit(state.copyWith(modelServices: services));
   }

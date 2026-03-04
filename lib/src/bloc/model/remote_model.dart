@@ -5,14 +5,20 @@ extension Ext on ModelInfo {
 
   bool get isImportManually => url.isEmpty && localPath.isNotEmpty;
 
-  String get providerName => (this as RemoteModelInfo).providerName;
+  String get providerName =>
+      this is! RemoteModelInfo ? '' : (this as RemoteModelInfo).providerName;
 
-  String get serviceId => (this as RemoteModelInfo).serviceId;
+  String get providerUrl =>
+      this is! RemoteModelInfo ? '' : (this as RemoteModelInfo).providerUrl;
+
+  String get serviceId =>
+      this is! RemoteModelInfo ? '' : (this as RemoteModelInfo).serviceId;
 }
 
 class RemoteModelInfo extends ModelInfo {
   String providerName = '';
   String serviceId = '';
+  String providerUrl = '';
 
   RemoteModelInfo({
     required super.id,

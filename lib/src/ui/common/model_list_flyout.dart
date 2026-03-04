@@ -116,7 +116,8 @@ class ModelListFlyout extends StatelessWidget {
     }
 
     if (model.isRemote) {
-      tooltips = '模型来自 ${model.providerName}';
+      tooltips = '模型来自 ${model.providerName} ${model.providerUrl}'.trim();
+      name = [model.providerName, name].where((e) => e.isNotEmpty).join(': ');
     } else {
       tooltips = model.fileName;
     }
