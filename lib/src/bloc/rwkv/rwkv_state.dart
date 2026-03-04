@@ -42,7 +42,7 @@ class ModelBaseInfo {
     LoadedModel m,
   ) {
     return ModelBaseInfo._(
-      id: service.id,
+      id: m.info.id,
       name: m.info.name,
       providerName: service.sourceName,
       serviceId: service.id,

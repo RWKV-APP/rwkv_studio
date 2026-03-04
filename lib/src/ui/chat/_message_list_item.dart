@@ -75,7 +75,10 @@ class MessageListItem extends StatelessWidget {
       alignmentRight: message.isUser,
       footer: message.isUser
           ? null
-          : _MessageItemFooter(message: message, isLast: isLast),
+          : ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 28),
+              child: _MessageItemFooter(message: message, isLast: isLast),
+            ),
       child: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .start,
@@ -126,18 +129,22 @@ class _MessageBox extends StatelessWidget {
         crossAxisAlignment: alignmentRight ? .end : .start,
         children: [
           Container(
-            decoration: BoxDecoration(
-              color: context.theme.cardColor,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(10),
-                  offset: const Offset(1, 2),
-                  blurRadius: 4,
-                ),
-              ],
-            ),
-            padding: const .symmetric(horizontal: 12, vertical: 12),
+            decoration: !alignmentRight
+                ? null
+                : BoxDecoration(
+                    color: context.theme.cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(10),
+                        offset: const Offset(1, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+            padding: !alignmentRight
+                ? const .only(left: 12, top: 16)
+                : const .symmetric(horizontal: 12, vertical: 12),
             margin: .only(
               right: alignmentRight ? 0 : 100,
               left: alignmentRight ? 100 : 0,

@@ -1,4 +1,6 @@
+import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:gpt_markdown/gpt_markdown.dart';
 
 extension CustomeFluent on FluentThemeData {
   FluentThemeData custom({String? fontFamily}) {
@@ -15,9 +17,21 @@ extension CustomeFluent on FluentThemeData {
         const FontVariation.width(100),
         const FontVariation.slant(-5),
       ],
-    );
+    ).useSystemChineseFont();
 
     return copyWith(
+      extensions: [
+        GptMarkdownThemeData(
+          brightness: brightness,
+          hrLineThickness: .5,
+          hrLineColor: Colors.grey[100],
+          h1: defaultFontStyle.copyWith(fontSize: 24),
+          h2: defaultFontStyle.copyWith(fontSize: 22),
+          h3: defaultFontStyle.copyWith(fontSize: 20),
+          h4: defaultFontStyle.copyWith(fontSize: 18),
+          h5: defaultFontStyle.copyWith(fontSize: 16),
+        ),
+      ],
       navigationPaneTheme: const NavigationPaneThemeData(
         backgroundColor: Colors.transparent,
       ),

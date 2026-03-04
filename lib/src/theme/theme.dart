@@ -12,6 +12,8 @@ extension ThemeModeExt on BuildContext {
 
   FluentThemeData get fluent => FluentTheme.of(this);
 
+  bool get isDark => theme.brightness == Brightness.dark;
+
   Typography get typography => FluentTheme.of(this).typography;
 }
 

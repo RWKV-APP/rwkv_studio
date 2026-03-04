@@ -1,5 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:rwkv_studio/src/widget/markdown.dart';
 
 class TextMessageContent extends StatelessWidget {
   final String content;
@@ -8,10 +8,7 @@ class TextMessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GptMarkdown(
-      content,
-      style: const TextStyle(height: 1.6, letterSpacing: 1.4),
-    );
+    return Markdown(text: content);
   }
 }
 
@@ -100,12 +97,12 @@ class _MessageThinkState extends State<MessageThink> {
                 left: BorderSide(color: Colors.grey[50], width: 1),
               ),
             ),
-            child: GptMarkdown(
-              widget.content,
+            child: Markdown(
+              text: widget.content,
               style: TextStyle(
                 color: Colors.grey[100],
                 fontSize: 14,
-                height: 1.6,
+                height: 1.4,
                 letterSpacing: 0.6,
               ),
             ),

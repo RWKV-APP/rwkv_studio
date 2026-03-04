@@ -71,12 +71,13 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
           id: modelId,
           info: ModelBaseInfo.fromRemoteService(service, m),
         );
+        logd('model added: ${service.url} ${m.info.name}');
       }
     }
 
     if (instances.isNotEmpty) {
-      logd('connected ${instances.length} instances from remote service');
-      emit(state.copyWith(models: {...instances, ...state.models}));
+      logd('connected ${instances.length} instance(s) from remote service');
+      emit(state.copyWith(models: {...state.models, ...instances}));
     } else {
       logd('no instances from remote service');
     }
@@ -122,6 +123,11 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
         ? DecodeParam.initial()
         : state.decodeParams[decodeParamId];
     if (param == null) throw "decode param preset not found: $decodeParamId";
+
+    logi(
+      'chat: instance:$instanceId, decode:$decodeParamId, reasoning:${config.reasoningEffort}, prompt:${config.prompt}',
+    );
+
     await _syncModelConfig(instanceId, param, config);
     try {
       yield* instance.rwkv
