@@ -7,6 +7,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/pair.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 import 'package:rwkv_studio/src/utils/stream_speed_sampler.dart';
 import 'package:rxdart/rxdart.dart';
@@ -45,7 +46,8 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     emit(
       state.copyWith(
         setting: size,
-        cells: [for (var i = 0; i < size.size; i++) '-'],
+        responsesDisplay: [for (var i = 0; i < size.size; i++) '-'],
+        responses: [for (var i = 0; i < size.size; i++) '-'],
       ),
     );
   }
@@ -81,15 +83,21 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
     _subscription?.cancel();
     emit(state.copyWith(isRunning: true));
-    Stream<List<String>> stream = _startBatchInfer(rwkv);
+    Stream<Pair<List<String>, List<String>>> stream = _startBatchInfer(rwkv);
 
     Completer completer = Completer();
     _subscription = stream
-        .throttleTime(const Duration(milliseconds: 60))
+        .throttleTime(const Duration(milliseconds: 30))
         .timeout(const Duration(seconds: 20))
         .listen(
-          (cells) {
-            emit(state.copyWith(cells: cells.toList(), isRunning: true));
+          (pair) {
+            emit(
+              state.copyWith(
+                responses: pair.first,
+                responsesDisplay: pair.second,
+                isRunning: true,
+              ),
+            );
           },
           onDone: () {
             logd('batch infer done');
@@ -107,9 +115,12 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     await completer.future;
   }
 
-  Stream<List<String>> _startBatchInfer(RwkvInterface rwkv) async* {
+  Stream<Pair<List<String>, List<String>>> _startBatchInfer(
+    RwkvInterface rwkv,
+  ) async* {
     final size = state.setting;
     List<String> cells = [for (var i = 0; i < size.size; i++) ''];
+    List<String> cellsRaw = [for (var i = 0; i < size.size; i++) ''];
     int len;
     if (size.size > 600) {
       len = 50;
@@ -135,6 +146,9 @@ class BatchInferCubit extends Cubit<BatchInferState> {
         _speedSampler.add(res.choices!.join());
       }
       for (final (index, choice) in res.choices!.indexed) {
+        str = cellsRaw[index];
+        cellsRaw[index] = str + choice;
+
         str = cells[index];
         if (str.length > (len + 40)) {
           str = str.substring(str.length - len);
@@ -144,7 +158,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
       if (isClosed || state.isRunning == false) {
         return;
       }
-      yield cells;
+      yield Pair(cellsRaw, cells);
     }
   }
 }

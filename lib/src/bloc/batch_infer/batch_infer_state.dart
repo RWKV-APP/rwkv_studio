@@ -13,7 +13,7 @@ class BatchSizeState {
       const BatchSizeState(row: 12, col: 20),
       const BatchSizeState(row: 16, col: 20),
       const BatchSizeState(row: 16, col: 30),
-      const BatchSizeState(row: 22, col: 34),
+      // const BatchSizeState(row: 22, col: 34),
     ];
   }
 
@@ -39,7 +39,8 @@ class BatchInferState {
   final BatchSizeState setting;
   final ModelLoadState modelState;
   final TextEditingController textController;
-  final List<String> cells;
+  final List<String> responsesDisplay;
+  final List<String> responses;
   final bool isRunning;
   final bool showSettingPanel;
   final String decodeParamId;
@@ -49,7 +50,8 @@ class BatchInferState {
     required this.modelState,
     required this.showSettingPanel,
     required this.textController,
-    required this.cells,
+    required this.responsesDisplay,
+    required this.responses,
     required this.isRunning,
     required this.performance,
     required this.decodeParamId,
@@ -61,7 +63,8 @@ class BatchInferState {
       setting: setting,
       modelState: ModelLoadState.empty(),
       textController: TextEditingController(text: '在很久很久以前'),
-      cells: [for (var i = 0; i < setting.size; i++) '-'],
+      responsesDisplay: [for (var i = 0; i < setting.size; i++) '-'],
+      responses: [for (var i = 0; i < setting.size; i++) '-'],
       isRunning: false,
       showSettingPanel: false,
       performance: const PerformanceState(tps: 0.0),
@@ -73,7 +76,8 @@ class BatchInferState {
     ModelLoadState? modelState,
     BatchSizeState? setting,
     TextEditingController? textController,
-    List<String>? cells,
+    List<String>? responsesDisplay,
+    List<String>? responses,
     bool? showSettingPanel,
     PerformanceState? performance,
     bool? isRunning,
@@ -84,7 +88,8 @@ class BatchInferState {
       modelState: modelState ?? this.modelState,
       textController: textController ?? this.textController,
       showSettingPanel: showSettingPanel ?? this.showSettingPanel,
-      cells: cells ?? this.cells,
+      responsesDisplay: responsesDisplay ?? this.responsesDisplay,
+      responses: responses ?? this.responses,
       isRunning: isRunning ?? this.isRunning,
       performance: performance ?? this.performance,
       decodeParamId: decodeParamId ?? this.decodeParamId,

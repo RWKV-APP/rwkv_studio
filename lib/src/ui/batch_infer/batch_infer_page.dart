@@ -11,10 +11,13 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/_setting_pannel.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/text_painter.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
+import 'package:rwkv_studio/src/utils/pair.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
-extension _ on BuildContext {
+part '_tool_bar.dart';
+
+extension _Ext on BuildContext {
   BatchInferCubit get cubit => BlocProvider.of<BatchInferCubit>(this);
 }
 
@@ -52,52 +55,16 @@ class BatchInferPage extends StatelessWidget {
               crossAxisAlignment: .stretch,
               children: [
                 _ToolBar(),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: BlocBuilder<BatchInferCubit, BatchInferState>(
-                        buildWhen: (prev, cur) =>
-                            cur.textController != prev.textController,
-                        builder: (context, state) {
-                          return TextBox(controller: state.textController);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    BlocBuilder<BatchInferCubit, BatchInferState>(
-                      buildWhen: (prev, cur) => cur.isRunning != prev.isRunning,
-                      builder: (context, state) {
-                        return FilledButton(
-                          child: state.isRunning
-                              ? const Row(
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: ProgressRing(strokeWidth: 2),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text('停止'),
-                                  ],
-                                )
-                              : const Text('提交'),
-                          onPressed: () {
-                            if (!state.isRunning) {
-                              context.cubit
-                                  .submit(context.rwkv)
-                                  .withToast(context);
-                            } else {
-                              context.cubit.stop();
-                            }
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 12),
-                Expanded(child: buildGrid()),
+                Expanded(
+                  child: Stack(
+                    fit: .expand,
+                    children: [
+                      buildGrid(), //
+                      _GridEventGesture(),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
@@ -107,136 +74,155 @@ class BatchInferPage extends StatelessWidget {
   }
 
   Widget buildGrid() {
-    return RepaintBoundary(
-      child: BlocBuilder<BatchInferCubit, BatchInferState>(
-        buildWhen: (prev, cur) =>
-            cur.cells != prev.cells || cur.setting != prev.setting,
-        builder: (context, state) {
-          return CustomPaint(
-            willChange: true,
-            painter: GridBackgroundPainter(
-              rows: state.setting.row,
-              cols: state.setting.col,
+    return BlocBuilder<BatchInferCubit, BatchInferState>(
+      buildWhen: (prev, cur) =>
+          cur.responsesDisplay != prev.responsesDisplay ||
+          cur.setting != prev.setting,
+      builder: (context, state) {
+        return CustomPaint(
+          painter: GridBackgroundPainter(
+            rows: state.setting.row,
+            cols: state.setting.col,
+          ),
+          foregroundPainter: GridTailParagraphPainter(
+            cells: state.responsesDisplay,
+            rows: state.setting.row,
+            cols: state.setting.col,
+            colSpacing: 2,
+            rowSpacing: 2,
+            textStyle: const TextStyle(
+              fontSize: 10,
+              height: 1,
+              letterSpacing: 1,
+              color: Colors.black,
             ),
-            foregroundPainter: GridTailParagraphPainter(
-              cells: state.cells,
-              rows: state.setting.row,
-              cols: state.setting.col,
-              colSpacing: 2,
-              rowSpacing: 2,
-              textStyle: const TextStyle(
-                fontSize: 10,
-                height: 1,
-                letterSpacing: 1,
-                color: Colors.black,
-              ),
-            ),
-          );
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _GridEventGesture extends StatefulWidget {
+  @override
+  State<_GridEventGesture> createState() => _GridEventGestureState();
+}
+
+class _GridEventGestureState extends State<_GridEventGesture> {
+  late BatchSizeState setting = context.cubit.state.setting;
+  final controller = FlyoutController();
+  bool running = false;
+
+  Offset pointer = Offset.zero;
+  Size widgetSize = Size.zero;
+  Pair<int, int>? currentCell;
+
+  void _onMove(PointerHoverEvent e) {
+    pointer = e.localPosition;
+    final cellW = widgetSize.width / setting.col;
+    final cellH = widgetSize.height / setting.row;
+    final c = (pointer.dx / cellW).floor();
+    final r = (pointer.dy / cellH).floor();
+    if (c != currentCell?.first || r != currentCell?.second) {
+      setState(() {
+        currentCell = Pair(c, r);
+      });
+    }
+  }
+
+  void _showRawResponse() {
+    final cell = currentCell!.first + currentCell!.second * setting.col;
+    final raw = context.cubit.state.responses[cell];
+    controller.showFlyout(
+      position: pointer,
+      builder: (ctx) {
+        return FlyoutContent(child: SelectableText(raw));
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        if (running || currentCell == null) {
+          return;
+        }
+        _showRawResponse();
+      },
+      child: MouseRegion(
+        onHover: _onMove,
+        onExit: (_) {
+          currentCell = null;
+          setState(() {});
         },
+        child: BlocListener<BatchInferCubit, BatchInferState>(
+          listenWhen: (prev, cur) =>
+              cur.isRunning != prev.isRunning || cur.setting != prev.setting,
+          listener: (context, state) {
+            setState(() {
+              running = state.isRunning;
+              setting = state.setting;
+            });
+          },
+          child: LayoutBuilder(
+            builder: (ctx, cs) {
+              widgetSize = Size(cs.maxWidth, cs.maxHeight);
+              if (currentCell == null) {
+                return const SizedBox();
+              }
+              return FlyoutTarget(
+                controller: controller,
+                child: CustomPaint(
+                  painter: _GridHighlightPainter(
+                    rows: setting.row,
+                    cols: setting.col,
+                    highlightRow: currentCell!.second,
+                    highlightCol: currentCell!.first,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 }
 
-class _ToolBar extends StatelessWidget {
+class _GridHighlightPainter extends CustomPainter {
+  final int rows;
+  final int cols;
+  final int highlightRow;
+  final int highlightCol;
+
+  late final _paint = Paint()
+    ..color = Colors.blue
+    ..style = PaintingStyle.stroke;
+
+  _GridHighlightPainter({
+    required this.rows,
+    required this.cols,
+    required this.highlightRow,
+    required this.highlightCol,
+  });
+
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: BlocBuilder<BatchInferCubit, BatchInferState>(
-            buildWhen: (prev, cur) => cur.performance != prev.performance,
-            builder: (context, state) {
-              return Row(
-                crossAxisAlignment: .end,
-                children: [
-                  Text('并行推理', style: context.fluent.typography.subtitle),
-                  const SizedBox(width: 16),
-                  Text(
-                    '${state.performance.tps.toInt()} tokens/s',
-                    style: const TextStyle(height: 2, fontSize: 10),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        SizedBox(
-          height: 34,
-          child: BlocSelector<BatchInferCubit, BatchInferState, ModelLoadState>(
-            selector: (state) => state.modelState,
-            builder: (context, state) {
-              return ModelSelector(
-                modelState: state,
-                onModelSelected: (s) {
-                  context.cubit
-                      .loadModel(context, context.rwkv, s)
-                      .withToast(context);
-                },
-                filter: (model) =>
-                    model.isRemote || model.backend == ModelBackend.albatross,
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          height: 34,
-          child: BlocSelector<BatchInferCubit, BatchInferState, BatchSizeState>(
-            selector: (state) => state.setting,
-            builder: (context, state) {
-              return ComboBox(
-                onChanged: (v) {
-                  if (context.cubit.state.isRunning) {
-                    context.toast('请停止推理后修改');
-                    return;
-                  }
-                  context.cubit.setBatchSize(v!);
-                },
-                items: [
-                  for (var v in BatchSizeState.all)
-                    ComboBoxItem(
-                      value: v,
-                      child: Text('${v.size} 路并行 (${v.row}x${v.col})'),
-                    ),
-                ],
-                value: state,
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          height: 34,
-          child: BlocBuilder<AppCubit, AppState>(
-            buildWhen: (prev, cur) => cur.fullScreen != prev.fullScreen,
-            builder: (context, state) {
-              return Button(
-                child: Text(state.fullScreen ? '退出全屏' : '全屏'),
-                onPressed: () async {
-                  context.app.toggleFullScreen();
-                },
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          height: 34,
-          child: BlocBuilder<BatchInferCubit, BatchInferState>(
-            buildWhen: (prev, cur) =>
-                cur.showSettingPanel != prev.showSettingPanel,
-            builder: (context, state) {
-              return Button(
-                child: const Text('解码参数'),
-                onPressed: () async {
-                  context.cubit.toggleShowSettingPanel();
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
+  void paint(Canvas canvas, Size size) {
+    final rowHeight = size.height / rows;
+    final colWidth = size.width / cols;
+
+    final left = highlightCol * colWidth;
+    final top = highlightRow * rowHeight;
+    final right = (highlightCol + 1) * colWidth;
+    final bottom = (highlightRow + 1) * rowHeight;
+    canvas.drawRect(Rect.fromLTRB(left, top, right, bottom), _paint);
   }
+
+  @override
+  bool shouldRepaint(covariant _GridHighlightPainter oldDelegate) =>
+      rows != oldDelegate.rows ||
+      cols != oldDelegate.cols ||
+      highlightRow != oldDelegate.highlightRow ||
+      highlightCol != oldDelegate.highlightCol;
 }

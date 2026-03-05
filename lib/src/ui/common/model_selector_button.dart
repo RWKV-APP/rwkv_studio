@@ -90,12 +90,16 @@ class ModelSelector extends StatelessWidget {
     } else {
       final name = modelState.displayName;
       content = Row(
+        mainAxisSize: .min,
         children: [
           const Icon(WindowsIcons.task_view, size: 14),
           const SizedBox(width: 6),
-          Text(
-            name.isNotEmpty ? name : '选择模型',
-            style: const TextStyle(fontSize: 13),
+          Flexible(
+            child: Text(
+              name.isNotEmpty ? name : '选择模型',
+              overflow: .ellipsis,
+              style: const TextStyle(fontSize: 13),
+            ),
           ),
         ],
       );

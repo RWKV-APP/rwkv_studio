@@ -8,7 +8,10 @@ class TextMessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Markdown(text: content);
+    return Markdown(
+      text: content,
+      style: const TextStyle(fontSize: 14, height: 1.6, letterSpacing: 0.6),
+    );
   }
 }
 

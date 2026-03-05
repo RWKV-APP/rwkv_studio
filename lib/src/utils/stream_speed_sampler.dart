@@ -5,7 +5,10 @@ import 'dart:math';
 class SpeedMetrics {
   /// Filtered speed, as the primary value exposed to consumers.
   final double speed;
-  /// Raw speed calculated directly from the fixed time window.
+
+  /// Raw speed calculated from the active time window.
+  /// During warm-up this uses elapsed time since first sample,
+  /// then switches to the fixed window once elapsed >= window.
   final double rawSpeed;
   final Duration window;
   final DateTime timestamp;
@@ -50,6 +53,7 @@ class StreamSpeedSampler {
 
       double totalInWindow = 0.0;
       double? filteredSpeed;
+      DateTime? firstSampleAt;
       DateTime? lastEmitAt;
 
       void prune(DateTime now) {
@@ -74,16 +78,14 @@ class StreamSpeedSampler {
 
         final List<double> sorted = rawHistory.toList()..sort();
         final int mid = sorted.length ~/ 2;
-        final double median =
-            sorted.length.isOdd
-                ? sorted[mid]
-                : (sorted[mid - 1] + sorted[mid]) / 2.0;
+        final double median = sorted.length.isOdd
+            ? sorted[mid]
+            : (sorted[mid - 1] + sorted[mid]) / 2.0;
 
-        filteredSpeed =
-            filteredSpeed == null
-                ? median
-                : (smoothingAlpha * median) +
-                    ((1 - smoothingAlpha) * filteredSpeed!);
+        filteredSpeed = filteredSpeed == null
+            ? median
+            : (smoothingAlpha * median) +
+                  ((1 - smoothingAlpha) * filteredSpeed!);
 
         return filteredSpeed!;
       }
@@ -94,12 +96,22 @@ class StreamSpeedSampler {
         }
 
         prune(now);
-        final double seconds = max(
-          window.inMilliseconds / Duration.millisecondsPerSecond,
+        final inWarmUp =
+            firstSampleAt != null && now.difference(firstSampleAt!) < window;
+        final int denominatorMs;
+        if (inWarmUp) {
+          final elapsedMs = now.difference(firstSampleAt!).inMilliseconds;
+          denominatorMs = max(elapsedMs, maxSampleRate.inMilliseconds);
+        } else {
+          denominatorMs = window.inMilliseconds;
+        }
+
+        final seconds = max(
+          denominatorMs / Duration.millisecondsPerSecond,
           1e-9,
         );
-        final double raw = totalInWindow / seconds;
-        final double smoothed = applyFilter(raw);
+        final raw = totalInWindow / seconds;
+        final smoothed = inWarmUp ? raw : applyFilter(raw);
         lastEmitAt = now;
 
         controller.add(
@@ -148,6 +160,7 @@ class StreamSpeedSampler {
                 return;
               }
               if (value > 0) {
+                firstSampleAt ??= now;
                 buckets.addLast(_Bucket(now, value));
                 totalInWindow += value;
               }

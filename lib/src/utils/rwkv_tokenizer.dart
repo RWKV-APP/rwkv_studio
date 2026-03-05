@@ -1,20 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/services.dart';
-
-import 'assets.dart';
-
 class RwkvTokenizer {
   static final Map<String, _TokenizerData> _cache = <String, _TokenizerData>{};
 
   final String vocabPath;
 
+  static List<String> rwkvVocab20230424Data = [];
+
   const RwkvTokenizer({required this.vocabPath});
 
-  static RwkvTokenizer get default_ =>
-      RwkvTokenizer(vocabPath: AppAssets.rwkvVocab20230424);
+  static RwkvTokenizer get default_ => const RwkvTokenizer(vocabPath: '');
 
   int tokenCount(String text) {
     return encode(text).length;
@@ -72,6 +68,20 @@ class RwkvTokenizer {
     return tokens;
   }
 
+  List<String> id2token(List<int> tokens) {
+    final _TokenizerData data = _getData();
+    final List<String> tokensStr = <String>[];
+    for (final int token in tokens) {
+      final t = data.tokenToBytes[token];
+      if (t != null) {
+        tokensStr.add(String.fromCharCodes(t));
+      } else {
+        throw StateError('No token found for id $token');
+      }
+    }
+    return tokensStr;
+  }
+
   String decode(List<int> tokens) {
     final _TokenizerData data = _getData();
     final List<int> bytes = <int>[];
@@ -106,8 +116,8 @@ class _TokenizerData {
   factory _TokenizerData.load(String path) {
     List<String> lines;
 
-    if (path.startsWith('assets/')) {
-      lines = AppAssets.rwkvVocab20230424Data;
+    if (path.isEmpty) {
+      lines = RwkvTokenizer.rwkvVocab20230424Data;
     } else {
       final File file = File(path);
       if (!file.existsSync()) {

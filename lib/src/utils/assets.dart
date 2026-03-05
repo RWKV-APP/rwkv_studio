@@ -1,14 +1,14 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
+import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 
 class AppAssets {
   static String rwkvVocab20230424 = '';
-  static late List<String> rwkvVocab20230424Data;
 
   AppAssets._();
 
@@ -20,7 +20,7 @@ class AppAssets {
     if (kIsWeb) {
       final asset = await rootBundle.load(rwkvVocab20230424);
       final bytes = asset.buffer.asUint8List();
-      rwkvVocab20230424Data = utf8
+      RwkvTokenizer.rwkvVocab20230424Data = utf8
           .decode(bytes)
           .split('\n')
           .map((String line) => line.trim())

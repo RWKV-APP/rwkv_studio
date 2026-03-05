@@ -2,6 +2,15 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
+
+bool _isHighSurrogateCodeUnit(int codeUnit) {
+  return codeUnit >= 0xD800 && codeUnit <= 0xDBFF;
+}
+
+bool _isLowSurrogateCodeUnit(int codeUnit) {
+  return codeUnit >= 0xDC00 && codeUnit <= 0xDFFF;
+}
 
 class GridBackgroundPainter extends CustomPainter {
   GridBackgroundPainter({
@@ -194,7 +203,14 @@ class GridTailParagraphPainter extends CustomPainter {
     if (text.length <= maxChars) {
       return text;
     }
-    return text.substring(text.length - maxChars);
+    int start = text.length - maxChars;
+    if (start > 0) {
+      final int codeUnit = text.codeUnitAt(start);
+      if (_isLowSurrogateCodeUnit(codeUnit)) {
+        start += 1;
+      }
+    }
+    return text.substring(start);
   }
 
   @override
@@ -300,10 +316,15 @@ class _ParagraphCache {
       _cache[cacheKey] = existed;
       return existed;
     }
-
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(paragraphStyle)
-      ..pushStyle(textStyle)
-      ..addText(breakableText);
+    ui.ParagraphBuilder builder;
+    try {
+      builder = ui.ParagraphBuilder(paragraphStyle)
+        ..pushStyle(textStyle)
+        ..addText(breakableText);
+    } on ArgumentError {
+      loge("=>$breakableText");
+      builder = ui.ParagraphBuilder(paragraphStyle)..addText('');
+    }
     final ui.Paragraph paragraph = builder.build();
     paragraph.layout(ui.ParagraphConstraints(width: key.maxWidth));
 
@@ -316,12 +337,49 @@ class _ParagraphCache {
   }
 
   String _insertWordBreakOpportunities(String input) {
-    return input.replaceAllMapped(_asciiWordPattern, (Match m) {
+    final String safeInput = _toWellFormedUtf16(input);
+    return safeInput.replaceAllMapped(_asciiWordPattern, (Match m) {
       final String word = m.group(0)!;
       if (word.length < 2) {
         return word;
       }
-      return word.split('').join('\u200B');
+      final StringBuffer buffer = StringBuffer();
+      for (int i = 0; i < word.length; i++) {
+        if (i > 0) {
+          buffer.write('\u200B');
+        }
+        buffer.writeCharCode(word.codeUnitAt(i));
+      }
+      return buffer.toString();
     });
+  }
+
+  String _toWellFormedUtf16(String input) {
+    bool changed = false;
+    final StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < input.length; i++) {
+      final int codeUnit = input.codeUnitAt(i);
+      if (_isHighSurrogateCodeUnit(codeUnit)) {
+        if (i + 1 < input.length) {
+          final int nextCodeUnit = input.codeUnitAt(i + 1);
+          if (_isLowSurrogateCodeUnit(nextCodeUnit)) {
+            buffer.writeCharCode(codeUnit);
+            buffer.writeCharCode(nextCodeUnit);
+            i += 1;
+            continue;
+          }
+        }
+        changed = true;
+        buffer.write('\uFFFD');
+        continue;
+      }
+      if (_isLowSurrogateCodeUnit(codeUnit)) {
+        changed = true;
+        buffer.write('\uFFFD');
+        continue;
+      }
+      buffer.writeCharCode(codeUnit);
+    }
+    return changed ? buffer.toString() : input;
   }
 }
