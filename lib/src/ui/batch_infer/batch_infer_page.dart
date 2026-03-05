@@ -15,7 +15,7 @@ import 'package:rwkv_studio/src/utils/pair.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
-part '_tool_bar.dart';
+part '_title_bar.dart';
 
 extension _Ext on BuildContext {
   BatchInferCubit get cubit => BlocProvider.of<BatchInferCubit>(this);
@@ -54,7 +54,7 @@ class BatchInferPage extends StatelessWidget {
               mainAxisSize: .max,
               crossAxisAlignment: .stretch,
               children: [
-                _ToolBar(),
+                _TitleBar(),
                 const SizedBox(height: 12),
                 Expanded(
                   child: Stack(

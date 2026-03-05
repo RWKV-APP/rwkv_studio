@@ -112,7 +112,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   @override
   Stream<GenerationResponse> chat(
-    List<String> message,
+    List<ChatMessage> message,
     String instanceId,
     String decodeParamId,
     GenerationConfig config,

@@ -8,6 +8,8 @@ class ModelLoadState {
   final bool loading;
   final String error;
 
+  bool get isRWKV => modelName.toLowerCase().contains('rwkv');
+
   String get displayName =>
       [providerName, modelName].where((e) => e.isNotEmpty).join(': ').trim();
 

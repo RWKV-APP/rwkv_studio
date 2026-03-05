@@ -1,4 +1,3 @@
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 
@@ -17,7 +16,7 @@ extension CustomeFluent on FluentThemeData {
         const FontVariation.width(100),
         const FontVariation.slant(-5),
       ],
-    ).useSystemChineseFont();
+    );
 
     return copyWith(
       extensions: [

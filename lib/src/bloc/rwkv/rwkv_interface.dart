@@ -38,7 +38,7 @@ mixin class RwkvInterface {
   }
 
   Stream<GenerationResponse> chat(
-    List<String> message,
+    List<ChatMessage> message,
     String instanceId,
     String decodeParamId,
     GenerationConfig config,

@@ -131,7 +131,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     } else {
       len = 1000;
     }
-    final prompt = state.textController.text.trim();
+    final prompt = state.textController.text;
 
     final stream = rwkv.generate(
       prompt,
