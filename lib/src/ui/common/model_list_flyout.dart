@@ -5,6 +5,7 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
+import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class ModelListFlyout extends StatelessWidget {
@@ -60,10 +61,37 @@ class ModelListFlyout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    /// grouping by provider name, if provider name is empty or length <= 2, then flat
+    Map<String, List<ModelInfo>> groups = models.groupBy((e) => e.providerName);
+    final flat = <ModelInfo>[
+      for (final group in groups.entries)
+        if (group.key.isEmpty || group.value.length <= 2)
+          ...group.value
+        else
+          ...[],
+    ];
+    groups.removeWhere((k, v) => k.isEmpty || v.length <= 2);
+    groups = groups.map((k, v) {
+      v.sort((a, b) => a.name.compareTo(b.name));
+      return MapEntry(k, v);
+    });
+
     return MenuFlyout(
       items: [
-        for (final model in models)
+        for (final group in groups.entries)
+          MenuFlyoutSubItem(
+            text: Text("${group.key} (${group.value.length})"),
+            items: (c) {
+              return [
+                for (final model in group.value)
+                  _buildMenuItem(context: c, model: model, showProvider: false),
+              ];
+            },
+          ),
+
+        for (final model in flat)
           _buildMenuItem(context: context, model: model),
+
         if (models.isEmpty)
           MenuFlyoutItem(text: const Text('没有可用的模型'), onPressed: null),
         const MenuFlyoutSeparator(),
@@ -95,6 +123,7 @@ class ModelListFlyout extends StatelessWidget {
   MenuFlyoutItem _buildMenuItem({
     required BuildContext context,
     required ModelInfo model,
+    bool showProvider = true,
   }) {
     Widget? trailing;
     String name = model.name;
@@ -117,7 +146,9 @@ class ModelListFlyout extends StatelessWidget {
 
     if (model.isRemote) {
       tooltips = '模型来自 ${model.providerName} ${model.providerUrl}'.trim();
-      name = [model.providerName, name].where((e) => e.isNotEmpty).join(': ');
+      if (showProvider) {
+        name = [model.providerName, name].where((e) => e.isNotEmpty).join(': ');
+      }
     } else {
       tooltips = model.fileName;
     }
@@ -126,16 +157,17 @@ class ModelListFlyout extends StatelessWidget {
         ? ModelBackend.albatross
         : model.backend;
 
-    Widget icon;
+    Widget? icon;
 
     bool attachLink = false;
 
     if (model.isRemote) {
-      if (model.backend != ModelBackend.unknown) {
+      if (model.backend != ModelBackend.unknown &&
+          model.backend.name.isNotEmpty) {
         attachLink = true;
         icon = ModelBackendBadge(backend: backend);
       } else {
-        icon = const Icon(FluentIcons.link12);
+        icon = showProvider ? const Icon(FluentIcons.link12) : null;
       }
     } else {
       icon = ModelBackendBadge(backend: backend);
@@ -146,8 +178,8 @@ class ModelListFlyout extends StatelessWidget {
         message: tooltips,
         child: Row(
           children: [
-            icon,
-            const SizedBox(width: 8),
+            ?icon,
+            if (icon != null) const SizedBox(width: 8),
             if (attachLink)
               const Padding(
                 padding: .only(right: 4),

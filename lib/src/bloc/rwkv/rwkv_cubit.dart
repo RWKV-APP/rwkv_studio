@@ -35,7 +35,10 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
       (e) => e.key,
       (e) => DecodeParam.fromMap(jsonDecode(e.value)),
     );
-    logi('restore decode params: ${decodeParams.keys.join(',')}');
+    decodeParams.removeWhere((k, _) => k.isEmpty);
+    logi(
+      'restore decode params(${decodeParams.length}): ${decodeParams.keys.join(',')}',
+    );
     emit(
       state.copyWith(
         decodeParams: {'default': DecodeParam.initial(), ...decodeParams},
@@ -44,6 +47,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   }
 
   void setOrPutDecodeParam(String id, DecodeParam param) {
+    id = id.isEmpty ? 'default' : id;
     StateCacheBox.put(
       id,
       param.toMap(),

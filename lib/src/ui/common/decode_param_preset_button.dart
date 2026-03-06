@@ -72,7 +72,9 @@ class DecodeParamPresetButton extends StatelessWidget {
           items: [
             for (final entry in presets.entries)
               MenuFlyoutItem(
-                leading: currentId == entry.key
+                leading:
+                    currentId == entry.key ||
+                        (currentId.isEmpty && entry.key == 'default')
                     ? const Icon(FluentIcons.check_mark)
                     : null,
                 text: Text(entry.key),
