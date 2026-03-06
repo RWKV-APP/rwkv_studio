@@ -97,6 +97,7 @@ class AppState {
   final List<NavBarItem> navBarItems;
   final bool fullScreen;
   final bool showNavBar;
+  final RwkvHttpApiService rwkvModelService;
 
   List<NavBarItem> expandedItems() {
     return navBarItems
@@ -113,6 +114,7 @@ class AppState {
     required this.fullScreen,
     required this.showNavBar,
     required this.modelServices,
+    required this.rwkvModelService,
   });
 
   factory AppState.initial() {
@@ -125,6 +127,7 @@ class AppState {
       fullScreen: false,
       showNavBar: true,
       modelServices: [],
+      rwkvModelService: RwkvHttpApiService(),
     );
   }
 
@@ -137,6 +140,7 @@ class AppState {
     bool? fullScreen,
     bool? showNavBar,
     List<ModelServiceWrap>? modelServices,
+    RwkvHttpApiService? rwkvModelService,
   }) {
     return AppState(
       pane: pane ?? this.pane,
@@ -147,6 +151,7 @@ class AppState {
       fullScreen: fullScreen ?? this.fullScreen,
       showNavBar: showNavBar ?? this.showNavBar,
       modelServices: modelServices ?? this.modelServices,
+      rwkvModelService: rwkvModelService ?? this.rwkvModelService,
     );
   }
 }

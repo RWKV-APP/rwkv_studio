@@ -4,14 +4,21 @@ class ModelSettingState extends Equatable {
   final List<RemoteService> remoteServices;
   final String modelListUrl;
   final List<ModelBackend> enabledBackends;
+  final ModelServerSetting modelServer;
 
   @override
-  List<Object?> get props => [remoteServices, modelListUrl, enabledBackends];
+  List<Object?> get props => [
+    remoteServices,
+    modelListUrl,
+    enabledBackends,
+    modelServer,
+  ];
 
   const ModelSettingState({
     required this.remoteServices,
     required this.modelListUrl,
     required this.enabledBackends,
+    required this.modelServer,
   });
 
   factory ModelSettingState.initial() {
@@ -19,6 +26,7 @@ class ModelSettingState extends Equatable {
       enabledBackends: [],
       remoteServices: [],
       modelListUrl: '',
+      modelServer: ModelServerSetting.empty,
     );
   }
 
@@ -27,6 +35,7 @@ class ModelSettingState extends Equatable {
     remoteServices: [],
     modelListUrl:
         'https://aifasthub.com/meta-logic/config/resolve/main/model_config.json?download=true',
+    modelServer: ModelServerSetting.empty,
   );
 
   Map<String, dynamic> toMap() {
@@ -34,6 +43,7 @@ class ModelSettingState extends Equatable {
       'remoteServices': remoteServices.map((e) => e.toMap()).toList(),
       'modelListUrl': modelListUrl,
       'enabledBackends': enabledBackends.map((e) => e.name).toList(),
+      'modelServer': modelServer.toMap(),
     };
   }
 
@@ -49,6 +59,7 @@ class ModelSettingState extends Equatable {
           [],
       modelListUrl: map['modelListUrl'] ?? default_.modelListUrl,
       enabledBackends: ModelBackend.fromJson(map['enabledBackends']),
+      modelServer: ModelServerSetting.fromMap(map['modelServer']),
     );
   }
 
@@ -56,11 +67,13 @@ class ModelSettingState extends Equatable {
     List<RemoteService>? remoteServices,
     String? modelListUrl,
     List<ModelBackend>? enabledBackends,
+    ModelServerSetting? modelServer,
   }) {
     return ModelSettingState(
       remoteServices: remoteServices ?? this.remoteServices,
       modelListUrl: modelListUrl ?? this.modelListUrl,
       enabledBackends: enabledBackends ?? this.enabledBackends,
+      modelServer: modelServer ?? this.modelServer,
     );
   }
 }

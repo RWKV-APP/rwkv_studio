@@ -1,12 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/bloc/model/model_provider.dart';
-import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
-import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
@@ -28,7 +23,7 @@ class ServiceSettingCard extends StatelessWidget {
       children: [
         Expander(
           contentBackgroundColor: context.fluent.cardColor,
-          header: const Text('API 模型服务'),
+          header: const Text('模型服务'),
           contentPadding: const .only(top: 16, bottom: 12),
           trailing: Text(
             '${services.where((e) => e.enabled).length}/${services.length} 已启用',
@@ -202,10 +197,17 @@ class _ServiceItem extends StatelessWidget {
       padding: const .symmetric(vertical: 12),
       child: Row(
         children: [
-          Container(width: 50, alignment: .center, child: _ServiceStatus(service: service)),
+          Container(
+            width: 50,
+            alignment: .center,
+            child: _ServiceStatus(service: service),
+          ),
           const SizedBox(width: 12),
           Expanded(flex: 2, child: Text(service.name)),
-          Expanded(flex: 2, child: SelectableText(service.url, textAlign: .start)),
+          Expanded(
+            flex: 2,
+            child: SelectableText(service.url, textAlign: .start),
+          ),
           Expanded(
             flex: 2,
             child: Text(

@@ -3,13 +3,13 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/setting/_appearance_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/_behavior_setting.dart';
+import 'package:rwkv_studio/src/ui/setting/service/_model_server_setting.dart';
 import 'package:rwkv_studio/src/ui/setting/_model_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/_python_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/service/_service_settings.dart';
@@ -101,6 +101,23 @@ class _SettingBody extends StatelessWidget {
             },
           ),
         const SizedBox(height: 12),
+
+        if (!kIsWeb)
+          BlocBuilder<SettingCubit, SettingState>(
+            buildWhen: (p, c) => p.model.modelServer != c.model.modelServer,
+            builder: (context, state) {
+              return ModelServerSettingCard(
+                setting: state.model.modelServer,
+                onChanged: (v) {
+                  context.settings.setServiceSetting(
+                    state.model.copyWith(modelServer: v),
+                  );
+                },
+              );
+            },
+          ),
+        if (!kIsWeb) const SizedBox(height: 16),
+
         BlocBuilder<SettingCubit, SettingState>(
           buildWhen: (p, c) => p.model != c.model,
           builder: (context, state) {

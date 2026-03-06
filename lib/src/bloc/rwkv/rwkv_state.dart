@@ -96,6 +96,9 @@ class RwkvState {
   final List<ModelService> services;
   final Map<String, DecodeParam> decodeParams;
 
+  Iterable<ModelInstanceState> get localInstances =>
+      models.values.where((e) => !e.info.isRemote);
+
   RwkvState({
     required this.models,
     required this.services,

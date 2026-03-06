@@ -78,7 +78,7 @@ List<Widget> _buildStateSyncListeners() {
       listenWhen: (p, c) =>
           p.appearance.theme.brightness != c.appearance.theme.brightness,
       listener: (context, state) {
-        logd('appearance changed: ${state.appearance.theme.brightness}');
+        logd('appearance updated: ${state.appearance.theme.brightness}');
         _syncAppearance(state.appearance);
       },
       child: const SizedBox(),
@@ -86,7 +86,7 @@ List<Widget> _buildStateSyncListeners() {
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.appearance.userType != c.appearance.userType,
       listener: (context, state) {
-        logd('user-type changed: ${state.appearance.userType}');
+        logd('user-type updated: ${state.appearance.userType}');
         context.app.onUserTypeChanged(state.appearance.userType);
       },
       child: const SizedBox(),
@@ -95,7 +95,7 @@ List<Widget> _buildStateSyncListeners() {
       listenWhen: (p, c) => p.model.remoteServices != c.model.remoteServices,
       listener: (context, state) async {
         logd(
-          'model-service-settings changed: ${state.model.remoteServices.length} services',
+          'model-service-settings updated: ${state.model.remoteServices.length} services',
         );
         context.app.updateModelServices(state.model.remoteServices);
       },
@@ -104,7 +104,7 @@ List<Widget> _buildStateSyncListeners() {
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.python != c.python,
       listener: (context, state) async {
-        logd('python changed: ${state.python.selected}');
+        logd('python updated: ${state.python.selected}');
         context.app.onPythonSelected(
           id: state.python.selected,
           albatrossPath: state.python.albatrossPath,
@@ -115,11 +115,23 @@ List<Widget> _buildStateSyncListeners() {
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.model.modelListUrl != c.model.modelListUrl,
       listener: (context, state) async {
-        logd('model-list-url changed: ${state.model.modelListUrl}');
+        logd('model-list-url updated: ${state.model.modelListUrl}');
         context.modelManage.updateModelConfigUrl(state.model.modelListUrl);
       },
       child: const SizedBox(),
     ),
+
+    if (!kIsWeb)
+      BlocListener<SettingCubit, SettingState>(
+        listenWhen: (p, c) => p.model.modelServer != c.model.modelServer,
+        listener: (context, state) async {
+          logd(
+            'model-server setting updated: ${state.model.modelServer.toMap()}',
+          );
+          context.app.onModelServerSettingChanged(state.model.modelServer);
+        },
+        child: const SizedBox(),
+      ),
 
     BlocListener<AppCubit, AppState>(
       listenWhen: (p, c) => p.modelServices != c.modelServices,
@@ -143,7 +155,11 @@ List<Widget> _buildStateSyncListeners() {
     BlocListener<RwkvCubit, RwkvState>(
       listenWhen: (p, c) => p.models.length != c.models.length,
       listener: (context, state) {
-        logd('model-instance changed: ${state.models.length} instances');
+        logd('model-instance updated: ${state.models.length} instances');
+
+        if (!kIsWeb)
+          context.app.onLoadLocalModelListChanged(state.localInstances);
+
         final chat = context.chat.state.modelInstanceId;
         final textGen = context.textGen.state.modelInstanceId;
         if (chat.isNotEmpty && state.models[chat] == null) {

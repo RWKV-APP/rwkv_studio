@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/settings/model_server_state.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
@@ -76,6 +78,27 @@ class AppCubit extends Cubit<AppState> {
     return state.pythons
         .where((e) => e.id == state.selectedPythonId)
         .firstOrNull;
+  }
+
+  void onModelServerSettingChanged(ModelServerSetting setting) {
+    if (setting.enabled) {
+      state.rwkvModelService.run(host: setting.host, port: setting.port);
+    } else {
+      state.rwkvModelService.shutdown();
+    }
+  }
+
+  void onLoadLocalModelListChanged(Iterable<ModelInstanceState> models) {
+    logd(
+      'update rwkv model service model list: ${models.map((e) => e.info.name).join(',')}',
+    );
+    state.rwkvModelService.updateInstances([
+      for (final m in models)
+        HttpServiceModelInstance(
+          rwkv: m.rwkv,
+          info: ModelBean.fromJson({'id': m.info.name}),
+        ),
+    ]);
   }
 
   void onUserTypeChanged(UserType userType) {
