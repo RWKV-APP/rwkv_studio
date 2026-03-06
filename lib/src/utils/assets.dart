@@ -33,7 +33,7 @@ class AppAssets {
   }
 
   static Future<File> _assetsPath(String assets, String file) async {
-    final dir = appExecutableDir.path;
+    final dir = appDataDir.path;
     final f = File(pathJoin(dir, pathJoin('data', file)));
     if (await f.exists()) {
       return f;

@@ -45,7 +45,11 @@ class AppLog with ChangeNotifier {
     runZonedGuarded(
       entry,
       (error, stackTrace) {
-        stderr.writeln(error.toString());
+        if (kIsWeb) {
+          //
+        } else {
+          stderr.writeln(error.toString());
+        }
         instance._log(
           Log(
             tag: '',
@@ -57,7 +61,10 @@ class AppLog with ChangeNotifier {
       },
       zoneSpecification: ZoneSpecification(
         print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
-          stdout.writeln(line);
+          if (kIsWeb) {
+          } else {
+            stdout.writeln(line);
+          }
           AppLog.instance._log(
             Log(tag: '', level: '', message: line, datetime: DateTime.now()),
           );

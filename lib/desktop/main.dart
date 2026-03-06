@@ -2,7 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:rwkv_studio/src/app/app.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/path.dart';
 import 'package:window_manager/window_manager.dart';
 
 void main() async {
@@ -21,6 +24,14 @@ void main() async {
       await windowManager.focus();
       //await Window.setEffect(effect: WindowEffect.mica, dark: false);
     });
+  }
+
+  if (Platform.isMacOS || Platform.isIOS) {
+    try {
+      appDataDir = await getApplicationDocumentsDirectory();
+    } catch (e) {
+      loge(e);
+    }
   }
   runApp(const RWKVApp());
 }

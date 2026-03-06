@@ -14,8 +14,8 @@ class CacheSettingState extends Equatable {
 
   factory CacheSettingState.initial() {
     if (!kIsWeb) {
-      final defaultModelDir = pathJoin(appExecutableDir.path, 'models');
-      final defaultCacheDir = pathJoin(appExecutableDir.path, 'cache');
+      final defaultModelDir = pathJoin(appDataDir.path, 'models');
+      final defaultCacheDir = pathJoin(appDataDir.path, 'cache');
       return CacheSettingState(
         modelDownloadDir: defaultModelDir,
         appCacheDir: defaultCacheDir,

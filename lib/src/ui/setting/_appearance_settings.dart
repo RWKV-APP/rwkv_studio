@@ -1,5 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 
@@ -56,9 +56,11 @@ class AppearanceSettings extends StatelessWidget {
               const Spacer(),
               ComboBox(
                 value: appearance.fontFamily,
-                onChanged: (v) {
-                  onChanged?.call(appearance.copyWith(fontFamily: v));
-                },
+                onChanged: kIsWeb
+                    ? null
+                    : (String? v) {
+                        onChanged?.call(appearance.copyWith(fontFamily: v));
+                      },
                 items: [
                   const ComboBoxItem(value: '', child: Text('默认')),
                   const ComboBoxItem(
@@ -69,6 +71,11 @@ class AppearanceSettings extends StatelessWidget {
                     value: 'Microsoft YaHei',
                     child: Text('Microsoft YaHei'),
                   ),
+                  const ComboBoxItem(
+                    value: 'Microsoft YaHei UI',
+                    child: Text('Microsoft YaHei UI'),
+                  ),
+                  const ComboBoxItem(value: '黑体', child: Text('黑体')),
                   const ComboBoxItem(value: '微软雅黑', child: Text('微软雅黑')),
                   const ComboBoxItem(value: '仿宋', child: Text('仿宋')),
                 ],

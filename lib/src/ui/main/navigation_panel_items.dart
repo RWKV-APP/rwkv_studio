@@ -38,7 +38,7 @@ String _itemTitle(NavBarItemType type) {
 Widget _itemIcon(NavBarItemType type) {
   switch (type) {
     case NavBarItemType.chat:
-      return const WindowsIcon(WindowsIcons.chat_bubbles);
+      return const WindowsIcon(FluentIcons.office_chat);
     case NavBarItemType.textGeneration:
       return const WindowsIcon(FluentIcons.text_document_edit);
     case NavBarItemType.modelManage:

@@ -21,7 +21,7 @@ class HiveManager {
   /// Initialize Hive and register adapters
   static Future<void> init() async {
     if (!kIsWeb) {
-      final appDir = appExecutableDir;
+      final appDir = appDataDir;
       final hiveDir = Directory('${appDir.path}${Platform.pathSeparator}hive');
       if (!await hiveDir.exists()) {
         await hiveDir.create(recursive: true);

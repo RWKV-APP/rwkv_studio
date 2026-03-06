@@ -6,7 +6,12 @@ Future<String> appDocumentsDir() => getApplicationDocumentsDirectory().then(
   (value) => Directory(pathJoin(value.path, 'rwkv_music')).path,
 );
 
-Directory get appExecutableDir => File(Platform.resolvedExecutable).parent;
+Directory? _appDataDir;
+
+set appDataDir(Directory dir) => _appDataDir = dir;
+
+Directory get appDataDir =>
+    _appDataDir ?? File(Platform.resolvedExecutable).parent;
 
 String pathJoin(String a, String b) {
   if (Platform.isWindows) {
