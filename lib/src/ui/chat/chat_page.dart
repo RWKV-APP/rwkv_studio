@@ -11,34 +11,32 @@ import 'package:rwkv_studio/src/widget/side_bar.dart';
 
 import '_chat_setting_pannel.dart';
 
-class ChatPage extends StatefulWidget {
+class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
-}
-
-class _ChatPageState extends State<ChatPage> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ResizableSplitLayout(
-      restoreId: 'split-conv',
-      fixed: _ConversationList(),
-      flexible: _Chat(),
-      direction: .horizontal,
-      size: 300,
-      minSize: 150,
-      maxSize: 500,
+    return BlocBuilder<ChatCubit, ChatState>(
+      buildWhen: (p, c) => p.showConversationList != c.showConversationList,
+      builder: (context, state) {
+        return ResizableSplitLayout(
+          restoreId: 'split-conv',
+          fixed: const _ConversationList(),
+          flexible: const _Chat(),
+          direction: .horizontal,
+          hideFixedWidget: state.showConversationList,
+          size: 300,
+          minSize: 150,
+          maxSize: 500,
+        );
+      },
     );
   }
 }
 
 class _ConversationList extends StatefulWidget {
+  const _ConversationList();
+
   @override
   State<_ConversationList> createState() => _ConversationListState();
 }
@@ -105,12 +103,9 @@ class _ConversationListState extends State<_ConversationList> {
   }
 }
 
-class _Chat extends StatefulWidget {
-  @override
-  State<_Chat> createState() => _ChatState();
-}
+class _Chat extends StatelessWidget {
+  const _Chat();
 
-class _ChatState extends State<_Chat> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatCubit, ChatState>(

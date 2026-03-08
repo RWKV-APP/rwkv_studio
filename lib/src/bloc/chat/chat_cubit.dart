@@ -16,9 +16,7 @@ import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'chat_state.dart';
-
 part 'conversation_state.dart';
-
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -162,6 +160,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         (e) => e.copyWith(systemPrompt: prompt),
       );
     }
+  }
+
+  void toggleConversationListVisible() {
+    emit(state.copyWith(showConversationList: !state.showConversationList));
   }
 
   void toggleReasoningEnable() {

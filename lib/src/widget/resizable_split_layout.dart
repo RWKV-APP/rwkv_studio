@@ -12,6 +12,7 @@ class ResizableSplitLayout extends StatefulWidget {
   final double maxSize;
   final bool flexibleAlignEnd;
   final String? restoreId;
+  final bool hideFixedWidget;
 
   const ResizableSplitLayout({
     super.key,
@@ -23,6 +24,7 @@ class ResizableSplitLayout extends StatefulWidget {
     required this.maxSize,
     this.restoreId,
     this.flexibleAlignEnd = true,
+    this.hideFixedWidget = false,
   }) : assert(
          minSize <= maxSize,
          'minSize must be less than or equal to maxSize.',
@@ -80,6 +82,10 @@ class _ResizableSplitLayoutState extends State<ResizableSplitLayout> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.hideFixedWidget) {
+      return widget.flexible;
+    }
+
     final Widget fixed = SizedBox(
       width: _isHorizontal ? _size : null,
       height: _isHorizontal ? null : _size,

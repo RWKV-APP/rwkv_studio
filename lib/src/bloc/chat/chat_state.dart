@@ -9,6 +9,7 @@ class ChatState {
   final GenerationConfig generationConfig;
   final bool generating;
   final bool showSettingPanel;
+  final bool showConversationList;
 
   final TextEditingController inputController;
   final FocusNode inputFocusNode;
@@ -21,7 +22,7 @@ class ChatState {
 
   bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;
 
-  ChatState({
+  const ChatState({
     required this.initialized,
     required this.showSettingPanel,
     required this.conversations,
@@ -32,21 +33,23 @@ class ChatState {
     required this.generating,
     required this.modelState,
     required this.inputFocusNode,
+    required this.showConversationList,
   });
 
   ChatState.empty()
-    : this(
-        initialized: false,
-        showSettingPanel: false,
-        conversations: [],
-        selected: ConversationState.empty,
-        messages: {},
-        inputController: TextEditingController(),
-        generating: false,
-        generationConfig: GenerationConfig.initial(),
-        modelState: ModelLoadState.empty(),
-        inputFocusNode: FocusNode(),
-      );
+      : this(
+    initialized: false,
+    showSettingPanel: false,
+    conversations: [],
+    selected: ConversationState.empty,
+    messages: {},
+    inputController: TextEditingController(),
+    generating: false,
+    generationConfig: GenerationConfig.initial(),
+    modelState: ModelLoadState.empty(),
+    inputFocusNode: FocusNode(),
+    showConversationList: true,
+  );
 
   ChatState copyWith({
     bool? initialized,
@@ -59,6 +62,7 @@ class ChatState {
     bool? showSettingPanel,
     ModelLoadState? modelState,
     FocusNode? inputFocusNode,
+    bool? showConversationList
   }) {
     return ChatState(
       initialized: initialized ?? this.initialized,
@@ -71,6 +75,7 @@ class ChatState {
       showSettingPanel: showSettingPanel ?? this.showSettingPanel,
       inputFocusNode: inputFocusNode ?? this.inputFocusNode,
       modelState: modelState ?? this.modelState,
+      showConversationList: showConversationList ?? this.showConversationList,
     );
   }
 }

@@ -23,6 +23,14 @@ class ChatTitleBar extends StatelessWidget {
           }
           return Row(
             children: [
+              IconButton(
+                icon: state.showConversationList
+                    ? const Icon(FluentIcons.close_pane)
+                    : const Icon(FluentIcons.open_pane),
+                onPressed: () {
+                  context.chat.toggleConversationListVisible();
+                },
+              ),
               Expanded(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 100),
