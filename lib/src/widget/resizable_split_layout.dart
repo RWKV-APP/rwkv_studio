@@ -13,6 +13,7 @@ class ResizableSplitLayout extends StatefulWidget {
   final bool flexibleAlignEnd;
   final String? restoreId;
   final bool hideFixedWidget;
+  final bool autoHideDivider;
 
   const ResizableSplitLayout({
     super.key,
@@ -23,6 +24,7 @@ class ResizableSplitLayout extends StatefulWidget {
     required this.minSize,
     required this.maxSize,
     this.restoreId,
+    this.autoHideDivider = false,
     this.flexibleAlignEnd = true,
     this.hideFixedWidget = false,
   }) : assert(
@@ -99,7 +101,11 @@ class _ResizableSplitLayoutState extends State<ResizableSplitLayout> {
     ];
 
     if (_isHorizontal) {
-      return Row(children: children);
+      return Row(
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      );
     }
 
     return Column(
@@ -110,7 +116,16 @@ class _ResizableSplitLayoutState extends State<ResizableSplitLayout> {
   }
 
   Widget _buildDivider() {
+    BoxDecoration? decor = _isDividerHighlighted
+        ? BoxDecoration(color: Colors.blue)
+        : null;
+
+    if (widget.autoHideDivider && decor == null) {
+      decor = const BoxDecoration(color: Colors.transparent);
+    }
+
     return MouseRegion(
+      hitTestBehavior: HitTestBehavior.translucent,
       cursor: _isHorizontal
           ? SystemMouseCursors.resizeLeftRight
           : SystemMouseCursors.resizeUpDown,
@@ -130,9 +145,7 @@ class _ResizableSplitLayoutState extends State<ResizableSplitLayout> {
             style: DividerThemeData(
               horizontalMargin: EdgeInsets.zero,
               verticalMargin: EdgeInsets.zero,
-              decoration: _isDividerHighlighted
-                  ? BoxDecoration(color: Colors.blue)
-                  : null,
+              decoration: decor,
             ),
           ),
         ),

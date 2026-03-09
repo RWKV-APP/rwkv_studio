@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/_chat_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_input.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
@@ -115,21 +116,45 @@ class _Chat extends StatelessWidget {
           open: state.showSettingPanel,
           divider: const Divider(direction: .vertical),
           sidebar: const ChatSettingPanel(),
-          content: const ResizableSplitLayout(
-            restoreId: 'spit-chat',
-            fixed: ChatMessageInput(),
-            flexible: Column(
-              children: [
-                ChatTitleBar(),
-                Divider(),
-                Expanded(child: ChatMessageList()),
-              ],
-            ),
-            flexibleAlignEnd: false,
-            direction: .vertical,
-            size: 150,
-            minSize: 100,
-            maxSize: 300,
+          content: LayoutBuilder(
+            builder: (ctx, cs) {
+              final float = cs.maxWidth > 1100;
+
+              return ResizableSplitLayout(
+                restoreId: 'spit-chat',
+                autoHideDivider: float,
+                fixed: Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 600),
+                    constraints: const BoxConstraints(maxWidth: 1100),
+                    margin: const .only(bottom: 6),
+                    decoration: !float
+                        ? const BoxDecoration()
+                        : BoxDecoration(
+                            borderRadius: .circular(8),
+                            color: context.fluent.scaffoldBackgroundColor,
+                            border: Border.all(
+                              width: 1,
+                              color: context.fluent.inactiveBackgroundColor,
+                            ),
+                          ),
+                    child: const ChatMessageInput(),
+                  ),
+                ),
+                flexible: const Column(
+                  children: [
+                    ChatTitleBar(),
+                    Divider(),
+                    Expanded(child: ChatMessageList(maxWidth: 1100)),
+                  ],
+                ),
+                flexibleAlignEnd: false,
+                direction: .vertical,
+                size: 150,
+                minSize: 100,
+                maxSize: 300,
+              );
+            },
           ),
         );
       },

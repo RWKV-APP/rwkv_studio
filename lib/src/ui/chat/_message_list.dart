@@ -6,7 +6,9 @@ import 'package:rwkv_studio/src/ui/chat/_message_list_item.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 class ChatMessageList extends StatefulWidget {
-  const ChatMessageList({super.key});
+  final double? maxWidth;
+
+  const ChatMessageList({super.key, this.maxWidth});
 
   @override
   State<ChatMessageList> createState() => _ChatMessageListState();
@@ -73,33 +75,46 @@ class _ChatMessageListState extends State<ChatMessageList> {
                 style: context.fluent.typography.bodyStrong,
               ),
             ),
-          ListView.builder(
-            controller: _scrollController,
-            itemCount: _messages.length,
-            reverse: true,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            itemBuilder: (context, index) {
-              final isLast = index == 0;
-              final item = MessageListItem(
-                message: _messages[index],
-                isLast: isLast,
-              );
-
-              if (isLast) {
-                return item;
-                // return MeasureSize(
-                //   onChange: (v) {
-                //     if (_autoScrolling && context.chat.state.generating) {
-                //       _scrollController.jumpTo(
-                //         _scrollController.position.maxScrollExtent,
-                //       );
-                //     }
-                //   },
-                //   child: item,
-                // );
+          LayoutBuilder(
+            builder: (ctx, cs) {
+              double? paddingHorizontal;
+              if (widget.maxWidth != null) {
+                paddingHorizontal = cs.maxWidth > widget.maxWidth!
+                    ? (cs.maxWidth - widget.maxWidth!) / 2
+                    : 0;
               }
+              return ListView.builder(
+                controller: _scrollController,
+                itemCount: _messages.length,
+                reverse: true,
+                padding: EdgeInsets.symmetric(
+                  horizontal: paddingHorizontal ?? 12,
+                  vertical: 12,
+                ),
+                itemBuilder: (context, index) {
+                  final isLast = index == 0;
+                  final item = MessageListItem(
+                    message: _messages[index],
+                    isLast: isLast,
+                  );
 
-              return item;
+                  if (isLast) {
+                    return item;
+                    // return MeasureSize(
+                    //   onChange: (v) {
+                    //     if (_autoScrolling && context.chat.state.generating) {
+                    //       _scrollController.jumpTo(
+                    //         _scrollController.position.maxScrollExtent,
+                    //       );
+                    //     }
+                    //   },
+                    //   child: item,
+                    // );
+                  }
+
+                  return item;
+                },
+              );
             },
           ),
         ],
