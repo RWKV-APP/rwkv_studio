@@ -16,7 +16,9 @@ import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'chat_state.dart';
+
 part 'conversation_state.dart';
+
 part 'message_state.dart';
 
 extension Ext on BuildContext {
@@ -427,8 +429,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       final isRwkv = state.modelState.isRWKV;
       if (!isClosed && isRwkv) {
         var assistant = state.messages[convId]!.last;
-        final count = RwkvTokenizer.default_.tokenCount(assistant.text);
-        assistant = assistant.copyWithExtra(tokenCount: count);
+        try {
+          final count = RwkvTokenizer.default_.tokenCount(assistant.text);
+          assistant = assistant.copyWithExtra(tokenCount: count);
+        } catch (e) {
+          logw(assistant.text);
+          loge(e);
+        }
         emit(
           state.copyWith(
             generating: false,

@@ -60,7 +60,7 @@ class BatchInferPage extends StatelessWidget {
                   child: Stack(
                     fit: .expand,
                     children: [
-                      buildGrid(), //
+                      buildGrid(context), //
                       _GridEventGesture(),
                     ],
                   ),
@@ -73,7 +73,12 @@ class BatchInferPage extends StatelessWidget {
     );
   }
 
-  Widget buildGrid() {
+  Widget buildGrid(BuildContext context) {
+    final textColor = context.fluent.typography.caption?.copyWith(
+      fontSize: 10,
+      height: 1,
+      letterSpacing: 1,
+    );
     return BlocBuilder<BatchInferCubit, BatchInferState>(
       buildWhen: (prev, cur) =>
           cur.responsesDisplay != prev.responsesDisplay ||
@@ -90,12 +95,14 @@ class BatchInferPage extends StatelessWidget {
             cols: state.setting.col,
             colSpacing: 2,
             rowSpacing: 2,
-            textStyle: const TextStyle(
-              fontSize: 10,
-              height: 1,
-              letterSpacing: 1,
-              color: Colors.black,
-            ),
+            textStyle:
+                textColor ??
+                const TextStyle(
+                  fontSize: 10,
+                  height: 1,
+                  letterSpacing: 1,
+                  color: Colors.black,
+                ),
           ),
         );
       },

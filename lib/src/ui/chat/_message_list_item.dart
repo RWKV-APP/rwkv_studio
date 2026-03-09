@@ -146,7 +146,7 @@ class _MessageBox extends StatelessWidget {
                 ? const .only(left: 12, top: 16)
                 : const .symmetric(horizontal: 12, vertical: 12),
             margin: .only(
-              right: alignmentRight ? 0 : 100,
+              right: alignmentRight ? 16 : 100,
               left: alignmentRight ? 100 : 0,
             ),
             child: child,

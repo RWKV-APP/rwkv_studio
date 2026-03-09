@@ -29,7 +29,7 @@ class SettingPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: .start,
-          crossAxisAlignment: .start,
+          crossAxisAlignment: .center,
           children: [
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),

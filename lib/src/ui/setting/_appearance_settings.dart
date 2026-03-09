@@ -128,9 +128,11 @@ class AppearanceSettings extends StatelessWidget {
               const Spacer(),
               ComboBox(
                 value: appearance.userType,
-                onChanged: (v) {
-                  onChanged?.call(appearance.copyWith(userType: v));
-                },
+                onChanged: !kDebugMode
+                    ? null
+                    : (UserType? v) {
+                        onChanged?.call(appearance.copyWith(userType: v));
+                      },
                 items: [
                   const ComboBoxItem(value: UserType.user, child: Text('用户')),
                   const ComboBoxItem(

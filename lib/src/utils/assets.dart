@@ -26,6 +26,8 @@ class AppAssets {
           .map((String line) => line.trim())
           .where((String line) => line.isNotEmpty)
           .toList(growable: false);
+      rwkvVocab20230424 = '';
+      logd('b_rwkv_vocab_v20230424 loaded');
       return;
     }
     final vocab = await _assetsPath(rwkvVocab20230424, name);

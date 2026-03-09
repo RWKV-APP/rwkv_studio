@@ -42,6 +42,7 @@ class AppLog with ChangeNotifier {
   }
 
   static void captureZone(Function() entry) {
+    if (kIsWeb) return entry();
     runZonedGuarded(
       entry,
       (error, stackTrace) {

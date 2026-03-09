@@ -25,7 +25,7 @@ class ChatPage extends StatelessWidget {
           fixed: const _ConversationList(),
           flexible: const _Chat(),
           direction: .horizontal,
-          hideFixedWidget: state.showConversationList,
+          hideFixedWidget: !state.showConversationList,
           size: 300,
           minSize: 150,
           maxSize: 500,
