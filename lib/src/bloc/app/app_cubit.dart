@@ -61,8 +61,8 @@ class AppCubit extends Cubit<AppState> {
     if (kIsWeb) {
       return [];
     }
-    final python = await Python.findPythons();
-    final conda = await Python.detectCondaEnv();
+    final python = await Python.findPythons().onError((e, st) => []);
+    final conda = await Python.detectCondaEnv().onError((e, st) => []);
     emit(
       state.copyWith(
         pythons: [
