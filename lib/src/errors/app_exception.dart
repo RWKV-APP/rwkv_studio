@@ -31,6 +31,34 @@ class AppException implements Exception {
       }
       return AppException("${e.type.name}, ${e.requestOptions.uri.toString()}");
     }
+
+    if (e is DioException) {
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+          return const AppException('Connection timed out');
+        case DioExceptionType.sendTimeout:
+          return const AppException('Send timed out');
+        case DioExceptionType.receiveTimeout:
+          return const AppException('Receive timed out');
+        case DioExceptionType.badCertificate:
+          return const AppException('Bad certificate');
+        case DioExceptionType.badResponse:
+          final resp = e.response;
+          final status = resp?.statusCode;
+          if (resp != null && status != null && status >= 400) {
+            // final body = resp.data;
+            String msg =
+                "HTTP ${resp.statusCode} ${resp.statusMessage}  ${e.requestOptions.uri}";
+            return AppException(msg);
+          }
+        case DioExceptionType.connectionError:
+          return const AppException('Connection error');
+        case DioExceptionType.cancel:
+          return const AppException('Request cancelled');
+        case DioExceptionType.unknown:
+          return const AppException('Unknown error');
+      }
+    }
     return AppException(e.toString(), cause: e);
   }
 

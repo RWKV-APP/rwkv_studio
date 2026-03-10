@@ -52,13 +52,18 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       configProviderUrl: configProviderUrl,
       modelDownloadDir: modelDownloadDir,
     );
-    _manager.downloadUpdateEvents().listen((event) {
-      _emitTaskUpdate(
-        modelId: event.model.id,
-        update: event.update,
-        error: event.error,
-      );
-    });
+    _manager.downloadUpdateEvents().listen(
+      (event) {
+        _emitTaskUpdate(
+          modelId: event.model.id,
+          update: event.update,
+          error: event.error,
+        );
+      },
+      onError: (e) {
+        loge(e);
+      },
+    );
     await _manager.init();
     emit(
       state.copyWith(
@@ -87,6 +92,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       return;
     }
     await _manager.setModelDownloadDir(path, migration: migration);
+    logd('Model download dir set to $path, updating model list');
     await updateModelList(remote: false);
   }
 
@@ -175,8 +181,12 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       List<ModelInfo> models = [];
       final providers = state.remoteModelProviders;
       for (final provider in providers) {
-        final list = await provider.getModelList().wrapError();
-        models = [...list, ...models];
+        try {
+          final list = await provider.getModelList().wrapError();
+          models = [...list, ...models];
+        } catch (e) {
+          loge(e);
+        }
       }
       emit(state.copyWith(remoteModels: models));
     }

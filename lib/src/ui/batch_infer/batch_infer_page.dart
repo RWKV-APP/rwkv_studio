@@ -143,7 +143,13 @@ class _GridEventGestureState extends State<_GridEventGesture> {
     controller.showFlyout(
       position: pointer,
       builder: (ctx) {
-        return FlyoutContent(child: SelectableText(raw));
+        return FlyoutContent(
+          constraints: BoxConstraints(
+            maxWidth: widgetSize.width / 2,
+            maxHeight: widgetSize.height / 2,
+          ),
+          child: SelectableText(raw),
+        );
       },
     );
   }

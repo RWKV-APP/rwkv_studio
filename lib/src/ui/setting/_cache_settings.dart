@@ -11,11 +11,11 @@ class CacheSettingsCard extends StatelessWidget {
     if (dir == null || !context.mounted || dir == current) {
       return;
     }
-    final migration = await _askMigrationModels(context, current, dir);
-    if (!context.mounted || migration == null) {
-      return;
-    }
-    await context.modelManage.setModelDownloadDir(dir, migration: migration);
+    // final migration = await _askMigrationModels(context, current, dir);
+    // if (!context.mounted || migration == null) {
+    //   return;
+    // }
+    await context.modelManage.setModelDownloadDir(dir, migration: false);
     if (!context.mounted) {
       return;
     }
@@ -101,13 +101,26 @@ class _ModelCacheInfoState extends State<_ModelCacheInfo> {
   @override
   void initState() {
     super.initState();
+    _refresh();
+  }
+
+  void _refresh() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      setState(() {
+        _loading = true;
+      });
       final dir = widget.dir;
       _info = await FileUtils.getDirectoryFileInfo(dir, excludeExts: {'json'});
       setState(() {
         _loading = false;
       });
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant _ModelCacheInfo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _refresh();
   }
 
   @override
@@ -147,7 +160,15 @@ Future<bool?> _askMigrationModels(
             }(),
             builder: (ctx, snapshot) {
               final count = snapshot.data?.length ?? 0;
-              if (count <= 0) {
+              final ignore =
+                  (snapshot.data
+                          ?.where(
+                            (e) => e.path.contains('.rwkv_downloader.json'),
+                          )
+                          .length ??
+                      0) >
+                  0;
+              if (count <= 0 || ignore) {
                 return const SizedBox();
               }
               return const InfoBar(

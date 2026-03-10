@@ -51,7 +51,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     logd('restored conversations: ${convs.length}, messages: ${msgs.length}');
     emit(state.copyWith(conversations: convs, messages: msgs));
 
-    if (state.messages.isEmpty) {
+    if (state.conversations.isEmpty) {
       await newChat();
     }
     selectConversation(state.conversations.first);

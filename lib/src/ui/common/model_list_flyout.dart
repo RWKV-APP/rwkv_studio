@@ -57,6 +57,7 @@ class ModelListFlyout extends StatelessWidget {
 
   Future _onModelReleased(BuildContext context, String instanceId) async {
     context.rwkv.release(instanceId).withToast(context);
+    Navigator.of(context).pop();
   }
 
   @override

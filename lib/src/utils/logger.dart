@@ -42,7 +42,6 @@ class AppLog with ChangeNotifier {
   }
 
   static void captureZone(Function() entry) {
-    if (kIsWeb) return entry();
     runZonedGuarded(
       entry,
       (error, stackTrace) {
@@ -50,12 +49,13 @@ class AppLog with ChangeNotifier {
           //
         } else {
           stderr.writeln(error.toString());
+          stderr.writeln(stackTrace.toString());
         }
         instance._log(
           Log(
             tag: '',
             level: '',
-            message: error.toString(),
+            message: "${error.toString()}\n${stackTrace.toString()}",
             datetime: DateTime.now(),
           ),
         );

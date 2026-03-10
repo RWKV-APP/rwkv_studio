@@ -38,9 +38,9 @@ class ModelManageState {
   }
 
   bool shouldModelListUpdate(ModelManageState other) {
-    return other.models.length != models.length ||
-        other.importedModels.length != importedModels.length ||
-        remoteModels.length != other.remoteModels.length;
+    return other.models != models ||
+        other.importedModels != importedModels ||
+        remoteModels != other.remoteModels;
   }
 
   ModelManageState._({

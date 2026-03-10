@@ -207,6 +207,7 @@ class _PromptInputBoxState extends State<_PromptInputBox> {
         dismissWithEsc: true,
         builder: (ctx) {
           return FlyoutContent(
+            constraints: const BoxConstraints(maxWidth: 90000),
             child: SizedBox(
               width: anchorWidth,
               child: Column(
@@ -271,7 +272,7 @@ class _PromptInputBoxState extends State<_PromptInputBox> {
     if (renderObject is! RenderBox) {
       return 520;
     }
-    return renderObject.size.width.clamp(320.0, 900.0).toDouble();
+    return renderObject.size.width.clamp(320.0, 9000.0).toDouble();
   }
 
   Offset? _resolveAnchorPosition() {

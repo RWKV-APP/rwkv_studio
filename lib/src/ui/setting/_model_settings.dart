@@ -39,7 +39,9 @@ class ModelSettings extends StatelessWidget {
             runSpacing: 12,
             children: [
               for (final backend in ModelBackend.defaultBackends.where(
-                (e) => e.platforms.contains(ModelPlatform.current),
+                (e) =>
+                    e.platforms.contains(ModelPlatform.current) &&
+                    e != ModelBackend.mnn,
               ))
                 Checkbox(
                   checked: settings.enabledBackends.contains(backend),

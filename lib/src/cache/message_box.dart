@@ -99,7 +99,10 @@ class MessageBox {
       role: message.role,
       error: message.error,
       modelName: message.modelName,
-      stopReason: message.stopReason.index,
+      // avoid incorrect state.
+      stopReason: !message.stopped
+          ? StopReason.unknown.index
+          : message.stopReason.index,
       createAt: message.createAt.millisecondsSinceEpoch,
       extra: Map<String, dynamic>.from(message.extra),
       reasoning: message.reasoning.name,
