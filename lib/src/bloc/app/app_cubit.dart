@@ -6,7 +6,6 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
-import 'package:rwkv_studio/src/bloc/settings/model_server_state.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
@@ -31,7 +30,11 @@ class AppCubit extends Cubit<AppState> {
 
     await AppAssets.init().catchError((e) => loge(e));
     await HiveManager.init().catchError((e) => loge(e));
-    await HiveManager.openPreferencesBox().catchError((e) => loge(e));
+    try {
+      await HiveManager.openPreferencesBox();
+    } catch (e, s) {
+      loge(e, s);
+    }
     _initIPAddress();
   }
 
@@ -83,7 +86,7 @@ class AppCubit extends Cubit<AppState> {
         .firstOrNull;
   }
 
-  void onModelServerSettingChanged(ModelServerSetting setting) async {
+  void onModelServerSettingChanged(ModelServerSettingsModel setting) async {
     final server = state.rwkvModelService;
     if (setting.enabled) {
       if (server.isRunning()) {
@@ -128,7 +131,7 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(showNavBar: show));
   }
 
-  Future updateModelServices(List<RemoteService> configs) async {
+  Future updateModelServices(List<RemoteServiceModel> configs) async {
     List<ModelServiceWrap> services = [];
     for (final config in configs.where((e) => e.enabled)) {
       final s = await ModelService.create(
