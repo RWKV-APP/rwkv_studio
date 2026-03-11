@@ -40,7 +40,9 @@ class ModelManagerRepository {
   final StreamController<ModelTaskUpdateEvent> _taskUpdates =
       StreamController<ModelTaskUpdateEvent>.broadcast();
 
-  Future<void> initialize({
+  bool get isInitialized => _manager != null;
+
+  Future<void> ensureInitialized({
     required String modelDownloadDir,
     required String configProviderUrl,
     DownloadSource? downloadSource,
@@ -66,6 +68,24 @@ class ModelManagerRepository {
     await manager.init();
   }
 
+  Future<void> updateRuntimeConfig({
+    String? modelDownloadDir,
+    bool migration = false,
+    String? configProviderUrl,
+    DownloadSource? downloadSource,
+  }) async {
+    final manager = _requireManager();
+    if (modelDownloadDir != null) {
+      await manager.setModelDownloadDir(modelDownloadDir, migration: migration);
+    }
+    if (configProviderUrl != null) {
+      manager.setConfigProviderUrl(configProviderUrl);
+    }
+    if (downloadSource != null) {
+      manager.downloadSource = downloadSource;
+    }
+  }
+
   Stream<ModelTaskUpdateEvent> watchTaskUpdates() {
     return _taskUpdates.stream;
   }
@@ -80,15 +100,15 @@ class ModelManagerRepository {
     String path, {
     bool migration = false,
   }) async {
-    await _requireManager().setModelDownloadDir(path, migration: migration);
+    await updateRuntimeConfig(modelDownloadDir: path, migration: migration);
   }
 
   Future<void> setConfigProviderUrl(String url) async {
-    _requireManager().setConfigProviderUrl(url);
+    await updateRuntimeConfig(configProviderUrl: url);
   }
 
   Future<void> setDownloadSource(DownloadSource source) async {
-    _requireManager().downloadSource = source;
+    await updateRuntimeConfig(downloadSource: source);
   }
 
   Future<void> download(String id) async {

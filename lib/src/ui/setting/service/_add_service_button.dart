@@ -140,87 +140,37 @@ class _AddButtonState extends State<_AddButton> {
   }
 }
 
-class _ServiceStatus extends StatefulWidget {
+class _ServiceStatus extends StatelessWidget {
   final RemoteServiceModel service;
 
   const _ServiceStatus({required this.service});
 
   @override
-  State<_ServiceStatus> createState() => _ServiceStatusState();
-}
-
-class _ServiceStatusState extends State<_ServiceStatus> {
-  bool loading = true;
-  ModelService? service;
-
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _test();
-    });
-  }
-
-  void _test() async {
-    if (!widget.service.enabled) {
-      return;
-    }
-    setState(() {
-      loading = true;
-      service = null;
-    });
-    final t = DateTime.now();
-    try {
-      final s = await ModelService.create(
-        url: widget.service.url,
-        id: widget.service.id,
-        accessKey: widget.service.apiKey,
-      );
-      if (s.available) {
-        service = s;
-      }
-    } catch (_) {
-      //
-    } finally {
-      final span = DateTime.now().difference(t).inMilliseconds;
-      if (span < 1000) {
-        await Future.delayed(Duration(milliseconds: 1000 - span));
-      }
-      loading = false;
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _ServiceStatus oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.service != oldWidget.service) {
-      _test();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (!widget.service.enabled) {
-      return const Icon(WindowsIcons.unknown);
-    }
-    Widget body;
-    if (loading) {
-      body = const SizedBox(
-        height: 16,
-        width: 16,
-        child: ProgressRing(strokeWidth: 2),
-      );
-    } else {
-      if (service == null) {
-        body = const Icon(WindowsIcons.error, color: Colors.errorPrimaryColor);
-      } else {
-        body = Icon(WindowsIcons.check_mark, color: Colors.green);
-      }
-    }
-    return body;
+    return BlocSelector<AppCubit, AppState, RemoteServiceStatus?>(
+      selector: (state) => state.remoteServiceStatuses[service.id],
+      builder: (context, status) {
+        if (!service.enabled || status == null || !status.enabled) {
+          return const Icon(WindowsIcons.unknown);
+        }
+        if (status.checking) {
+          return const SizedBox(
+            height: 16,
+            width: 16,
+            child: ProgressRing(strokeWidth: 2),
+          );
+        }
+        if (!status.available) {
+          return Tooltip(
+            message: status.error,
+            child: const Icon(
+              WindowsIcons.error,
+              color: Colors.errorPrimaryColor,
+            ),
+          );
+        }
+        return Icon(WindowsIcons.check_mark, color: Colors.green);
+      },
+    );
   }
 }

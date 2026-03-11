@@ -9,6 +9,9 @@ class ModelDownloadState {
 
 class ModelManageState {
   final bool initialized;
+  final bool runtimeReady;
+  final bool runtimeLoading;
+  final String runtimeError;
 
   final List<ModelInfo> models;
   final List<ModelInfo> remoteModels;
@@ -44,6 +47,9 @@ class ModelManageState {
 
   ModelManageState._({
     required this.initialized,
+    required this.runtimeReady,
+    required this.runtimeLoading,
+    required this.runtimeError,
     required this.models,
     required this.modelStates,
     required this.downloadSource,
@@ -58,6 +64,9 @@ class ModelManageState {
   factory ModelManageState.initial() {
     return ModelManageState._(
       initialized: false,
+      runtimeReady: false,
+      runtimeLoading: false,
+      runtimeError: '',
       models: [],
       modelStates: {},
       downloadSource: DownloadSource.aiFastHub,
@@ -72,6 +81,9 @@ class ModelManageState {
 
   ModelManageState copyWith({
     bool? initialized,
+    bool? runtimeReady,
+    bool? runtimeLoading,
+    String? runtimeError,
     List<ModelInfo>? models,
     List<ModelInfo>? localModels,
     Map<String, ModelDownloadState?>? modelStates,
@@ -85,6 +97,9 @@ class ModelManageState {
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
+      runtimeReady: runtimeReady ?? this.runtimeReady,
+      runtimeLoading: runtimeLoading ?? this.runtimeLoading,
+      runtimeError: runtimeError ?? this.runtimeError,
       models: models ?? this.models,
       modelStates: modelStates ?? this.modelStates,
       downloadSource: downloadSource ?? this.downloadSource,

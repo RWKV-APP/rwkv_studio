@@ -21,10 +21,10 @@ class ModelListPage extends StatefulWidget {
 }
 
 enum _SortType {
-  modelSize('参数大小'),
-  updateAt('更新时间'),
-  fileSize('文件大小'),
-  download('下载状态');
+  modelSize('Model size'),
+  updateAt('Updated time'),
+  fileSize('File size'),
+  download('Download');
 
   final String name;
 
@@ -32,8 +32,8 @@ enum _SortType {
 }
 
 class _ModelListPageState extends State<ModelListPage> {
-  late final _controllerSearchChange = StreamController<String>();
-  late final _controllerSearch = TextEditingController();
+  late final StreamController<String> _controllerSearchChange;
+  late final TextEditingController _controllerSearch;
 
   String? _selectedModelId;
   List<ModelInfo> _allModels = [];
@@ -43,6 +43,10 @@ class _ModelListPageState extends State<ModelListPage> {
 
   @override
   void initState() {
+    super.initState();
+    _controllerSearchChange = StreamController<String>();
+    _controllerSearch = TextEditingController();
+
     _controllerSearchChange.stream
         .map((event) => true)
         .timeout(const Duration(milliseconds: 500))
@@ -50,17 +54,16 @@ class _ModelListPageState extends State<ModelListPage> {
         .distinct((p, n) => p == n)
         .where((typing) => !typing)
         .skip(1)
-        .listen((t) {
+        .listen((_) {
           filterByKeywords(_controllerSearch.text.trim().toLowerCase());
         });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureRuntimeReady();
       _allModels = context.modelManage.state.allModels;
       _showModels = _allModels;
       sortModel();
     });
-
-    super.initState();
   }
 
   @override
@@ -68,6 +71,14 @@ class _ModelListPageState extends State<ModelListPage> {
     _controllerSearchChange.close();
     _controllerSearch.dispose();
     super.dispose();
+  }
+
+  Future<void> _ensureRuntimeReady() async {
+    try {
+      await context.modelManage.ensureRuntimeReady();
+    } catch (e) {
+      loge(e);
+    }
   }
 
   void filterByKeywords(String keywords) {
@@ -79,17 +90,17 @@ class _ModelListPageState extends State<ModelListPage> {
     }
     logd('search: $keywords');
 
-    final m = _allModels.where(
+    final filtered = _allModels.where(
       (e) =>
           e.name.toLowerCase().contains(keywords) ||
           e.tags.any((t) => t.toLowerCase().contains(keywords)) ||
           e.backend.name.toLowerCase().contains(keywords),
     );
-    final selected = m.any((e) => e.id == _selectedModelId);
+    final selected = filtered.any((e) => e.id == _selectedModelId);
     if (!selected) {
       _selectedModelId = null;
     }
-    _showModels = m.toList();
+    _showModels = filtered.toList();
     sortModel();
   }
 
@@ -100,24 +111,24 @@ class _ModelListPageState extends State<ModelListPage> {
       sortModel();
       return;
     }
-    final ms = _allModels.where(
+    final filtered = _allModels.where(
       (e) =>
           filters.contains(e.backend.name) ||
           e.tags.any((t) => filters.contains(t)) ||
           e.groups.any((t) => filters.contains(t)),
     );
-    final selected = ms.any((e) => e.id == _selectedModelId);
+    final selected = filtered.any((e) => e.id == _selectedModelId);
     if (!selected) {
       _selectedModelId = null;
     }
-    _showModels = ms.toList();
+    _showModels = filtered.toList();
     sortModel();
   }
 
   void sortModel() {
     _showModels.sort((a, b) {
-      int av = a.localPath.isNotEmpty ? 1 : 0;
-      int bv = b.localPath.isNotEmpty ? 1 : 0;
+      final av = a.localPath.isNotEmpty ? 1 : 0;
+      final bv = b.localPath.isNotEmpty ? 1 : 0;
       if (a.isRemote) {
         return -1;
       }
@@ -156,14 +167,14 @@ class _ModelListPageState extends State<ModelListPage> {
           _controllerSearchChange.add(v);
         },
         suffix: const Padding(
-          padding: .only(right: 12),
+          padding: EdgeInsets.only(right: 12),
           child: Icon(FluentIcons.search, size: 16),
         ),
-        suffixMode: .always,
       ),
     );
+
     final listHeaderBar = Row(
-      mainAxisAlignment: .spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _SortButton(
           sortType: _sortType,
@@ -183,7 +194,7 @@ class _ModelListPageState extends State<ModelListPage> {
           onPressed: () async {
             await context.modelManage.updateModelList().withToast(
               context,
-              success: '更新列表成功',
+              success: 'Model list updated',
             );
             filterByFilters(_filters);
             sortModel();
@@ -192,7 +203,7 @@ class _ModelListPageState extends State<ModelListPage> {
             children: [
               Icon(FluentIcons.refresh),
               SizedBox(width: 8),
-              Text('更新列表'),
+              Text('Refresh'),
             ],
           ),
         ),
@@ -215,11 +226,11 @@ class _ModelListPageState extends State<ModelListPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Text('浏览模型', style: context.typography.subtitle),
+              Text('Models', style: context.typography.subtitle),
               const Spacer(),
               searchBar,
               const SizedBox(width: 16),
-              const Divider(direction: .vertical, size: 24),
+              const Divider(direction: Axis.vertical, size: 24),
               const SizedBox(width: 16),
               const _SourceSelector(),
             ],
@@ -227,68 +238,97 @@ class _ModelListPageState extends State<ModelListPage> {
         ),
         const Divider(),
         Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: .stretch,
-                  children: [
-                    Padding(
-                      padding: const .symmetric(horizontal: 8, vertical: 4),
-                      child: LayoutBuilder(
-                        builder: (ctx, cs) {
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minWidth: cs.maxWidth,
-                              ),
-                              child: listHeaderBar,
+          child: BlocBuilder<ModelManageCubit, ModelManageState>(
+            buildWhen: (p, c) =>
+                p.runtimeReady != c.runtimeReady ||
+                p.runtimeLoading != c.runtimeLoading ||
+                p.runtimeError != c.runtimeError,
+            builder: (context, state) {
+              if (state.runtimeLoading && !state.runtimeReady) {
+                return const Center(child: ProgressRing());
+              }
+              if (state.runtimeError.isNotEmpty && !state.runtimeReady) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        state.runtimeError,
+                        style: const TextStyle(color: Colors.errorPrimaryColor),
+                      ),
+                      const SizedBox(height: 12),
+                      Button(
+                        onPressed: _ensureRuntimeReady,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: LayoutBuilder(
+                            builder: (ctx, cs) {
+                              return SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minWidth: cs.maxWidth),
+                                  child: listHeaderBar,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const Divider(),
+                        Expanded(
+                          child: ModelList(
+                            models: _showModels,
+                            selectedModelId: _selectedModelId ?? '',
+                            onModelSelected: (model) {
+                              setState(() {
+                                _selectedModelId = model.id;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(direction: Axis.vertical),
+                  Expanded(
+                    flex: 5,
+                    child: _selectedModelId == null || _selectedModelId!.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No model selected',
+                              style: AppTextStyle.bodySecondary,
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    const Divider(),
-                    Expanded(
-                      child: ModelList(
-                        models: _showModels,
-                        selectedModelId: _selectedModelId ?? '',
-                        onModelSelected: (model) {
-                          setState(() {
-                            _selectedModelId = model.id;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(direction: .vertical),
-              Expanded(
-                flex: 5,
-                child: _selectedModelId == null || _selectedModelId!.isEmpty
-                    ? Center(
-                        child: Text('未选择模型', style: AppTextStyle.bodySecondary),
-                      )
-                    : BlocSelector<
-                        ModelManageCubit,
-                        ModelManageState,
-                        ModelInfo?
-                      >(
-                        selector: (state) => state.allModels
-                            .where((m) => m.id == _selectedModelId)
-                            .firstOrNull,
-                        builder: (context, state) {
-                          if (state == null) {
-                            return const SizedBox();
-                          }
-                          return ModelDetail(model: state);
-                        },
-                      ),
-              ),
-            ],
+                          )
+                        : BlocSelector<ModelManageCubit, ModelManageState, ModelInfo?>(
+                            selector: (state) => state.allModels
+                                .where((m) => m.id == _selectedModelId)
+                                .firstOrNull,
+                            builder: (context, state) {
+                              if (state == null) {
+                                return const SizedBox();
+                              }
+                              return ModelDetail(model: state);
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],
@@ -311,8 +351,7 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
       return MenuFlyout(
         items: [
           MenuFlyoutItem(
-            leading: const Text('下载源'),
-            text: const SizedBox(),
+            text: const Text('Download source'),
             onPressed: null,
           ),
           for (final s in [
@@ -323,7 +362,7 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
             DownloadSource.googleApis,
           ])
             ToggleMenuFlyoutItem(
-              text: Text(s == DownloadSource.auto ? '自动选择' : s.name),
+              text: Text(s == DownloadSource.auto ? 'Auto' : s.name),
               value: s == selected,
               onChanged: (bool value) {
                 context.modelManage.setDownloadSource(s);
@@ -354,9 +393,7 @@ class _SourceSelector extends StatelessWidget {
                 child: const Icon(FluentIcons.server),
               ),
               const SizedBox(width: 8),
-              Text(
-                "下载源: ${state == DownloadSource.auto ? '自动选择' : state.name}",
-              ),
+              Text('Source: ${state == DownloadSource.auto ? 'Auto' : state.name}'),
             ],
           ),
         );
@@ -389,7 +426,7 @@ class _SortButton extends StatelessWidget {
     );
   }
 
-  void _showMenu() async {
+  void _showMenu() {
     controller.showFlyout(
       autoModeConfiguration: FlyoutAutoConfiguration(
         preferredMode: FlyoutPlacementMode.bottomCenter,
@@ -433,7 +470,7 @@ class _FilterButton extends StatelessWidget {
           children: [
             const Icon(FluentIcons.filter),
             const SizedBox(width: 8),
-            Text(filter.isEmpty ? '无过滤' : '${filter.length} 个过滤'),
+            Text(filter.isEmpty ? 'No filters' : '${filter.length} filters'),
           ],
         ),
         onPressed: () {
@@ -464,7 +501,7 @@ class _FilterButton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '分组',
+                    'Groups',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12.0),
@@ -489,7 +526,7 @@ class _FilterButton extends StatelessWidget {
                   ),
                   const SizedBox(height: 12.0),
                   const Text(
-                    '标签',
+                    'Tags',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12.0),
@@ -517,7 +554,7 @@ class _FilterButton extends StatelessWidget {
                     children: [
                       const Spacer(),
                       Button(
-                        child: const Text('清空'),
+                        child: const Text('Clear'),
                         onPressed: () {
                           filters.clear();
                           cs(() {});
@@ -529,7 +566,7 @@ class _FilterButton extends StatelessWidget {
                           onFilterChanged(filters);
                           Flyout.of(context).close();
                         },
-                        child: const Text('确定'),
+                        child: const Text('Apply'),
                       ),
                     ],
                   ),

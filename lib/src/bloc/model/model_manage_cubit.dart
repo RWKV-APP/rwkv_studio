@@ -24,14 +24,36 @@ extension Ext2 on ModelManager {
   }).toList();
 }
 
+class _ModelManagerRuntimeConfig {
+  final String modelDownloadDir;
+  final String configProviderUrl;
+  final DownloadSource downloadSource;
+
+  const _ModelManagerRuntimeConfig({
+    required this.modelDownloadDir,
+    required this.configProviderUrl,
+    required this.downloadSource,
+  });
+}
+
 class ModelManageCubit extends Cubit<ModelManageState> {
   final ModelManagerRepository _repository;
   final RemoteServiceRepository _remoteServiceRepository;
   StreamSubscription<ModelTaskUpdateEvent>? _taskUpdateSubscription;
-  bool _managerInitialized = false;
+  late final StreamSubscription<RemoteServiceSnapshot>
+  _remoteServiceSnapshotSubscription;
+  Future<void>? _runtimeInitFuture;
+  _ModelManagerRuntimeConfig? _desiredRuntimeConfig;
+  _ModelManagerRuntimeConfig? _appliedRuntimeConfig;
 
   ModelManageCubit(this._repository, this._remoteServiceRepository)
-    : super(ModelManageState.initial());
+    : super(ModelManageState.initial()) {
+    _remoteServiceSnapshotSubscription = _remoteServiceRepository
+        .watchSnapshot()
+        .listen((snapshot) {
+          emit(state.copyWith(remoteModels: snapshot.remoteModels));
+        });
+  }
 
   Iterable<ModelInfo> get availableTextModels => [
     ...state.remoteModels,
@@ -42,53 +64,152 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     ),
   ];
 
-  Future initManager({
-    required String modelDownloadDir,
-    required String configProviderUrl,
-  }) async {
-    if (kIsWeb || _managerInitialized) {
+  Future<void> ensureRuntimeReady() async {
+    if (kIsWeb) {
       return;
     }
-    await _repository.initialize(
+    if (_repository.isInitialized) {
+      if (!state.runtimeReady ||
+          state.runtimeLoading ||
+          state.runtimeError.isNotEmpty) {
+        emit(
+          state.copyWith(
+            runtimeReady: true,
+            runtimeLoading: false,
+            runtimeError: '',
+          ),
+        );
+      }
+      return;
+    }
+    _runtimeInitFuture ??= _initializeRuntime().whenComplete(() {
+      _runtimeInitFuture = null;
+    });
+    await _runtimeInitFuture;
+  }
+
+  void setRuntimeConfig({
+    required String modelDownloadDir,
+    required String configProviderUrl,
+    DownloadSource? downloadSource,
+  }) {
+    if (kIsWeb) {
+      return;
+    }
+    final desired = _ModelManagerRuntimeConfig(
       modelDownloadDir: modelDownloadDir,
       configProviderUrl: configProviderUrl,
-      downloadSource: state.downloadSource,
+      downloadSource: downloadSource ?? state.downloadSource,
     );
-    await _taskUpdateSubscription?.cancel();
-    _taskUpdateSubscription = _repository.watchTaskUpdates().listen(
-      (event) {
-        _emitTaskUpdate(
-          modelId: event.modelId,
-          update: event.update,
-          error: event.error,
-        );
-      },
-      onError: (e) {
-        loge(e);
-      },
+    _desiredRuntimeConfig = desired;
+    emit(
+      state.copyWith(
+        downloadDir: desired.modelDownloadDir,
+        downloadSource: desired.downloadSource,
+      ),
     );
-    _emitCatalogSnapshot(
-      _repository.getCurrentCatalog(),
-      downloadDir: modelDownloadDir,
+  }
+
+  Future<void> syncRuntimeConfig({
+    required String modelDownloadDir,
+    required String configProviderUrl,
+    DownloadSource? downloadSource,
+    bool migration = false,
+    bool refreshLocalCatalog = false,
+  }) async {
+    if (kIsWeb) {
+      return;
+    }
+    setRuntimeConfig(
+      modelDownloadDir: modelDownloadDir,
+      configProviderUrl: configProviderUrl,
+      downloadSource: downloadSource,
     );
-    _managerInitialized = true;
+    final desired = _requireRuntimeConfig();
+    await ensureRuntimeReady();
+
+    final previous = _appliedRuntimeConfig;
+    if (previous == null) {
+      return;
+    }
+
+    final downloadDirChanged =
+        previous.modelDownloadDir != desired.modelDownloadDir;
+    final configUrlChanged =
+        previous.configProviderUrl != desired.configProviderUrl;
+    final downloadSourceChanged =
+        previous.downloadSource != desired.downloadSource;
+    if (!downloadDirChanged && !configUrlChanged && !downloadSourceChanged) {
+      return;
+    }
+
+    await _repository.updateRuntimeConfig(
+      modelDownloadDir: downloadDirChanged ? desired.modelDownloadDir : null,
+      migration: migration,
+      configProviderUrl: configUrlChanged ? desired.configProviderUrl : null,
+      downloadSource: downloadSourceChanged ? desired.downloadSource : null,
+    );
+    _appliedRuntimeConfig = desired;
+
+    if (downloadDirChanged || configUrlChanged || refreshLocalCatalog) {
+      _emitCatalogSnapshot(
+        await _repository.refreshLocalCatalog(),
+        downloadDir: desired.modelDownloadDir,
+        runtimeReady: true,
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        runtimeReady: true,
+        runtimeLoading: false,
+        runtimeError: '',
+        downloadDir: desired.modelDownloadDir,
+        downloadSource: desired.downloadSource,
+      ),
+    );
   }
 
   Future setModelDownloadDir(String path, {bool migration = false}) async {
-    if (!_managerInitialized) {
+    final config = _requireRuntimeConfig();
+    logd('Model download dir set to $path, updating model list');
+    if (!_repository.isInitialized) {
+      setRuntimeConfig(
+        modelDownloadDir: path,
+        configProviderUrl: config.configProviderUrl,
+        downloadSource: config.downloadSource,
+      );
       return;
     }
-    await _repository.setModelDownloadDir(path, migration: migration);
-    logd('Model download dir set to $path, updating model list');
-    await updateModelList(remote: false);
+    await syncRuntimeConfig(
+      modelDownloadDir: path,
+      configProviderUrl: config.configProviderUrl,
+      downloadSource: config.downloadSource,
+      migration: migration,
+      refreshLocalCatalog: true,
+    );
   }
 
   Future updateModelConfigUrl(String url) async {
-    if (kIsWeb || !_managerInitialized) {
+    if (kIsWeb) {
       return;
     }
-    await _repository.setConfigProviderUrl(url);
-    await updateModelList(remote: false);
+    final config = _requireRuntimeConfig();
+    if (!_repository.isInitialized) {
+      setRuntimeConfig(
+        modelDownloadDir: config.modelDownloadDir,
+        configProviderUrl: url,
+        downloadSource: config.downloadSource,
+      );
+      return;
+    }
+    await syncRuntimeConfig(
+      modelDownloadDir: config.modelDownloadDir,
+      configProviderUrl: url,
+      downloadSource: config.downloadSource,
+      refreshLocalCatalog: true,
+    );
   }
 
   Future init() async {
@@ -109,6 +230,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     emit(
       state.copyWith(
         initialized: true,
+        runtimeLoading: false,
         importedModels: importedModels,
         backends: [
           ModelBackend.albatross,
@@ -122,6 +244,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   Future download(String id) async {
     try {
+      await ensureRuntimeReady();
       await _repository.download(id);
     } catch (e) {
       _emitTaskUpdate(
@@ -133,6 +256,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future resume(String id) async {
+    await ensureRuntimeReady();
     await _repository.resume(id);
   }
 
@@ -142,11 +266,13 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       emit(state.copyWith(importedModels: importedModels));
       return;
     }
+    await ensureRuntimeReady();
     await _repository.deleteLocalModelFiles(id);
     _emitCatalogSnapshot(_repository.getCurrentCatalog());
   }
 
   Future cancel(String id) async {
+    await ensureRuntimeReady();
     await _repository.cancel(id);
     emit(
       state.copyWith(
@@ -157,27 +283,48 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future pause(String id) async {
+    await ensureRuntimeReady();
     await _repository.pause(id);
   }
 
   Future updateModelList({bool local = true, bool remote = true}) async {
     if (remote) {
-      final models = await _remoteServiceRepository.fetchRemoteModels(
-        forceRefresh: true,
-      );
-      emit(state.copyWith(remoteModels: models));
+      await _remoteServiceRepository.fetchRemoteModels(forceRefresh: true);
     }
 
     if (local && !kIsWeb) {
-      _emitCatalogSnapshot(await _repository.refreshLocalCatalog());
+      await ensureRuntimeReady();
+      _emitCatalogSnapshot(
+        await _repository.refreshLocalCatalog(),
+        downloadDir:
+            _desiredRuntimeConfig?.modelDownloadDir ?? state.downloadDir,
+        runtimeReady: true,
+      );
     }
   }
 
   Future<void> setDownloadSource(DownloadSource source) async {
-    if (_managerInitialized) {
-      await _repository.setDownloadSource(source);
-    }
     emit(state.copyWith(downloadSource: source));
+    if (kIsWeb) {
+      return;
+    }
+    final config = _desiredRuntimeConfig;
+    if (config == null) {
+      return;
+    }
+    if (!_repository.isInitialized) {
+      setRuntimeConfig(
+        modelDownloadDir: config.modelDownloadDir,
+        configProviderUrl: config.configProviderUrl,
+        downloadSource: source,
+      );
+      return;
+    }
+    await syncRuntimeConfig(
+      modelDownloadDir: config.modelDownloadDir,
+      configProviderUrl: config.configProviderUrl,
+      downloadSource: source,
+    );
   }
 
   Future onImportModel(ModelInfo model) async {
@@ -202,6 +349,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         : null;
     emit(
       state.copyWith(
+        runtimeReady: update.isCompleted ? true : state.runtimeReady,
         models: models,
         modelStates: {
           ...state.modelStates,
@@ -216,9 +364,13 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   void _emitCatalogSnapshot(
     ModelCatalogSnapshot snapshot, {
     String? downloadDir,
+    bool? runtimeReady,
   }) {
     emit(
       state.copyWith(
+        runtimeReady: runtimeReady ?? state.runtimeReady,
+        runtimeLoading: false,
+        runtimeError: '',
         models: snapshot.localModels,
         tags: snapshot.tags,
         groups: snapshot.groups,
@@ -231,9 +383,64 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     );
   }
 
+  Future<void> _initializeRuntime() async {
+    final config = _requireRuntimeConfig();
+    emit(state.copyWith(runtimeLoading: true, runtimeError: ''));
+    try {
+      await _repository.ensureInitialized(
+        modelDownloadDir: config.modelDownloadDir,
+        configProviderUrl: config.configProviderUrl,
+        downloadSource: config.downloadSource,
+      );
+      _bindTaskUpdateSubscription();
+      _appliedRuntimeConfig = config;
+      _emitCatalogSnapshot(
+        _repository.getCurrentCatalog(),
+        downloadDir: config.modelDownloadDir,
+        runtimeReady: true,
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          runtimeReady: false,
+          runtimeLoading: false,
+          runtimeError: e.toString(),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  void _bindTaskUpdateSubscription() {
+    if (_taskUpdateSubscription != null) {
+      return;
+    }
+    _taskUpdateSubscription = _repository.watchTaskUpdates().listen(
+      (event) {
+        _emitTaskUpdate(
+          modelId: event.modelId,
+          update: event.update,
+          error: event.error,
+        );
+      },
+      onError: (e) {
+        loge(e);
+      },
+    );
+  }
+
+  _ModelManagerRuntimeConfig _requireRuntimeConfig() {
+    final config = _desiredRuntimeConfig;
+    if (config == null) {
+      throw StateError('Model manager runtime config has not been provided');
+    }
+    return config;
+  }
+
   @override
   Future<void> close() async {
     await _taskUpdateSubscription?.cancel();
+    await _remoteServiceSnapshotSubscription.cancel();
     return super.close();
   }
 }

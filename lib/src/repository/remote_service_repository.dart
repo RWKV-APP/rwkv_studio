@@ -6,6 +6,74 @@ import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/models/settings/model_settings_model.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
+class RemoteServiceStatus {
+  final bool enabled;
+  final bool checking;
+  final bool available;
+  final String error;
+  final int modelCount;
+  final DateTime? checkedAt;
+
+  const RemoteServiceStatus({
+    required this.enabled,
+    required this.checking,
+    required this.available,
+    required this.error,
+    required this.modelCount,
+    required this.checkedAt,
+  });
+
+  const RemoteServiceStatus.disabled()
+    : enabled = false,
+      checking = false,
+      available = false,
+      error = '',
+      modelCount = 0,
+      checkedAt = null;
+
+  const RemoteServiceStatus.checking()
+    : enabled = true,
+      checking = true,
+      available = false,
+      error = '',
+      modelCount = 0,
+      checkedAt = null;
+
+  factory RemoteServiceStatus.available(int modelCount) {
+    return RemoteServiceStatus(
+      enabled: true,
+      checking: false,
+      available: true,
+      error: '',
+      modelCount: modelCount,
+      checkedAt: DateTime.now(),
+    );
+  }
+
+  factory RemoteServiceStatus.unavailable(Object error) {
+    return RemoteServiceStatus(
+      enabled: true,
+      checking: false,
+      available: false,
+      error: error.toString(),
+      modelCount: 0,
+      checkedAt: DateTime.now(),
+    );
+  }
+}
+
+class RemoteServiceSnapshot {
+  final List<ModelServiceWrap> services;
+  final List<RemoteModelInfo> remoteModels;
+  final Map<String, RemoteServiceStatus> statuses;
+
+  const RemoteServiceSnapshot({
+    this.services = const [],
+    this.remoteModels = const [],
+    this.statuses = const {},
+  });
+}
+
 class RemoteServiceConnection {
   final RemoteServiceModel config;
   final ModelService service;
@@ -14,13 +82,28 @@ class RemoteServiceConnection {
 }
 
 class RemoteServiceRepository {
-  List<RemoteServiceConnection> _connections = const [];
+  final StreamController<RemoteServiceSnapshot> _snapshotController =
+      StreamController<RemoteServiceSnapshot>.broadcast();
+  List<RemoteServiceModel> _configs = const [];
   List<ModelServiceWrap> _services = const [];
   List<RemoteModelInfo> _cachedRemoteModels = const [];
+  Map<String, RemoteServiceStatus> _statuses = const {};
 
   List<ModelServiceWrap> get connectedServices => _services;
 
   List<RemoteModelInfo> get cachedRemoteModels => _cachedRemoteModels;
+
+  Map<String, RemoteServiceStatus> get statuses => _statuses;
+
+  RemoteServiceSnapshot get snapshot => RemoteServiceSnapshot(
+    services: _services,
+    remoteModels: _cachedRemoteModels,
+    statuses: _statuses,
+  );
+
+  Stream<RemoteServiceSnapshot> watchSnapshot() {
+    return _snapshotController.stream;
+  }
 
   Future<RemoteServiceConnection?> connectService(
     RemoteServiceModel config,
@@ -36,27 +119,18 @@ class RemoteServiceRepository {
     return RemoteServiceConnection(config: config, service: service);
   }
 
-  Future<List<RemoteServiceConnection>> connectServices(
-    Iterable<RemoteServiceModel> configs,
-  ) async {
-    final connections = <RemoteServiceConnection>[];
-    for (final config in configs) {
-      final connection = await connectService(config);
-      if (connection != null) {
-        connections.add(connection);
-      }
-    }
-    return connections;
-  }
-
   Future<void> syncConnections(Iterable<RemoteServiceModel> configs) async {
-    final connections = await connectServices(configs);
-    _connections = connections;
-    _services = [
-      for (final connection in connections)
-        ModelServiceWrap(connection.service, name: connection.config.name),
-    ];
+    _configs = configs.toList();
+    _statuses = {
+      for (final config in _configs)
+        config.id: config.enabled && config.url.trim().isNotEmpty
+            ? const RemoteServiceStatus.checking()
+            : const RemoteServiceStatus.disabled(),
+    };
+    _services = const [];
     _cachedRemoteModels = const [];
+    _emitSnapshot();
+    await _refreshRuntime();
   }
 
   Future<bool> testConnection(RemoteServiceModel config) async {
@@ -64,23 +138,8 @@ class RemoteServiceRepository {
     return connection?.service.available ?? false;
   }
 
-  Future<void> refreshConnections([
-    Iterable<RemoteServiceConnection>? connections,
-  ]) async {
-    for (final connection in connections ?? _connections) {
-      try {
-        await connection.service.refresh();
-      } catch (e, s) {
-        loge(e, s);
-      }
-    }
-  }
-
-  Future<List<LoadedModel>> getLoadedModels([
-    Iterable<RemoteServiceConnection>? connections,
-  ]) async {
-    final items = connections ?? _connections;
-    return [for (final connection in items) ...connection.service.models];
+  Future<void> refreshConnections() async {
+    await _refreshRuntime();
   }
 
   Future<List<RemoteModelInfo>> fetchRemoteModels({
@@ -89,11 +148,50 @@ class RemoteServiceRepository {
     if (!forceRefresh && _cachedRemoteModels.isNotEmpty) {
       return _cachedRemoteModels;
     }
+    await _refreshRuntime();
+    return _cachedRemoteModels;
+  }
 
+  Future<void> dispose() async {
+    _configs = const [];
+    _services = const [];
+    _cachedRemoteModels = const [];
+    _statuses = const {};
+    await _snapshotController.close();
+  }
+
+  Future<void> _refreshRuntime() async {
+    final services = <ModelServiceWrap>[];
     final models = <RemoteModelInfo>[];
-    for (final service in _services) {
+    final statuses = <String, RemoteServiceStatus>{
+      for (final config in _configs)
+        config.id: config.enabled && config.url.trim().isNotEmpty
+            ? const RemoteServiceStatus.checking()
+            : const RemoteServiceStatus.disabled(),
+    };
+    _statuses = statuses;
+    _services = const [];
+    _cachedRemoteModels = const [];
+    _emitSnapshot();
+
+    for (final config in _configs.where(
+      (config) => config.enabled && config.url.trim().isNotEmpty,
+    )) {
       try {
-        await service.refresh();
+        final connection = await connectService(config);
+        if (connection == null || !connection.service.available) {
+          statuses[config.id] = RemoteServiceStatus.unavailable(
+            'service unavailable',
+          );
+          _statuses = Map<String, RemoteServiceStatus>.from(statuses);
+          _emitSnapshot();
+          continue;
+        }
+
+        final service = ModelServiceWrap(
+          connection.service,
+          name: connection.config.name,
+        );
         final remoteModels = service.models
             .map(
               (model) => RemoteModelInfo.fromMap(model.info.toJson())
@@ -102,25 +200,37 @@ class RemoteServiceRepository {
                 ..providerUrl = service.url,
             )
             .toList();
+        services.add(service);
+        models.addAll(remoteModels);
+        statuses[config.id] = RemoteServiceStatus.available(
+          remoteModels.length,
+        );
         logd(
           'synced ${remoteModels.length} models from ${service.id} (${service.url})',
         );
-        models.addAll(remoteModels);
       } on TimeoutException {
-        logw('timeout fetching models from ${service.id} (${service.url})');
+        statuses[config.id] = RemoteServiceStatus.unavailable('timeout');
+        logw('timeout fetching models from ${config.id} (${config.url})');
       } catch (e, s) {
+        statuses[config.id] = RemoteServiceStatus.unavailable(e);
         loge(e, s);
       }
+      _services = List<ModelServiceWrap>.from(services);
+      _cachedRemoteModels = List<RemoteModelInfo>.from(models);
+      _statuses = Map<String, RemoteServiceStatus>.from(statuses);
+      _emitSnapshot();
     }
-    if (models.isNotEmpty || _services.isEmpty) {
-      _cachedRemoteModels = models;
-    }
-    return _cachedRemoteModels;
+
+    _services = services;
+    _cachedRemoteModels = models;
+    _statuses = statuses;
+    _emitSnapshot();
   }
 
-  Future<void> dispose() async {
-    _connections = const [];
-    _services = const [];
-    _cachedRemoteModels = const [];
+  void _emitSnapshot() {
+    if (_snapshotController.isClosed) {
+      return;
+    }
+    _snapshotController.add(snapshot);
   }
 }

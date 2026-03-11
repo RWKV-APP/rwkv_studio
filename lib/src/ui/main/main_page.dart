@@ -15,6 +15,7 @@ import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
+
 part 'navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
@@ -56,7 +57,7 @@ class MainPage extends StatelessWidget {
       pane: NavigationPane(
         // header: const Text('RWKV Studio'),
         size: const NavigationPaneSize(openWidth: 160, openMinWidth: 120),
-        selected: state.pane,
+        selected: state.pane.clamp(0, state.expandedItems().length),
         customPane: !state.showNavBar ? _HiddenNavPane() : null,
         displayMode: PaneDisplayMode.compact,
         acrylicDisabled: false,

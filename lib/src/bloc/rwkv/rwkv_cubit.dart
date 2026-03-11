@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
@@ -22,9 +24,15 @@ extension Ext on BuildContext {
 class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   final DecodeParamRepository _decodeParamRepository;
   final RemoteServiceRepository _remoteServiceRepository;
+  late final StreamSubscription<RemoteServiceSnapshot>
+  _remoteServiceSubscription;
 
   RwkvCubit(this._decodeParamRepository, this._remoteServiceRepository)
-    : super(RwkvState.initial());
+    : super(RwkvState.initial()) {
+    _remoteServiceSubscription = _remoteServiceRepository
+        .watchSnapshot()
+        .listen(_syncRemoteServiceInstances);
+  }
 
   Future init() async {
     logd('init rwkv');
@@ -54,9 +62,9 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     emit(state.copyWith(decodeParams: params));
   }
 
-  void syncRemoteServiceInstances() {
+  void _syncRemoteServiceInstances(RemoteServiceSnapshot snapshot) {
     final instances = <String, ModelInstanceState>{};
-    for (final service in _remoteServiceRepository.connectedServices) {
+    for (final service in snapshot.services) {
       final ms = service.models;
       for (final m in ms) {
         final modelId = m.info.id;
@@ -302,5 +310,11 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
       instance.id,
       info.providerName,
     );
+  }
+
+  @override
+  Future<void> close() async {
+    await _remoteServiceSubscription.cancel();
+    return super.close();
   }
 }

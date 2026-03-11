@@ -42,25 +42,32 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      backends = [ModelBackend.unknown, ...context.modelManage.state.backends];
-      tags = context.modelManage.state.getDisplayTags();
-      groups = context.modelManage.state.getDisplayGroups();
-      setState(() {
-        message = '正在解析模型信息...';
-      });
       try {
+        setState(() {
+          message = 'Loading model metadata...';
+        });
+        await context.modelManage.ensureRuntimeReady();
+        if (!mounted) {
+          return;
+        }
+        backends = [ModelBackend.unknown, ...context.modelManage.state.backends];
+        tags = context.modelManage.state.getDisplayTags();
+        groups = context.modelManage.state.getDisplayGroups();
+        setState(() {
+          message = 'Resolving model info...';
+        });
         await resolve();
       } catch (e) {
         if (mounted) {
           setState(() {
-            message = "解析模型信息失败\n$e";
+            message = 'Failed to resolve model info\n$e';
           });
         }
       }
     });
   }
 
-  void calculateMd5() async {
+  Future<void> calculateMd5() async {
     calculating = true;
     setState(() {});
     final md5 = await File(widget.path).md5();
@@ -90,11 +97,11 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
     }
   }
 
-  Future resolve() async {
+  Future<void> resolve() async {
     final file = File(widget.path);
     final size = await file.length();
-    final sha256 = ''; // await file.sha256();
-    final md5 = ''; //await file.md5();
+    const sha256 = '';
+    const md5 = '';
 
     model = ModelInfo.base(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -112,12 +119,12 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
 
     setState(() {});
 
-    calculateMd5();
+    await calculateMd5();
   }
 
-  void onConfirmTap() async {
+  void onConfirmTap() {
     if (model!.name.isEmpty) {
-      context.toast('请输入名称');
+      context.toast('Please enter a model name');
       return;
     }
     Navigator.of(context).pop(model);
@@ -127,7 +134,7 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
   Widget build(BuildContext context) {
     return ContentDialog(
       constraints: const BoxConstraints(maxWidth: 600),
-      title: Text(model == null ? '请稍后...' : '导入模型'),
+      title: Text(model == null ? 'Please wait...' : 'Import model'),
       content: model == null
           ? Text(message ?? '...')
           : SingleChildScrollView(child: buildModelInfo()),
@@ -136,11 +143,11 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('取消'),
+          child: const Text('Cancel'),
         ),
         FilledButton(
           onPressed: model == null ? null : onConfirmTap,
-          child: const Text('确定'),
+          child: const Text('Confirm'),
         ),
       ],
     );
@@ -148,13 +155,10 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
 
   Widget modelExists() {
     if (existingModel != null) {
-      if (existingModel!.localPath.isEmpty) {
-        /// TODO
-      }
       return Padding(
-        padding: const .only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: 12),
         child: Text(
-          '模型列表中似乎已存在 md5 相同的模型, ${existingModel?.name}',
+          'A model with the same MD5 already exists: ${existingModel?.name}',
           style: const TextStyle(color: Colors.errorPrimaryColor),
         ),
       );
@@ -165,21 +169,21 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
   Widget buildModelInfo() {
     final model = this.model!;
     return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .stretch,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('文件路径   ${widget.path}', overflow: .ellipsis),
+        Text('Path   ${widget.path}', overflow: TextOverflow.ellipsis),
         const SizedBox(height: 12),
         const ToggleSwitch(
           checked: false,
           onChanged: null,
-          content: Text('拷贝到模型目录'),
+          content: Text('Copy into model directory'),
         ),
         const SizedBox(height: 12),
         modelExists(),
         Row(
           children: [
-            const SizedBox(width: 70, child: Text('模型名称')),
+            const SizedBox(width: 90, child: Text('Model name')),
             Expanded(
               child: TextBox(
                 maxLines: 1,
@@ -194,10 +198,10 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
         const SizedBox(height: 8),
         Row(
           children: [
-            const SizedBox(width: 70, child: Text('参数大小')),
+            const SizedBox(width: 90, child: Text('Model size')),
             Expanded(
               child: TextBox(
-                placeholder: '未知',
+                placeholder: 'Unknown',
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 onChanged: (v) {
@@ -213,19 +217,19 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
         const SizedBox(height: 8),
         Row(
           children: [
-            const SizedBox(width: 70, child: Text('词表')),
+            const SizedBox(width: 90, child: Text('Vocab')),
             Flexible(
               child: ComboBox(
                 value: 'b_rwkv_vocab_v20230424.txt',
                 onChanged: (v) {
                   this.model = model.copyWith(vocabId: v);
                 },
-                items: [
-                  const ComboBoxItem(
+                items: const [
+                  ComboBoxItem(
                     value: 'b_rwkv_vocab_v20230424.txt',
                     child: Text(
                       'b_rwkv_vocab_v20230424.txt',
-                      overflow: .ellipsis,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -233,31 +237,29 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
             ),
           ],
         ),
-
         const SizedBox(height: 8),
         Row(
           children: [
-            const SizedBox(width: 70, child: Text('文件大小')),
+            const SizedBox(width: 90, child: Text('File size')),
             Expanded(child: Text(model.fileSize.formatFileSize)),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           children: [
-            const SizedBox(width: 70, child: Text('MD5')),
-            if (model.md5.isNotEmpty)
-              Expanded(child: SelectableText(model.md5)),
+            const SizedBox(width: 90, child: Text('MD5')),
+            if (model.md5.isNotEmpty) Expanded(child: SelectableText(model.md5)),
             if (calculating)
               const SizedBox(width: 24, height: 24, child: ProgressRing()),
             if (!calculating)
-              Button(onPressed: calculateMd5, child: const Text('计算')),
+              Button(onPressed: calculateMd5, child: const Text('Calculate')),
           ],
         ),
         const SizedBox(height: 12),
         Row(
-          crossAxisAlignment: .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(width: 70, child: Text('推理后端')),
+            const SizedBox(width: 90, child: Text('Backend')),
             Expanded(
               child: RadioGroup(
                 groupValue: model.backend,
@@ -280,12 +282,11 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
             ),
           ],
         ),
-
         const SizedBox(height: 12),
         Row(
-          crossAxisAlignment: .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(width: 70, child: Text('模型分组')),
+            const SizedBox(width: 90, child: Text('Group')),
             Expanded(
               child: RadioGroup(
                 groupValue: model.groups.firstOrNull ?? '',
@@ -305,12 +306,11 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
             ),
           ],
         ),
-
         const SizedBox(height: 12),
         Row(
-          crossAxisAlignment: .start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(width: 70, child: Text('模型标签')),
+            const SizedBox(width: 90, child: Text('Tags')),
             Expanded(
               child: Wrap(
                 runSpacing: 6,
@@ -326,9 +326,7 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
                           );
                         } else {
                           this.model = model.copyWith(
-                            tags: model.tags
-                                .where((e) => e != tag.name)
-                                .toList(),
+                            tags: model.tags.where((e) => e != tag.name).toList(),
                           );
                         }
                         setState(() {});

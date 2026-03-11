@@ -1,29 +1,57 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
-class ModelListFlyout extends StatelessWidget {
+class ModelListFlyout extends StatefulWidget {
   final String? modelInstanceId;
   final Function(ModelInfo info) onModelSelected;
-
-  final List<ModelInfo> models;
-  final Map<String, ModelInstanceState> id2instance;
+  final bool Function(ModelInfo model)? filter;
 
   const ModelListFlyout({
     super.key,
     this.modelInstanceId,
     required this.onModelSelected,
-    required this.models,
-    required this.id2instance,
+    this.filter,
   });
 
-  Future _onModelSelected(BuildContext context, ModelInfo info) async {
+  @override
+  State<ModelListFlyout> createState() => _ModelListFlyoutState();
+}
+
+class _ModelListFlyoutState extends State<ModelListFlyout> {
+  bool _initializing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await context.modelManage.ensureRuntimeReady();
+    } catch (e) {
+      loge(e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _initializing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onModelSelected(BuildContext context, ModelInfo info) async {
     if (info.backend == ModelBackend.albatross && !info.isRemote) {
       if (context.app.getSelectedPython() == null) {
         showDialog(
@@ -52,24 +80,157 @@ class ModelListFlyout extends StatelessWidget {
         return;
       }
     }
-    onModelSelected(info);
+    widget.onModelSelected(info);
   }
 
-  Future _onModelReleased(BuildContext context, String instanceId) async {
+  Future<void> _onModelReleased(BuildContext context, String instanceId) async {
     context.rwkv.release(instanceId).withToast(context);
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    return BlocBuilder<ModelManageCubit, ModelManageState>(
+      buildWhen: (previous, current) =>
+          previous.runtimeLoading != current.runtimeLoading ||
+          previous.runtimeError != current.runtimeError ||
+          previous.models != current.models ||
+          previous.remoteModels != current.remoteModels,
+      builder: (context, modelManageState) {
+        return BlocBuilder<RwkvCubit, RwkvState>(
+          buildWhen: (previous, current) => previous.models != current.models,
+          builder: (context, rwkvState) {
+            return MenuFlyout(
+              items: _buildItems(
+                context: context,
+                modelManageState: modelManageState,
+                id2instance: rwkvState.models,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<MenuFlyoutItemBase> _buildItems({
+    required BuildContext context,
+    required ModelManageState modelManageState,
+    required Map<String, ModelInstanceState> id2instance,
+  }) {
+    final items = <MenuFlyoutItemBase>[];
+
+    if (_initializing || modelManageState.runtimeLoading) {
+      items.add(
+        MenuFlyoutItem(
+          onPressed: null,
+          text: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(width: 16, height: 16, child: ProgressRing()),
+              SizedBox(width: 8),
+              Text('Loading...'),
+            ],
+          ),
+        ),
+      );
+    } else {
+      final modelSetting = context.settings.state.model;
+      final models = [
+        ...modelManageState.remoteModels,
+        ...modelManageState.models.where(
+          (e) =>
+              e.localPath.isNotEmpty &&
+              e.groups.overlaps({'chat', 'albatross', 'roleplay'}),
+        ),
+      ].where(
+        (e) =>
+            !e.tags.contains('translate') &&
+            (modelSetting.enabledBackends.contains(e.backend) || e.isRemote),
+      ).where((e) => widget.filter == null || widget.filter!(e)).toList();
+
+      items.addAll(
+        _buildModelItems(
+          context: context,
+          models: models,
+          id2instance: id2instance,
+        ),
+      );
+
+      if (models.isEmpty) {
+        items.add(
+          MenuFlyoutItem(text: const Text('没有可用的模型'), onPressed: null),
+        );
+      }
+    }
+
+    if (modelManageState.runtimeError.isNotEmpty) {
+      items.add(
+        MenuFlyoutItem(
+          onPressed: null,
+          text: Tooltip(
+            message: modelManageState.runtimeError,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  FluentIcons.warning,
+                  color: Colors.warningPrimaryColor,
+                ),
+                SizedBox(width: 8),
+                Text('Models unavailable'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    items.add(const MenuFlyoutSeparator());
+
+    if (kIsWeb) {
+      items.add(
+        MenuFlyoutItem(
+          text: const Text('模型服务设置'),
+          onPressed: () {
+            context.app.jump2ModelServiceSettings();
+          },
+        ),
+      );
+    }
+
+    if (!kIsWeb) {
+      items.add(
+        MenuFlyoutItem(
+          text: const Text('模型管理'),
+          onPressed: () {
+            context.app.jump2ModelManage();
+          },
+        ),
+      );
+      items.add(
+        MenuFlyoutItem(
+          text: const Text('导入本地模型'),
+          onPressed: () {
+            context.toast('请将模型文件拖拽到应用窗口');
+          },
+        ),
+      );
+    }
+
+    return items;
+  }
+
+  List<MenuFlyoutItemBase> _buildModelItems({
+    required BuildContext context,
+    required List<ModelInfo> models,
+    required Map<String, ModelInstanceState> id2instance,
+  }) {
     /// grouping by provider name, if provider name is empty or length <= 2, then flat
     Map<String, List<ModelInfo>> groups = models.groupBy((e) => e.providerName);
     final flat = <ModelInfo>[
       for (final group in groups.entries)
-        if (group.key.isEmpty || group.value.length <= 2)
-          ...group.value
-        else
-          ...[],
+        if (group.key.isEmpty || group.value.length <= 2) ...group.value,
     ];
     groups.removeWhere((k, v) => k.isEmpty || v.length <= 2);
     groups = groups.map((k, v) {
@@ -77,61 +238,42 @@ class ModelListFlyout extends StatelessWidget {
       return MapEntry(k, v);
     });
 
-    return MenuFlyout(
-      items: [
-        for (final group in groups.entries)
-          MenuFlyoutSubItem(
-            text: Text("${group.key} (${group.value.length})"),
-            items: (c) {
-              return [
-                for (final model in group.value)
-                  _buildMenuItem(context: c, model: model, showProvider: false),
-              ];
-            },
-          ),
-
-        for (final model in flat)
-          _buildMenuItem(context: context, model: model),
-
-        if (models.isEmpty)
-          MenuFlyoutItem(text: const Text('没有可用的模型'), onPressed: null),
-        const MenuFlyoutSeparator(),
-        if (kIsWeb)
-          MenuFlyoutItem(
-            text: const Text('模型服务设置'),
-            onPressed: () {
-              context.app.jump2ModelServiceSettings();
-            },
-          ),
-        if (!kIsWeb)
-          MenuFlyoutItem(
-            text: const Text('模型管理'),
-            onPressed: () {
-              context.app.jump2ModelManage();
-            },
-          ),
-        if (!kIsWeb)
-          MenuFlyoutItem(
-            text: const Text('导入本地模型'),
-            onPressed: () {
-              context.toast('请将模型文件拖拽到应用窗口');
-            },
-          ),
-      ],
-    );
+    return [
+      for (final group in groups.entries)
+        MenuFlyoutSubItem(
+          text: Text("${group.key} (${group.value.length})"),
+          items: (c) {
+            return [
+              for (final model in group.value)
+                _buildMenuItem(
+                  context: c,
+                  model: model,
+                  id2instance: id2instance,
+                  showProvider: false,
+                ),
+            ];
+          },
+        ),
+      for (final model in flat)
+        _buildMenuItem(
+          context: context,
+          model: model,
+          id2instance: id2instance,
+        ),
+    ];
   }
 
   MenuFlyoutItem _buildMenuItem({
     required BuildContext context,
     required ModelInfo model,
+    required Map<String, ModelInstanceState> id2instance,
     bool showProvider = true,
   }) {
     Widget? trailing;
     String name = model.name;
     String tooltips = '';
 
-    final selectedInstance = id2instance[modelInstanceId];
-
+    final selectedInstance = id2instance[widget.modelInstanceId];
     final inst = id2instance.values
         .where((e) => e.info.id == model.id)
         .firstOrNull;
@@ -159,7 +301,6 @@ class ModelListFlyout extends StatelessWidget {
         : model.backend;
 
     Widget? icon;
-
     bool attachLink = false;
 
     if (model.isRemote) {
@@ -183,7 +324,7 @@ class ModelListFlyout extends StatelessWidget {
             if (icon != null) const SizedBox(width: 8),
             if (attachLink)
               const Padding(
-                padding: .only(right: 4),
+                padding: EdgeInsets.only(right: 4),
                 child: Icon(FluentIcons.link12, size: 12),
               ),
             Text(name),

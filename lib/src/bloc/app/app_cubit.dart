@@ -1,12 +1,14 @@
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
-import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
+import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
@@ -22,9 +24,17 @@ extension Ext on BuildContext {
 class AppCubit extends Cubit<AppState> {
   final LocalMachineRepository _localMachineRepository;
   final RemoteServiceRepository _remoteServiceRepository;
+  late final StreamSubscription<RemoteServiceSnapshot>
+  _remoteServiceSubscription;
 
   AppCubit(this._localMachineRepository, this._remoteServiceRepository)
-    : super(AppState.initial());
+    : super(AppState.initial()) {
+    _remoteServiceSubscription = _remoteServiceRepository
+        .watchSnapshot()
+        .listen((snapshot) {
+          emit(state.copyWith(remoteServiceStatuses: snapshot.statuses));
+        });
+  }
 
   Future init() async {
     detectPythonInterpreters();
@@ -37,27 +47,6 @@ class AppCubit extends Cubit<AppState> {
       loge(e, s);
     }
     _initIPAddress();
-  }
-
-  Future init2({required SettingState settings}) async {
-    final albatrossPath = settings.python.albatrossPath;
-    final selectedPythonId = settings.python.selected;
-
-    final userType = settings.appearance.userType;
-    emit(
-      state.copyWith(
-        navBarItems: userType == UserType.developer
-            ? NavBarItem.devNavItems()
-            : NavBarItem.defaultNavItems(),
-        albatrossPath: albatrossPath,
-        selectedPythonId: selectedPythonId,
-      ),
-    );
-
-    final serviceConfig = settings.model.remoteServices
-        .where((e) => e.enabled)
-        .toList();
-    updateModelServices(serviceConfig);
   }
 
   void setPane(int pane) {
@@ -112,7 +101,12 @@ class AppCubit extends Cubit<AppState> {
     final expand = navItems.flatten(
       (e) => <NavBarItem>[e, ...(e.subitems ?? [])],
     );
-    emit(state.copyWith(navBarItems: navItems, pane: expand.length - 1));
+    emit(
+      state.copyWith(
+        navBarItems: navItems,
+        pane: state.pane == -1 ? 0 : expand.length - 1,
+      ),
+    );
   }
 
   void onPythonSelected({required String id, String? albatrossPath}) {
@@ -124,9 +118,13 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future updateModelServices(List<RemoteServiceModel> configs) async {
-    await _remoteServiceRepository.syncConnections(
-      configs.where((e) => e.enabled),
-    );
+    await _remoteServiceRepository.syncConnections(configs);
+  }
+
+  @override
+  Future<void> close() async {
+    await _remoteServiceSubscription.cancel();
+    return super.close();
   }
 
   Future setFullScreen(bool fullScreen) async {

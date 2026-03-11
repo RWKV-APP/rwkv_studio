@@ -98,6 +98,7 @@ class AppState {
   final bool showNavBar;
   final RwkvHttpApiService rwkvModelService;
   final List<String> ipAddresses;
+  final Map<String, RemoteServiceStatus> remoteServiceStatuses;
 
   List<NavBarItem> expandedItems() {
     return navBarItems
@@ -115,11 +116,12 @@ class AppState {
     required this.showNavBar,
     required this.rwkvModelService,
     required this.ipAddresses,
+    required this.remoteServiceStatuses,
   });
 
   factory AppState.initial() {
     return AppState(
-      pane: 0,
+      pane: -1,
       pythons: [],
       selectedPythonId: '',
       albatrossPath: 'app.py',
@@ -128,6 +130,7 @@ class AppState {
       showNavBar: true,
       rwkvModelService: RwkvHttpApiService(),
       ipAddresses: [],
+      remoteServiceStatuses: const {},
     );
   }
 
@@ -141,6 +144,7 @@ class AppState {
     bool? showNavBar,
     RwkvHttpApiService? rwkvModelService,
     List<String>? ipAddresses,
+    Map<String, RemoteServiceStatus>? remoteServiceStatuses,
   }) {
     return AppState(
       pane: pane ?? this.pane,
@@ -152,6 +156,8 @@ class AppState {
       showNavBar: showNavBar ?? this.showNavBar,
       rwkvModelService: rwkvModelService ?? this.rwkvModelService,
       ipAddresses: ipAddresses ?? this.ipAddresses,
+      remoteServiceStatuses:
+          remoteServiceStatuses ?? this.remoteServiceStatuses,
     );
   }
 }

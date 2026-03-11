@@ -36,8 +36,8 @@ class SettingCubit extends Cubit<SettingState> {
     try {
       final settings = await _repository.load();
       if (settings != null) {
-        /// avoid theme apply not work
-        await Future.delayed(const Duration(milliseconds: 500));
+        /// Wait for the first frame instead of adding a fixed startup delay.
+        await WidgetsBinding.instance.endOfFrame;
         emit(SettingState.fromSettings(settings, initialized: true));
       }
     } catch (e, s) {
