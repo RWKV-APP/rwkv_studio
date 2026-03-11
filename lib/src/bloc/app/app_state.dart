@@ -98,6 +98,7 @@ class AppState {
   final bool fullScreen;
   final bool showNavBar;
   final RwkvHttpApiService rwkvModelService;
+  final List<String> ipAddresses;
 
   List<NavBarItem> expandedItems() {
     return navBarItems
@@ -115,6 +116,7 @@ class AppState {
     required this.showNavBar,
     required this.modelServices,
     required this.rwkvModelService,
+    required this.ipAddresses,
   });
 
   factory AppState.initial() {
@@ -128,6 +130,7 @@ class AppState {
       showNavBar: true,
       modelServices: [],
       rwkvModelService: RwkvHttpApiService(),
+      ipAddresses: [],
     );
   }
 
@@ -141,6 +144,7 @@ class AppState {
     bool? showNavBar,
     List<ModelServiceWrap>? modelServices,
     RwkvHttpApiService? rwkvModelService,
+    List<String>? ipAddresses,
   }) {
     return AppState(
       pane: pane ?? this.pane,
@@ -152,6 +156,7 @@ class AppState {
       showNavBar: showNavBar ?? this.showNavBar,
       modelServices: modelServices ?? this.modelServices,
       rwkvModelService: rwkvModelService ?? this.rwkvModelService,
+      ipAddresses: ipAddresses ?? this.ipAddresses,
     );
   }
 }

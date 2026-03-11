@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -30,6 +32,7 @@ class AppCubit extends Cubit<AppState> {
     await AppAssets.init().catchError((e) => loge(e));
     await HiveManager.init().catchError((e) => loge(e));
     await HiveManager.openPreferencesBox().catchError((e) => loge(e));
+    _initIPAddress();
   }
 
   Future init2({required SettingState settings}) async {
@@ -80,17 +83,23 @@ class AppCubit extends Cubit<AppState> {
         .firstOrNull;
   }
 
-  void onModelServerSettingChanged(ModelServerSetting setting) {
+  void onModelServerSettingChanged(ModelServerSetting setting) async {
+    final server = state.rwkvModelService;
     if (setting.enabled) {
-      state.rwkvModelService.run(host: setting.host, port: setting.port);
+      if (server.isRunning()) {
+        logd('restarting model server');
+        await server.shutdown();
+      }
+      server.run(host: setting.host, port: setting.port);
     } else {
-      state.rwkvModelService.shutdown();
+      server.shutdown();
+      logd('shutdown model server');
     }
   }
 
-  void onLoadLocalModelListChanged(Iterable<ModelInstanceState> models) {
+  void onModelInstanceListChanged(Iterable<ModelInstanceState> models) {
     logd(
-      'update rwkv model service model list: ${models.map((e) => e.info.name).join(',')}',
+      'update rwkv model service model list(${models.length} models): ${models.map((e) => e.info.name).join(',')}',
     );
     state.rwkvModelService.updateInstances([
       for (final m in models)
@@ -172,5 +181,31 @@ class AppCubit extends Cubit<AppState> {
       (e) => e.type == NavBarItemType.settings,
     );
     emit(state.copyWith(pane: i));
+  }
+
+  void _initIPAddress() async {
+    if (kIsWeb) {
+      return;
+    }
+    List<String> ips = [];
+    const lanIP = {'192', '172', '10'};
+    for (var item in await NetworkInterface.list(
+      type: InternetAddressType.IPv4,
+    )) {
+      for (var address in item.addresses) {
+        if (address.address == '127.0.0.1' ||
+            address.address == '0.0.0.0' ||
+            address.isMulticast ||
+            address.address.isEmpty) {
+          continue;
+        }
+        if (!lanIP.contains(address.address.split('.')[0])) {
+          continue;
+        }
+        ips.add(address.address);
+      }
+    }
+    logd('interfaces: $ips');
+    emit(state.copyWith(ipAddresses: ips));
   }
 }

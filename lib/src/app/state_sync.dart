@@ -128,6 +128,15 @@ List<Widget> _buildStateSyncListeners() {
           logd(
             'model-server setting updated: ${state.model.modelServer.toMap()}',
           );
+
+          if (!kIsWeb && state.model.modelServer.enabled) {
+            final localOnly = state.model.modelServer.onlyLocalModel;
+            final models = localOnly
+                ? context.rwkv.state.localInstances
+                : context.rwkv.state.models.values;
+            context.app.onModelInstanceListChanged(models);
+          }
+
           context.app.onModelServerSettingChanged(state.model.modelServer);
         },
         child: const SizedBox(),
@@ -153,12 +162,16 @@ List<Widget> _buildStateSyncListeners() {
       child: const SizedBox(),
     ),
     BlocListener<RwkvCubit, RwkvState>(
-      listenWhen: (p, c) => p.models.length != c.models.length,
+      listenWhen: (p, c) => p.models != c.models,
       listener: (context, state) {
         logd('model-instance updated: ${state.models.length} instances');
 
-        if (!kIsWeb)
-          context.app.onLoadLocalModelListChanged(state.localInstances);
+        if (!kIsWeb) {
+          final localOnly =
+              context.settings.state.model.modelServer.onlyLocalModel;
+          final models = localOnly ? state.localInstances : state.models.values;
+          context.app.onModelInstanceListChanged(models);
+        }
 
         final chat = context.chat.state.modelInstanceId;
         final textGen = context.textGen.state.modelInstanceId;
