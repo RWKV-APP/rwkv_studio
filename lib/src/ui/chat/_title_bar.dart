@@ -18,7 +18,7 @@ class ChatTitleBar extends StatelessWidget {
         buildWhen: (p, c) => p.selected != c.selected,
         builder: (context, state) {
           final conv = state.selected;
-          if (conv == ConversationState.empty) {
+          if (conv == ConversationModel.empty) {
             return const SizedBox();
           }
           return Row(

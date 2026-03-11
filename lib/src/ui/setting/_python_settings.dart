@@ -3,8 +3,8 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 
 class PythonSettings extends StatefulWidget {
-  final PythonSettingState state;
-  final ValueChanged<PythonSettingState> onChanged;
+  final PythonSettingsModel state;
+  final ValueChanged<PythonSettingsModel> onChanged;
 
   const PythonSettings({
     super.key,
@@ -19,13 +19,8 @@ class PythonSettings extends StatefulWidget {
 class _PythonSettingsState extends State<PythonSettings> {
   String _error = '';
   bool _loading = true;
-  List<InterpreterState> _interpreters = [];
+  List<InterpreterModel> _interpreters = [];
   String _selectedType = 'python';
-  String _version = '';
-
-  late final _controller = TextEditingController(
-    text: widget.state.albatrossPath,
-  );
 
   @override
   void initState() {
@@ -43,7 +38,7 @@ class _PythonSettingsState extends State<PythonSettings> {
       final p = await context.app.detectPythonInterpreters();
       _interpreters = p
           .map(
-            (e) => InterpreterState(
+            (e) => InterpreterModel(
               id: e.condaEnv?.path ?? e.path,
               path: e.condaEnv?.path ?? e.path,
               name: e.condaEnv?.name ?? '',
@@ -58,7 +53,6 @@ class _PythonSettingsState extends State<PythonSettings> {
       if (selected == null) {
         if (widget.state.selected.isNotEmpty) {
           widget.onChanged(widget.state.copyWith(selected: ''));
-          _version = '';
         }
       } else {
         _selectedType = selected.isConda ? 'conda' : 'python';
@@ -120,7 +114,6 @@ class _PythonSettingsState extends State<PythonSettings> {
                 onChanged: (v) {
                   widget.onChanged(widget.state.copyWith(selected: ''));
                   setState(() {
-                    _version = '';
                     _selectedType = v ?? 'python';
                   });
                 },

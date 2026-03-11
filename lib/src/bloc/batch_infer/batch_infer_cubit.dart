@@ -72,7 +72,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
             maxSampleRate: const Duration(milliseconds: 500),
             enableSmoothing: true,
             smoothingAlpha: 0.5,
-            counter: (v) => RwkvTokenizer(
+            counter: (v) => const RwkvTokenizer(
               vocabPath: AppAssets.rwkvVocab20230424,
             ).tokenCount(v),
           ),

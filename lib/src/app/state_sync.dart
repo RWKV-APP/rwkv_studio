@@ -63,15 +63,15 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [widget.child, ..._buildStateSyncListeners()],
+      child: MultiBlocListener(
+        listeners: _buildStateSyncListeners(),
+        child: widget.child,
       ),
     );
   }
 }
 
-List<Widget> _buildStateSyncListeners() {
+List<BlocListener> _buildStateSyncListeners() {
   return [
     /// Sync native window brightness with appearance setting
     BlocListener<SettingCubit, SettingState>(
@@ -81,7 +81,6 @@ List<Widget> _buildStateSyncListeners() {
         logd('appearance updated: ${state.appearance.theme.brightness}');
         _syncAppearance(state.appearance);
       },
-      child: const SizedBox(),
     ),
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.appearance.userType != c.appearance.userType,
@@ -89,7 +88,6 @@ List<Widget> _buildStateSyncListeners() {
         logd('user-type updated: ${state.appearance.userType}');
         context.app.onUserTypeChanged(state.appearance.userType);
       },
-      child: const SizedBox(),
     ),
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.model.remoteServices != c.model.remoteServices,
@@ -99,7 +97,6 @@ List<Widget> _buildStateSyncListeners() {
         );
         context.app.updateModelServices(state.model.remoteServices);
       },
-      child: const SizedBox(),
     ),
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.python != c.python,
@@ -110,7 +107,6 @@ List<Widget> _buildStateSyncListeners() {
           albatrossPath: state.python.albatrossPath,
         );
       },
-      child: const SizedBox(),
     ),
     BlocListener<SettingCubit, SettingState>(
       listenWhen: (p, c) => p.model.modelListUrl != c.model.modelListUrl,
@@ -118,7 +114,6 @@ List<Widget> _buildStateSyncListeners() {
         logd('model-list-url updated: ${state.model.modelListUrl}');
         context.modelManage.updateModelConfigUrl(state.model.modelListUrl);
       },
-      child: const SizedBox(),
     ),
 
     if (!kIsWeb)
@@ -139,9 +134,7 @@ List<Widget> _buildStateSyncListeners() {
 
           context.app.onModelServerSettingChanged(state.model.modelServer);
         },
-        child: const SizedBox(),
       ),
-
     BlocListener<AppCubit, AppState>(
       listenWhen: (p, c) => p.modelServices != c.modelServices,
       listener: (context, state) async {
@@ -159,7 +152,6 @@ List<Widget> _buildStateSyncListeners() {
 
         context.modelManage.setModelProviders(providers);
       },
-      child: const SizedBox(),
     ),
     BlocListener<RwkvCubit, RwkvState>(
       listenWhen: (p, c) => p.models != c.models,
@@ -182,16 +174,15 @@ List<Widget> _buildStateSyncListeners() {
           context.textGen.onModelReleased();
         }
       },
-      child: const SizedBox(),
     ),
   ];
 }
 
-void _syncAppearance(AppearanceSettingState appearance) {
+void _syncAppearance(AppearanceSettingsModel appearance) {
   if (kIsWeb) {
     return;
   }
-  final isLight = appearance.theme == AppearanceSettingState.lightTheme;
+  final isLight = appearance.theme == AppearanceSettingsModel.lightTheme;
   if (isLight) {
     WindowManager.instance.setBrightness(Brightness.light);
   } else {

@@ -1,11 +1,11 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
-import 'package:rwkv_studio/src/bloc/settings/model_server_state.dart';
+import 'package:rwkv_studio/src/models/settings/model_server_settings_model.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 
 class ModelServerSettingCard extends StatefulWidget {
-  final ModelServerSetting setting;
-  final ValueChanged<ModelServerSetting> onChanged;
+  final ModelServerSettingsModel setting;
+  final ValueChanged<ModelServerSettingsModel> onChanged;
 
   const ModelServerSettingCard({
     super.key,

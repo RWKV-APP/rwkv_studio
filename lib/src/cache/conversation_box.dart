@@ -1,6 +1,6 @@
 import 'package:hive_ce/hive.dart';
-import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
+import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 
 part 'conversation_box.g.dart';
 
@@ -41,7 +41,7 @@ class ConversationBox {
     required this.useGlobalSystemPrompt,
   });
 
-  factory ConversationBox.fromChat(ConversationState conv) {
+  factory ConversationBox.fromChat(ConversationModel conv) {
     return ConversationBox(
       id: conv.id,
       title: conv.title,
@@ -54,7 +54,7 @@ class ConversationBox {
     );
   }
 
-  static Future put(ConversationState conv) async {
+  static Future put(ConversationModel conv) async {
     await HiveManager.conversationBox.put(
       conv.id,
       ConversationBox.fromChat(conv),
@@ -69,8 +69,8 @@ class ConversationBox {
     return HiveManager.conversationBox.values;
   }
 
-  ConversationState toChat() {
-    return ConversationState(
+  ConversationModel toChat() {
+    return ConversationModel(
       id: id,
       title: title,
       updateAt: updateAt,

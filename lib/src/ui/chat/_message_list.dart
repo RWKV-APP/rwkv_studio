@@ -15,7 +15,7 @@ class ChatMessageList extends StatefulWidget {
 }
 
 class _ChatMessageListState extends State<ChatMessageList> {
-  List<MessageState> _messages = [];
+  List<MessageModel> _messages = [];
   bool _autoScrolling = true;
   late String chatId = context.chat.state.selected.id;
   final Map<String, double> _chatScrollOffsets = {};

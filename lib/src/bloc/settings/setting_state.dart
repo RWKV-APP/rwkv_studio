@@ -1,12 +1,19 @@
 part of 'setting_cubit.dart';
 
 class SettingState extends Equatable {
-  final ModelSettingState model;
-  final AppearanceSettingState appearance;
-  final CacheSettingState cache;
-  final PythonSettingState python;
+  final ModelSettingsModel model;
+  final AppearanceSettingsModel appearance;
+  final CacheSettingsModel cache;
+  final PythonSettingsModel python;
 
   final bool initialized;
+
+  AppSettingsModel get settings => AppSettingsModel(
+    model: model,
+    appearance: appearance,
+    cache: cache,
+    python: python,
+  );
 
   @override
   List<Object?> get props => [model, appearance, cache, python, initialized];
@@ -20,20 +27,27 @@ class SettingState extends Equatable {
   });
 
   factory SettingState.initial() {
+    return SettingState.fromSettings(AppSettingsModel.initial());
+  }
+
+  factory SettingState.fromSettings(
+    AppSettingsModel settings, {
+    bool initialized = false,
+  }) {
     return SettingState(
-      appearance: AppearanceSettingState.initial(),
-      cache: CacheSettingState.initial(),
-      model: ModelSettingState.initial(),
-      python: PythonSettingState.initial(),
-      initialized: false,
+      appearance: settings.appearance,
+      cache: settings.cache,
+      model: settings.model,
+      python: settings.python,
+      initialized: initialized,
     );
   }
 
   SettingState copyWith({
-    AppearanceSettingState? appearance,
-    CacheSettingState? cache,
-    ModelSettingState? model,
-    PythonSettingState? python,
+    AppearanceSettingsModel? appearance,
+    CacheSettingsModel? cache,
+    ModelSettingsModel? model,
+    PythonSettingsModel? python,
     bool? initialized,
   }) {
     return SettingState(
@@ -46,21 +60,13 @@ class SettingState extends Equatable {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'model': model.toMap(),
-      'appearance': appearance.toMap(),
-      'python': python.toMap(),
-      'cache': cache.toMap(),
-    };
+    return settings.toMap();
   }
 
   factory SettingState.fromMap(Map<String, dynamic> map) {
-    return SettingState(
-      model: ModelSettingState.fromMap(map['model']),
-      appearance: AppearanceSettingState.fromMap(map['appearance']),
-      cache: CacheSettingState.fromMap(map['cache']),
+    return SettingState.fromSettings(
+      AppSettingsModel.fromMap(map),
       initialized: true,
-      python: PythonSettingState.fromMap(map['python']),
     );
   }
 }

@@ -1,7 +1,7 @@
 part of 'setting_page.dart';
 
 class CacheSettingsCard extends StatelessWidget {
-  final CacheSettingState cache;
+  final CacheSettingsModel cache;
 
   const CacheSettingsCard({super.key, required this.cache});
 
@@ -135,6 +135,7 @@ class _ModelCacheInfoState extends State<_ModelCacheInfo> {
   }
 }
 
+// ignore: unused_element
 Future<bool?> _askMigrationModels(
   BuildContext context,
   String old,

@@ -1,4 +1,4 @@
-import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
+import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 
 class ImportChatResult {}
 
@@ -6,8 +6,8 @@ class ExportChatUtils {
   ExportChatUtils._();
 
   static Future export(
-    ConversationState state,
-    List<MessageState> messages,
+    ConversationModel state,
+    List<MessageModel> messages,
   ) async {
     throw 'Not implemented';
   }

@@ -3,9 +3,9 @@ part of 'chat_cubit.dart';
 class ChatState {
   final bool initialized;
 
-  final List<ConversationState> conversations;
-  final Map<String, List<MessageState>> messages;
-  final ConversationState selected;
+  final List<ConversationModel> conversations;
+  final Map<String, List<MessageModel>> messages;
+  final ConversationModel selected;
   final GenerationConfig generationConfig;
   final bool generating;
   final bool showSettingPanel;
@@ -18,7 +18,7 @@ class ChatState {
 
   String get modelInstanceId => modelState.instanceId;
 
-  List<MessageState> get currentChat => messages[selected.id] ?? [];
+  List<MessageModel> get currentChat => messages[selected.id] ?? [];
 
   bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;
 
@@ -37,32 +37,32 @@ class ChatState {
   });
 
   ChatState.empty()
-      : this(
-    initialized: false,
-    showSettingPanel: false,
-    conversations: [],
-    selected: ConversationState.empty,
-    messages: {},
-    inputController: TextEditingController(),
-    generating: false,
-    generationConfig: GenerationConfig.initial(),
-    modelState: ModelLoadState.empty(),
-    inputFocusNode: FocusNode(),
-    showConversationList: true,
-  );
+    : this(
+        initialized: false,
+        showSettingPanel: false,
+        conversations: [],
+        selected: ConversationModel.empty,
+        messages: {},
+        inputController: TextEditingController(),
+        generating: false,
+        generationConfig: GenerationConfig.initial(),
+        modelState: ModelLoadState.empty(),
+        inputFocusNode: FocusNode(),
+        showConversationList: true,
+      );
 
   ChatState copyWith({
     bool? initialized,
-    List<ConversationState>? conversations,
-    Map<String, List<MessageState>>? messages,
-    ConversationState? selected,
+    List<ConversationModel>? conversations,
+    Map<String, List<MessageModel>>? messages,
+    ConversationModel? selected,
     TextEditingController? inputController,
     bool? generating,
     GenerationConfig? generationConfig,
     bool? showSettingPanel,
     ModelLoadState? modelState,
     FocusNode? inputFocusNode,
-    bool? showConversationList
+    bool? showConversationList,
   }) {
     return ChatState(
       initialized: initialized ?? this.initialized,

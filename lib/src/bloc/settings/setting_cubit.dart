@@ -3,21 +3,12 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/settings/model_server_state.dart';
 import 'package:rwkv_studio/src/cache/preferences_box.dart';
-import 'package:rwkv_studio/src/contract/user_type.dart';
+import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/utils/equatable.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
-import 'package:rwkv_studio/src/utils/path.dart';
 
-part 'appearance_state.dart';
-
-part 'cache_setting_state.dart';
-
-part 'python_setting_state.dart';
-
-part 'service_setting_state.dart';
+export 'package:rwkv_studio/src/models/settings/settings_models.dart';
 
 part 'setting_state.dart';
 
@@ -33,7 +24,7 @@ class SettingCubit extends Cubit<SettingState> {
     });
   }
 
-  List<RemoteService> getEnabledRemoteServices() {
+  List<RemoteServiceModel> getEnabledRemoteServices() {
     return state.model.remoteServices.where((e) => e.enabled).toList();
   }
 
@@ -43,11 +34,11 @@ class SettingCubit extends Cubit<SettingState> {
 
   Future init() async {
     try {
-      final ns = await PreferencesBox.getRaw();
-      if (ns != null) {
+      final settings = await PreferencesBox.getRaw();
+      if (settings != null) {
         /// avoid theme apply not work
         await Future.delayed(const Duration(milliseconds: 500));
-        emit(ns);
+        emit(SettingState.fromSettings(settings, initialized: true));
       }
       _checkCacheDirAvailable(state.cache);
     } catch (e, s) {
@@ -55,41 +46,41 @@ class SettingCubit extends Cubit<SettingState> {
     }
 
     if (state.model.modelListUrl.isEmpty) {
-      emit(state.copyWith(model: ModelSettingState.default_));
+      emit(state.copyWith(model: ModelSettingsModel.default_));
     }
 
     emit(state.copyWith(initialized: true));
   }
 
-  void setAppearance(AppearanceSettingState appearance) {
+  void setAppearance(AppearanceSettingsModel appearance) {
     emit(state.copyWith(appearance: appearance));
   }
 
-  void setServiceSetting(ModelSettingState model) {
+  void setServiceSetting(ModelSettingsModel model) {
     emit(state.copyWith(model: model));
   }
 
-  void setPythonSetting(PythonSettingState python) {
+  void setPythonSetting(PythonSettingsModel python) {
     emit(state.copyWith(python: python));
   }
 
-  Future setCacheSetting(CacheSettingState cache) async {
+  Future setCacheSetting(CacheSettingsModel cache) async {
     await _checkCacheDirAvailable(cache);
   }
 
   void _persist() async {
-    await PreferencesBox.putRaw(state);
+    await PreferencesBox.putRaw(state.settings);
     logi('settings persisted');
   }
 
   Future _checkCacheDirAvailable(
-    CacheSettingState cache, [
-    CacheSettingState? reset,
+    CacheSettingsModel cache, [
+    CacheSettingsModel? reset,
   ]) async {
     if (kIsWeb) {
       return;
     }
-    final initial = reset ?? CacheSettingState.initial();
+    final initial = reset ?? CacheSettingsModel.initial();
     String? modelDir;
     String? cacheDir;
 

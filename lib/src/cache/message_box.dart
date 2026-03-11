@@ -1,7 +1,7 @@
 import 'package:hive_ce/hive.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'message_box.g.dart';
@@ -72,7 +72,7 @@ class MessageBox {
 
   static Future clear() => Hive.deleteBoxFromDisk('messages');
 
-  static Future put(MessageState message) async {
+  static Future put(MessageModel message) async {
     final box = await _instance();
     box.put(message.id, MessageBox.fromMessage(message));
   }
@@ -89,7 +89,7 @@ class MessageBox {
     return messages;
   }
 
-  factory MessageBox.fromMessage(MessageState message) {
+  factory MessageBox.fromMessage(MessageModel message) {
     return MessageBox(
       id: message.id,
       convId: message.convId,
@@ -109,8 +109,8 @@ class MessageBox {
     );
   }
 
-  MessageState toMessage() {
-    return MessageState.create(
+  MessageModel toMessage() {
+    return MessageModel.create(
       role: role,
       convId: convId,
       text: text,

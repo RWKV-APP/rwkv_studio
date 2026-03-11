@@ -8,12 +8,12 @@ import 'package:rwkv_studio/src/utils/toast_util.dart';
 part '_add_service_button.dart';
 
 class ServiceSettingCard extends StatelessWidget {
-  final ModelSettingState setting;
-  final ValueChanged<ModelSettingState>? onChanged;
+  final ModelSettingsModel setting;
+  final ValueChanged<ModelSettingsModel>? onChanged;
 
   const ServiceSettingCard({super.key, required this.setting, this.onChanged});
 
-  List<RemoteService> get services => setting.remoteServices;
+  List<RemoteServiceModel> get services => setting.remoteServices;
 
   @override
   Widget build(BuildContext context) {
@@ -155,10 +155,10 @@ class _TableHeader extends StatelessWidget {
 }
 
 class _ServiceItem extends StatelessWidget {
-  final RemoteService service;
-  final ModelSettingState setting;
+  final RemoteServiceModel service;
+  final ModelSettingsModel setting;
 
-  final ValueChanged<ModelSettingState>? onChanged;
+  final ValueChanged<ModelSettingsModel>? onChanged;
 
   const _ServiceItem({
     required this.service,
@@ -166,7 +166,7 @@ class _ServiceItem extends StatelessWidget {
     this.onChanged,
   });
 
-  void onTapRemoveService(BuildContext context, RemoteService service) {
+  void onTapRemoveService(BuildContext context, RemoteServiceModel service) {
     final services = setting.remoteServices;
     onChanged?.call(
       setting.copyWith(
@@ -175,7 +175,7 @@ class _ServiceItem extends StatelessWidget {
     );
   }
 
-  void onTapEnableSwitch(BuildContext context, RemoteService service) {
+  void onTapEnableSwitch(BuildContext context, RemoteServiceModel service) {
     final services = setting.remoteServices;
     onChanged?.call(
       setting.copyWith(

@@ -1,7 +1,7 @@
 part of '_service_settings.dart';
 
 class _AddButton extends StatefulWidget {
-  final ValueChanged<RemoteService>? onAdd;
+  final ValueChanged<RemoteServiceModel>? onAdd;
 
   const _AddButton({this.onAdd});
 
@@ -31,7 +31,7 @@ class _AddButtonState extends State<_AddButton> {
       _isAdding = false;
     });
     widget.onAdd?.call(
-      RemoteService(
+      RemoteServiceModel(
         id: url,
         name: name,
         url: url,
@@ -141,7 +141,7 @@ class _AddButtonState extends State<_AddButton> {
 }
 
 class _ServiceStatus extends StatefulWidget {
-  final RemoteService service;
+  final RemoteServiceModel service;
 
   const _ServiceStatus({required this.service});
 

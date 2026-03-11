@@ -9,7 +9,7 @@ import 'package:rwkv_studio/src/utils/date_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class MessageListItem extends StatelessWidget {
-  final MessageState message;
+  final MessageModel message;
   final bool isLast;
 
   const MessageListItem({
@@ -163,7 +163,7 @@ class _MessageBox extends StatelessWidget {
 }
 
 class _MessageItemFooter extends StatelessWidget {
-  final MessageState message;
+  final MessageModel message;
   final bool isLast;
 
   const _MessageItemFooter({required this.message, required this.isLast});
@@ -221,7 +221,7 @@ class _MessageItemFooter extends StatelessWidget {
 
 class _ContextMenu extends StatelessWidget {
   final Widget child;
-  final MessageState message;
+  final MessageModel message;
   final _contextController = FlyoutController();
 
   _ContextMenu({required this.child, required this.message});
@@ -298,7 +298,7 @@ class _ContextMenu extends StatelessWidget {
     );
   }
 
-  void _showMenu(BuildContext ctx, TapUpDetails d, MessageState message) {
+  void _showMenu(BuildContext ctx, TapUpDetails d, MessageModel message) {
     final box = ctx.findRenderObject() as RenderBox;
     final position = box.localToGlobal(
       d.localPosition,

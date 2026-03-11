@@ -26,11 +26,11 @@ class ChatList extends StatelessWidget {
 }
 
 class _Item extends StatelessWidget {
-  final ConversationState conversation;
+  final ConversationModel conversation;
 
   const _Item({required this.conversation});
 
-  void _onSelect(BuildContext context, ConversationState conversation) async {
+  void _onSelect(BuildContext context, ConversationModel conversation) async {
     await context.chat.mayPause(context.rwkv);
     if (context.mounted) context.chat.selectConversation(conversation);
   }
@@ -91,7 +91,7 @@ final _contextController = FlyoutController();
 void _showMenu(
   BuildContext ctx,
   TapUpDetails d,
-  ConversationState conversation,
+  ConversationModel conversation,
 ) {
   final box = ctx.findRenderObject() as RenderBox;
   final position = box.localToGlobal(

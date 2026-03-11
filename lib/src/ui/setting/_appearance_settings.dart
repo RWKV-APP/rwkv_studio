@@ -4,8 +4,8 @@ import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 
 class AppearanceSettings extends StatelessWidget {
-  final AppearanceSettingState appearance;
-  final ValueChanged<AppearanceSettingState>? onChanged;
+  final AppearanceSettingsModel appearance;
+  final ValueChanged<AppearanceSettingsModel>? onChanged;
 
   const AppearanceSettings({
     super.key,
@@ -28,17 +28,17 @@ class AppearanceSettings extends StatelessWidget {
               ComboBox<FluentThemeData>(
                 items: [
                   ComboBoxItem(
-                    value: AppearanceSettingState.lightTheme,
+                    value: AppearanceSettingsModel.lightTheme,
                     child: const Text('Light'),
                   ),
                   ComboBoxItem(
-                    value: AppearanceSettingState.darkTheme,
+                    value: AppearanceSettingsModel.darkTheme,
                     child: const Text('Dark'),
                   ),
                 ],
                 value: appearance.theme,
                 placeholder: Text(
-                  appearance.theme == AppearanceSettingState.lightTheme
+                  appearance.theme == AppearanceSettingsModel.lightTheme
                       ? 'Dark'
                       : 'Light',
                 ),

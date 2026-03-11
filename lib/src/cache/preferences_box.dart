@@ -1,5 +1,5 @@
 import 'package:hive_ce/hive_ce.dart';
-import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 
 import 'hive_manager.dart';
 
@@ -27,34 +27,33 @@ class PreferencesBox {
     required this.cache,
   });
 
-  static Future putRaw(SettingState value) {
+  static Future putRaw(AppSettingsModel value) {
     return HiveManager.preferencesBox.put(
       'default',
-      PreferencesBox.fromSettingState(value),
+      PreferencesBox.fromSettings(value),
     );
   }
 
-  static Future<SettingState?> getRaw() async {
+  static Future<AppSettingsModel?> getRaw() async {
     final v = HiveManager.preferencesBox.get('default');
-    return v?.toSettingState();
+    return v?.toSettings();
   }
 
-  factory PreferencesBox.fromSettingState(SettingState state) {
+  factory PreferencesBox.fromSettings(AppSettingsModel settings) {
     return PreferencesBox(
-      model: state.model.toMap(),
-      appearance: state.appearance.toMap(),
-      python: state.python.toMap(),
-      cache: state.cache.toMap(),
+      model: settings.model.toMap(),
+      appearance: settings.appearance.toMap(),
+      python: settings.python.toMap(),
+      cache: settings.cache.toMap(),
     );
   }
 
-  SettingState toSettingState() {
-    return SettingState(
-      model: ModelSettingState.fromMap(model),
-      appearance: AppearanceSettingState.fromMap(appearance),
-      python: PythonSettingState.fromMap(python),
-      cache: CacheSettingState.fromMap(cache),
-      initialized: true,
+  AppSettingsModel toSettings() {
+    return AppSettingsModel(
+      model: ModelSettingsModel.fromMap(model),
+      appearance: AppearanceSettingsModel.fromMap(appearance),
+      python: PythonSettingsModel.fromMap(python),
+      cache: CacheSettingsModel.fromMap(cache),
     );
   }
 }
