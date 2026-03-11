@@ -11,9 +11,9 @@ import 'package:window_manager/window_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Window.initialize();
   if (Platform.isWindows) {
     await windowManager.ensureInitialized();
-    await Window.initialize();
     WindowOptions windowOptions = const WindowOptions(
       center: true,
       size: Size(1000, 800),
@@ -22,7 +22,10 @@ void main() async {
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
-      //await Window.setEffect(effect: WindowEffect.mica, dark: false);
+      await Window.setEffect(
+        effect: Platform.isMacOS ? WindowEffect.hudWindow : WindowEffect.mica,
+        dark: false,
+      );
     });
   }
 

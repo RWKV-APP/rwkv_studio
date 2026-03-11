@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_acrylic/window.dart';
@@ -183,10 +185,17 @@ void _syncAppearance(AppearanceSettingsModel appearance) {
     return;
   }
   final isLight = appearance.theme == AppearanceSettingsModel.lightTheme;
-  if (isLight) {
-    WindowManager.instance.setBrightness(Brightness.light);
+
+  if (!Platform.isMacOS) {
+    if (isLight) {
+      WindowManager.instance.setBrightness(Brightness.light);
+    } else {
+      WindowManager.instance.setBrightness(Brightness.dark);
+    }
+    Window.setEffect(effect: WindowEffect.mica, dark: !isLight);
   } else {
-    WindowManager.instance.setBrightness(Brightness.dark);
+    Window.setEffect(effect: WindowEffect.hudWindow, dark: !isLight);
+    Window.overrideMacOSBrightness(dark: !isLight);
+    Window.setWindowBackgroundColorToClear();
   }
-  Window.setEffect(effect: WindowEffect.mica, dark: !isLight);
 }
