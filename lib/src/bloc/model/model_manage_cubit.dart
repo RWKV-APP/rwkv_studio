@@ -1,14 +1,13 @@
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/cache/hive_manager.dart';
-import 'package:rwkv_studio/src/cache/model_file_box.dart';
-import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/repository/model_manager_repository.dart';
+import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
-
-import 'model_provider.dart';
 
 part 'model_manage_state.dart';
 
@@ -26,10 +25,13 @@ extension Ext2 on ModelManager {
 }
 
 class ModelManageCubit extends Cubit<ModelManageState> {
-  late final ModelManager _manager;
+  final ModelManagerRepository _repository;
+  final RemoteServiceRepository _remoteServiceRepository;
+  StreamSubscription<ModelTaskUpdateEvent>? _taskUpdateSubscription;
   bool _managerInitialized = false;
 
-  ModelManageCubit() : super(ModelManageState.initial());
+  ModelManageCubit(this._repository, this._remoteServiceRepository)
+    : super(ModelManageState.initial());
 
   Iterable<ModelInfo> get availableTextModels => [
     ...state.remoteModels,
@@ -44,18 +46,19 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     required String modelDownloadDir,
     required String configProviderUrl,
   }) async {
-    if (kIsWeb) {
+    if (kIsWeb || _managerInitialized) {
       return;
     }
-    _manager = ModelManager(
-      downloadSource: state.downloadSource,
-      configProviderUrl: configProviderUrl,
+    await _repository.initialize(
       modelDownloadDir: modelDownloadDir,
+      configProviderUrl: configProviderUrl,
+      downloadSource: state.downloadSource,
     );
-    _manager.downloadUpdateEvents().listen(
+    await _taskUpdateSubscription?.cancel();
+    _taskUpdateSubscription = _repository.watchTaskUpdates().listen(
       (event) {
         _emitTaskUpdate(
-          modelId: event.model.id,
+          modelId: event.modelId,
           update: event.update,
           error: event.error,
         );
@@ -64,34 +67,18 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         loge(e);
       },
     );
-    await _manager.init();
-    emit(
-      state.copyWith(
-        models: _manager.enabledModels,
-        tags: _manager.modelConfig.tags,
-        groups: _manager.modelConfig.groups,
-        modelStates: {
-          for (final entry in _manager.downloadTasks.entries)
-            entry.key: ModelDownloadState(
-              update: entry.value.update,
-              error: null,
-            ),
-        },
-      ),
+    _emitCatalogSnapshot(
+      _repository.getCurrentCatalog(),
+      downloadDir: modelDownloadDir,
     );
     _managerInitialized = true;
-  }
-
-  void setModelProviders(List<ModelListProvider> providers) {
-    emit(state.copyWith(remoteModelProviders: providers));
-    updateModelList(local: false);
   }
 
   Future setModelDownloadDir(String path, {bool migration = false}) async {
     if (!_managerInitialized) {
       return;
     }
-    await _manager.setModelDownloadDir(path, migration: migration);
+    await _repository.setModelDownloadDir(path, migration: migration);
     logd('Model download dir set to $path, updating model list');
     await updateModelList(remote: false);
   }
@@ -100,7 +87,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     if (kIsWeb || !_managerInitialized) {
       return;
     }
-    _manager.setConfigProviderUrl(url);
+    await _repository.setConfigProviderUrl(url);
     await updateModelList(remote: false);
   }
 
@@ -113,10 +100,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       return;
     }
 
-    List<ModelInfo> importedModels = [];
+    var importedModels = <ModelInfo>[];
     try {
-      await HiveManager.openModelFileBox();
-      importedModels = ModelFileBox.getAllModels().toList();
+      importedModels = await _repository.loadImportedModels();
     } catch (e) {
       logw(e);
     }
@@ -136,7 +122,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   Future download(String id) async {
     try {
-      await _manager.download(id);
+      await _repository.download(id);
     } catch (e) {
       _emitTaskUpdate(
         modelId: id,
@@ -147,23 +133,21 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future resume(String id) async {
-    await _manager.download(id);
+    await _repository.resume(id);
   }
 
   Future delete(String id) async {
     if (state.importedModels.any((e) => e.id == id)) {
-      await ModelFileBox.delete(id);
-      emit(
-        state.copyWith(importedModels: ModelFileBox.getAllModels().toList()),
-      );
+      final importedModels = await _repository.deleteImportedModel(id);
+      emit(state.copyWith(importedModels: importedModels));
       return;
     }
-    await _manager.deleteLocalModelFiles(id);
-    emit(state.copyWith(models: _manager.enabledModels));
+    await _repository.deleteLocalModelFiles(id);
+    _emitCatalogSnapshot(_repository.getCurrentCatalog());
   }
 
   Future cancel(String id) async {
-    _manager.cancelTask(id);
+    await _repository.cancel(id);
     emit(
       state.copyWith(
         modelStates: {...state.modelStates, id: null}
@@ -173,59 +157,32 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   Future pause(String id) async {
-    await _manager.pauseTask(id);
+    await _repository.pause(id);
   }
 
   Future updateModelList({bool local = true, bool remote = true}) async {
     if (remote) {
-      List<ModelInfo> models = [];
-      final providers = state.remoteModelProviders;
-      for (final provider in providers) {
-        try {
-          final list = await provider.getModelList().wrapError();
-          models = [...list, ...models];
-        } catch (e) {
-          loge(e);
-        }
-      }
+      final models = await _remoteServiceRepository.fetchRemoteModels(
+        forceRefresh: true,
+      );
       emit(state.copyWith(remoteModels: models));
     }
 
     if (local && !kIsWeb) {
-      await _manager.updateConfig();
-      emit(
-        state.copyWith(
-          models: _manager.enabledModels,
-          tags: _manager.modelConfig.tags,
-          groups: _manager.modelConfig.groups,
-          modelStates: {
-            for (final entry in _manager.downloadTasks.entries)
-              entry.key: ModelDownloadState(
-                update: entry.value.update,
-                error: null,
-              ),
-          },
-        ),
-      );
+      _emitCatalogSnapshot(await _repository.refreshLocalCatalog());
     }
   }
 
-  void setDownloadSource(DownloadSource source) {
-    _manager.downloadSource = source;
+  Future<void> setDownloadSource(DownloadSource source) async {
+    if (_managerInitialized) {
+      await _repository.setDownloadSource(source);
+    }
     emit(state.copyWith(downloadSource: source));
   }
 
   Future onImportModel(ModelInfo model) async {
-    await ModelFileBox.put(model);
-
-    emit(
-      state.copyWith(
-        models: [
-          model.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString()),
-          ..._manager.enabledModels,
-        ],
-      ),
-    );
+    final importedModels = await _repository.saveImportedModel(model);
+    emit(state.copyWith(importedModels: importedModels));
   }
 
   ModelInfo? findModelByMD5(String md5) {
@@ -240,10 +197,12 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     logd(
       'download update: ${update.state}, ${update.progress.toStringAsFixed(2)}',
     );
-    final m = update.isCompleted ? _manager.enabledModels : null;
+    final models = update.isCompleted
+        ? _repository.getCurrentCatalog().localModels
+        : null;
     emit(
       state.copyWith(
-        models: m,
+        models: models,
         modelStates: {
           ...state.modelStates,
           modelId: update.isCompleted
@@ -252,5 +211,29 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         }..removeWhere((k, v) => v == null || v.update.isCompleted),
       ),
     );
+  }
+
+  void _emitCatalogSnapshot(
+    ModelCatalogSnapshot snapshot, {
+    String? downloadDir,
+  }) {
+    emit(
+      state.copyWith(
+        models: snapshot.localModels,
+        tags: snapshot.tags,
+        groups: snapshot.groups,
+        downloadDir: downloadDir ?? state.downloadDir,
+        modelStates: {
+          for (final entry in snapshot.taskUpdates.entries)
+            entry.key: ModelDownloadState(update: entry.value, error: null),
+        },
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() async {
+    await _taskUpdateSubscription?.cancel();
+    return super.close();
   }
 }

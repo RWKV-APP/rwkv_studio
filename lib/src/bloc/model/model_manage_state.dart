@@ -19,7 +19,6 @@ class ModelManageState {
   final List<ModelTag> tags;
   final List<ModelGroup> groups;
   final List<ModelBackend> backends;
-  final List<ModelListProvider> remoteModelProviders;
 
   List<ModelInfo> get allModels => [
     ...remoteModels,
@@ -52,7 +51,6 @@ class ModelManageState {
     required this.tags,
     required this.groups,
     required this.backends,
-    required this.remoteModelProviders,
     required this.importedModels,
     required this.remoteModels,
   });
@@ -67,7 +65,6 @@ class ModelManageState {
       tags: [],
       groups: const [],
       backends: [],
-      remoteModelProviders: [],
       importedModels: [],
       remoteModels: [],
     );
@@ -83,7 +80,6 @@ class ModelManageState {
     List<ModelTag>? tags,
     List<ModelGroup>? groups,
     List<ModelBackend>? backends,
-    List<ModelListProvider>? remoteModelProviders,
     List<ModelInfo>? importedModels,
     List<ModelInfo>? remoteModels,
   }) {
@@ -96,7 +92,6 @@ class ModelManageState {
       tags: tags ?? this.tags,
       groups: groups ?? this.groups,
       backends: backends ?? this.backends,
-      remoteModelProviders: remoteModelProviders ?? this.remoteModelProviders,
       importedModels: importedModels ?? this.importedModels,
       remoteModels: remoteModels ?? this.remoteModels,
     );

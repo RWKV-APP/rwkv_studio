@@ -1,18 +1,20 @@
 import 'dart:async';
 
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/model/model_provider.dart';
-import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
+import 'package:rwkv_studio/src/cache/hive_manager.dart';
+import 'package:rwkv_studio/src/cache/model_file_box.dart';
 
 class ModelCatalogSnapshot {
   final List<ModelInfo> localModels;
   final List<ModelTag> tags;
   final List<ModelGroup> groups;
+  final Map<String, TaskUpdate> taskUpdates;
 
   const ModelCatalogSnapshot({
     this.localModels = const [],
     this.tags = const [],
     this.groups = const [],
+    this.taskUpdates = const {},
   });
 
   factory ModelCatalogSnapshot.empty() {
@@ -33,44 +35,130 @@ class ModelTaskUpdateEvent {
 }
 
 class ModelManagerRepository {
-  const ModelManagerRepository();
+  ModelManager? _manager;
+  StreamSubscription<DownloadEvent>? _taskUpdateSubscription;
+  final StreamController<ModelTaskUpdateEvent> _taskUpdates =
+      StreamController<ModelTaskUpdateEvent>.broadcast();
 
   Future<void> initialize({
     required String modelDownloadDir,
     required String configProviderUrl,
     DownloadSource? downloadSource,
-  }) async {}
+  }) async {
+    if (_manager != null) {
+      return;
+    }
+    final manager = ModelManager(
+      downloadSource: downloadSource ?? DownloadSource.aiFastHub,
+      configProviderUrl: configProviderUrl,
+      modelDownloadDir: modelDownloadDir,
+    );
+    _manager = manager;
+    _taskUpdateSubscription = manager.downloadUpdateEvents().listen((event) {
+      _taskUpdates.add(
+        ModelTaskUpdateEvent(
+          modelId: event.model.id,
+          update: event.update,
+          error: event.error,
+        ),
+      );
+    }, onError: _taskUpdates.addError);
+    await manager.init();
+  }
 
   Stream<ModelTaskUpdateEvent> watchTaskUpdates() {
-    return const Stream.empty();
+    return _taskUpdates.stream;
   }
 
   Future<ModelCatalogSnapshot> refreshLocalCatalog() async {
-    return ModelCatalogSnapshot.empty();
-  }
-
-  Future<List<RemoteModelInfo>> refreshRemoteCatalog(
-    Iterable<ModelListProvider> providers,
-  ) async {
-    return [];
+    final manager = _requireManager();
+    await manager.updateConfig();
+    return getCurrentCatalog();
   }
 
   Future<void> setModelDownloadDir(
     String path, {
     bool migration = false,
-  }) async {}
+  }) async {
+    await _requireManager().setModelDownloadDir(path, migration: migration);
+  }
 
-  Future<void> setConfigProviderUrl(String url) async {}
+  Future<void> setConfigProviderUrl(String url) async {
+    _requireManager().setConfigProviderUrl(url);
+  }
 
-  Future<void> setDownloadSource(DownloadSource source) async {}
+  Future<void> setDownloadSource(DownloadSource source) async {
+    _requireManager().downloadSource = source;
+  }
 
-  Future<void> download(String id) async {}
+  Future<void> download(String id) async {
+    await _requireManager().download(id);
+  }
 
-  Future<void> pause(String id) async {}
+  Future<void> pause(String id) async {
+    await _requireManager().pauseTask(id);
+  }
 
-  Future<void> resume(String id) async {}
+  Future<void> resume(String id) async {
+    await download(id);
+  }
 
-  Future<void> cancel(String id) async {}
+  Future<void> cancel(String id) async {
+    await _requireManager().cancelTask(id);
+  }
 
-  Future<void> deleteLocalModelFiles(String id) async {}
+  Future<void> deleteLocalModelFiles(String id) async {
+    await _requireManager().deleteLocalModelFiles(id);
+  }
+
+  Future<List<ModelInfo>> loadImportedModels() async {
+    await HiveManager.openModelFileBox();
+    return ModelFileBox.getAllModels().toList();
+  }
+
+  Future<List<ModelInfo>> saveImportedModel(ModelInfo model) async {
+    await HiveManager.openModelFileBox();
+    await ModelFileBox.put(model);
+    return ModelFileBox.getAllModels().toList();
+  }
+
+  Future<List<ModelInfo>> deleteImportedModel(String id) async {
+    await HiveManager.openModelFileBox();
+    await ModelFileBox.delete(id);
+    return ModelFileBox.getAllModels().toList();
+  }
+
+  ModelCatalogSnapshot getCurrentCatalog() {
+    final manager = _manager;
+    if (manager == null) {
+      return ModelCatalogSnapshot.empty();
+    }
+    return ModelCatalogSnapshot(
+      localModels: manager.models.where((e) {
+        if (e.groups.contains('othello') || e.groups.contains('sudoku')) {
+          return false;
+        }
+        return true;
+      }).toList(),
+      tags: manager.modelConfig.tags,
+      groups: manager.modelConfig.groups,
+      taskUpdates: {
+        for (final entry in manager.downloadTasks.entries)
+          entry.key: entry.value.update,
+      },
+    );
+  }
+
+  Future<void> dispose() async {
+    await _taskUpdateSubscription?.cancel();
+    await _taskUpdates.close();
+  }
+
+  ModelManager _requireManager() {
+    final manager = _manager;
+    if (manager == null) {
+      throw StateError('ModelManagerRepository is not initialized');
+    }
+    return manager;
+  }
 }

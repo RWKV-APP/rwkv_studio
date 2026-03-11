@@ -21,17 +21,47 @@ class WithGlobalProviders extends StatelessWidget {
         RepositoryProvider(create: (_) => const ChatRepository()),
         RepositoryProvider(create: (_) => const SettingRepository()),
         RepositoryProvider(create: (_) => const LocalMachineRepository()),
-        RepositoryProvider(create: (_) => const RemoteServiceRepository()),
+        RepositoryProvider(
+          create: (_) => RemoteServiceRepository(),
+          dispose: (repository) {
+            repository.dispose();
+          },
+        ),
         RepositoryProvider(create: (_) => const DecodeParamRepository()),
-        RepositoryProvider(create: (_) => const ModelManagerRepository()),
+        RepositoryProvider(
+          create: (_) => ModelManagerRepository(),
+          dispose: (repository) {
+            repository.dispose();
+          },
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => AppCubit()),
-          BlocProvider(create: (_) => SettingCubit()),
-          BlocProvider(create: (_) => ModelManageCubit()),
-          BlocProvider(create: (_) => ChatCubit()),
-          BlocProvider(create: (_) => RwkvCubit()),
+          BlocProvider(
+            create: (context) => AppCubit(
+              context.read<LocalMachineRepository>(),
+              context.read<RemoteServiceRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) =>
+                SettingCubit(context.read<SettingRepository>()),
+          ),
+          BlocProvider(
+            create: (context) => ModelManageCubit(
+              context.read<ModelManagerRepository>(),
+              context.read<RemoteServiceRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => ChatCubit(context.read<ChatRepository>()),
+          ),
+          BlocProvider(
+            create: (context) => RwkvCubit(
+              context.read<DecodeParamRepository>(),
+              context.read<RemoteServiceRepository>(),
+            ),
+          ),
           BlocProvider(create: (_) => TextGenerationCubit()),
           BlocProvider(create: (_) => BatchInferCubit()),
         ],

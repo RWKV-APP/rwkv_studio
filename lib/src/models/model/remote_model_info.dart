@@ -1,6 +1,6 @@
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 
-extension Ext on ModelInfo {
+extension ModelInfoX on ModelInfo {
   bool get isRemote => this is RemoteModelInfo;
 
   bool get isImportManually => url.isEmpty && localPath.isNotEmpty;

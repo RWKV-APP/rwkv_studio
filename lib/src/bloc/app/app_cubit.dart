@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -10,11 +8,10 @@ import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
+import 'package:rwkv_studio/src/repository/repositories.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
-
-import 'model_service_wrap.dart';
 
 part 'app_state.dart';
 
@@ -23,7 +20,11 @@ extension Ext on BuildContext {
 }
 
 class AppCubit extends Cubit<AppState> {
-  AppCubit() : super(AppState.initial());
+  final LocalMachineRepository _localMachineRepository;
+  final RemoteServiceRepository _remoteServiceRepository;
+
+  AppCubit(this._localMachineRepository, this._remoteServiceRepository)
+    : super(AppState.initial());
 
   Future init() async {
     detectPythonInterpreters();
@@ -64,19 +65,10 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future<List<Python>> detectPythonInterpreters() async {
-    if (kIsWeb) {
-      return [];
-    }
-    final python = await Python.findPythons().onError((e, st) => []);
-    final conda = await Python.detectCondaEnv().onError((e, st) => []);
-    emit(
-      state.copyWith(
-        pythons: [
-          for (final e in python) Python.fromPath(e),
-          for (final e in conda) Python.fromCondaEnv(e),
-        ],
-      ),
-    );
+    final pythons = await _localMachineRepository
+        .detectPythonInterpreters()
+        .onError((e, st) => <Python>[]);
+    emit(state.copyWith(pythons: pythons));
     return state.pythons;
   }
 
@@ -132,16 +124,9 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future updateModelServices(List<RemoteServiceModel> configs) async {
-    List<ModelServiceWrap> services = [];
-    for (final config in configs.where((e) => e.enabled)) {
-      final s = await ModelService.create(
-        url: config.url,
-        accessKey: config.apiKey,
-        id: config.id,
-      );
-      services.add(ModelServiceWrap(s, name: config.name));
-    }
-    emit(state.copyWith(modelServices: services));
+    await _remoteServiceRepository.syncConnections(
+      configs.where((e) => e.enabled),
+    );
   }
 
   Future setFullScreen(bool fullScreen) async {
@@ -187,27 +172,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void _initIPAddress() async {
-    if (kIsWeb) {
-      return;
-    }
-    List<String> ips = [];
-    const lanIP = {'192', '172', '10'};
-    for (var item in await NetworkInterface.list(
-      type: InternetAddressType.IPv4,
-    )) {
-      for (var address in item.addresses) {
-        if (address.address == '127.0.0.1' ||
-            address.address == '0.0.0.0' ||
-            address.isMulticast ||
-            address.address.isEmpty) {
-          continue;
-        }
-        if (!lanIP.contains(address.address.split('.')[0])) {
-          continue;
-        }
-        ips.add(address.address);
-      }
-    }
+    final ips = await _localMachineRepository.getInterfaceIPAddress();
     logd('interfaces: $ips');
     emit(state.copyWith(ipAddresses: ips));
   }

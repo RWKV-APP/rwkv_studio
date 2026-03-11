@@ -3,12 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
-import 'package:rwkv_studio/src/cache/conversation_box.dart';
-import 'package:rwkv_studio/src/cache/hive_manager.dart';
-import 'package:rwkv_studio/src/cache/message_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
+import 'package:rwkv_studio/src/repository/chat_repository.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/diff_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -25,7 +23,9 @@ extension Ext on BuildContext {
 }
 
 class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
-  ChatCubit() : super(ChatState.empty());
+  final ChatRepository _repository;
+
+  ChatCubit(this._repository) : super(ChatState.empty());
 
   Future init() async {
     if (state.initialized) {
@@ -34,19 +34,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     emit(state.copyWith(initialized: true));
 
-    final convBox = await HiveManager.openConversationBox();
-
-    final convs = convBox.values.map((e) => e.toChat()).toList();
-    final msgs = (await MessageBox.getAll())
-        .map((e) => e.toMessage())
-        .groupBy((e) => e.convId)
-        .map((k, v) {
-          final ms = v.toList();
-          ms.sort((a, b) => a.updateAt.compareTo(b.updateAt));
-          return MapEntry(k, ms);
-        });
-
-    convs.sort((a, b) => b.updateAt.compareTo(a.updateAt));
+    final snapshot = await _repository.load();
+    final convs = snapshot.conversations;
+    final msgs = snapshot.messages;
     logd('restored conversations: ${convs.length}, messages: ${msgs.length}');
     emit(state.copyWith(conversations: convs, messages: msgs));
 
@@ -68,17 +58,20 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
           leading: false,
         )
         .diff(keyExtractor: (e) => e.id)
-        .listen((e) {
-          logi(
-            'conversation changed, added: ${e.added.length}, changed: ${e.changed.length}, removed: ${e.removed.length}',
-          );
-          for (final conv in e.removed) {
-            ConversationBox.delete(conv.id);
+        .asyncMap((e) async {
+          try {
+            logi(
+              'conversation changed, added: ${e.added.length}, changed: ${e.changed.length}, removed: ${e.removed.length}',
+            );
+            for (final conv in e.removed) {
+              await _repository.deleteConversation(conv.id);
+            }
+            await _repository.saveConversations([...e.added, ...e.changed]);
+          } catch (error, stackTrace) {
+            loge(error, stackTrace);
           }
-          for (final conv in [...e.added, ...e.changed]) {
-            ConversationBox.put(conv);
-          }
-        });
+        })
+        .listen((_) {});
     addSubscription(sp1);
 
     final sp2 = stream
@@ -90,18 +83,21 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         )
         .map((e) => e.messages.values.flatten())
         .diff(keyExtractor: (e) => e.id)
-        .listen((e) {
-          for (final item in e.removed) {
-            MessageBox.delete(item.id);
-            logd('delete message: ${item.id}');
+        .asyncMap((e) async {
+          try {
+            for (final item in e.removed) {
+              await _repository.deleteMessage(item.id);
+              logd('delete message: ${item.id}');
+            }
+            await _repository.saveMessages([...e.added, ...e.changed]);
+            if (e.added.isNotEmpty) {
+              logd('add messages: ${e.added.length}');
+            }
+          } catch (error, stackTrace) {
+            loge(error, stackTrace);
           }
-          for (final item in [...e.added, ...e.changed]) {
-            MessageBox.put(item);
-          }
-          if (e.added.isNotEmpty) {
-            logd('add messages: ${e.added.length}');
-          }
-        });
+        })
+        .listen((_) {});
     addSubscription(sp2);
   }
 
@@ -186,7 +182,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future clear() async {
-    await MessageBox.clear();
+    await _repository.clearMessages();
     emit(state.copyWith(messages: {}));
   }
 
@@ -225,10 +221,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
   Future deleteConversation(String id) async {
     ConversationModel selected = state.selected;
-    List<ConversationModel> conversations = state.conversations
-        .where((e) => e.id != id)
-        .toList();
-    Map<String, List<MessageModel>> messages = state.messages;
+    final conversations = state.conversations.where((e) => e.id != id).toList();
+    final messages = {...state.messages};
     if (selected.id == id) {
       selected = conversations.firstOrNull ?? ConversationModel.empty;
     }

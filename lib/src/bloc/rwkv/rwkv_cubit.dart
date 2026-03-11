@@ -1,16 +1,14 @@
-import 'dart:convert';
-
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/app/model_service_wrap.dart';
-import 'package:rwkv_studio/src/bloc/model/remote_model.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
-import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
+import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
+import 'package:rwkv_studio/src/repository/decode_param_repository.dart';
+import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
-import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'rwkv_state.dart';
@@ -22,20 +20,16 @@ extension Ext on BuildContext {
 }
 
 class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
-  RwkvCubit() : super(RwkvState.initial());
+  final DecodeParamRepository _decodeParamRepository;
+  final RemoteServiceRepository _remoteServiceRepository;
+
+  RwkvCubit(this._decodeParamRepository, this._remoteServiceRepository)
+    : super(RwkvState.initial());
 
   Future init() async {
     logd('init rwkv');
 
-    final s = await StateCacheBox.getAll(
-      nameSpace: StateCacheBox.nsSpaceDecodeParam,
-    );
-
-    final decodeParams = s.associate(
-      (e) => e.key,
-      (e) => DecodeParam.fromMap(jsonDecode(e.value)),
-    );
-    decodeParams.removeWhere((k, _) => k.isEmpty);
+    final decodeParams = await _decodeParamRepository.getAll();
     logi(
       'restore decode params(${decodeParams.length}): ${decodeParams.keys.join(',')}',
     );
@@ -46,27 +40,23 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
     );
   }
 
-  void setOrPutDecodeParam(String id, DecodeParam param) {
+  Future<void> setOrPutDecodeParam(String id, DecodeParam param) async {
     id = id.isEmpty ? 'default' : id;
-    StateCacheBox.put(
-      id,
-      param.toMap(),
-      nameSpace: StateCacheBox.nsSpaceDecodeParam,
-    );
+    await _decodeParamRepository.put(id, param);
     emit(state.copyWith(decodeParams: {...state.decodeParams, id: param}));
   }
 
-  void deleteDecodeParam(String id) {
+  Future<void> deleteDecodeParam(String id) async {
     logd('delete decode param $id');
     final params = {...state.decodeParams};
     params.remove(id);
-    StateCacheBox.delete(id, nameSpace: StateCacheBox.nsSpaceDecodeParam);
+    await _decodeParamRepository.delete(id);
     emit(state.copyWith(decodeParams: params));
   }
 
-  void setRemoteServiceList(List<ModelServiceWrap> services) {
-    Map<String, ModelInstanceState> instances = {};
-    for (final service in services) {
+  void syncRemoteServiceInstances() {
+    final instances = <String, ModelInstanceState>{};
+    for (final service in _remoteServiceRepository.connectedServices) {
       final ms = service.models;
       for (final m in ms) {
         final modelId = m.info.id;
@@ -79,12 +69,11 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
       }
     }
 
-    if (instances.isNotEmpty) {
-      logd('connected ${instances.length} instance(s) from remote service');
-      emit(state.copyWith(models: {...state.models, ...instances}));
-    } else {
-      logd('no instances from remote service');
-    }
+    final localModels = Map<String, ModelInstanceState>.fromEntries(
+      state.models.entries.where((entry) => !entry.value.info.isRemote),
+    );
+    logd('synced ${instances.length} remote instance(s)');
+    emit(state.copyWith(models: {...localModels, ...instances}));
   }
 
   ModelInstanceState? getModelInstance(String? modelInstanceId) {

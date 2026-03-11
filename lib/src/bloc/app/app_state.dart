@@ -91,7 +91,6 @@ class NavBarItem {
 class AppState {
   final int pane;
   final List<Python> pythons;
-  final List<ModelServiceWrap> modelServices;
   final String selectedPythonId;
   final String albatrossPath;
   final List<NavBarItem> navBarItems;
@@ -114,7 +113,6 @@ class AppState {
     required this.navBarItems,
     required this.fullScreen,
     required this.showNavBar,
-    required this.modelServices,
     required this.rwkvModelService,
     required this.ipAddresses,
   });
@@ -128,7 +126,6 @@ class AppState {
       navBarItems: NavBarItem.defaultNavItems(),
       fullScreen: false,
       showNavBar: true,
-      modelServices: [],
       rwkvModelService: RwkvHttpApiService(),
       ipAddresses: [],
     );
@@ -142,7 +139,6 @@ class AppState {
     List<NavBarItem>? navBarItems,
     bool? fullScreen,
     bool? showNavBar,
-    List<ModelServiceWrap>? modelServices,
     RwkvHttpApiService? rwkvModelService,
     List<String>? ipAddresses,
   }) {
@@ -154,7 +150,6 @@ class AppState {
       navBarItems: navBarItems ?? this.navBarItems,
       fullScreen: fullScreen ?? this.fullScreen,
       showNavBar: showNavBar ?? this.showNavBar,
-      modelServices: modelServices ?? this.modelServices,
       rwkvModelService: rwkvModelService ?? this.rwkvModelService,
       ipAddresses: ipAddresses ?? this.ipAddresses,
     );

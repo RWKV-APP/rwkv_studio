@@ -16,5 +16,5 @@ class ModelServiceWrap {
 
   List<LoadedModel> get models => service.models;
 
-  Future refresh() => service.refresh();
+  Future<void> refresh() => service.refresh();
 }

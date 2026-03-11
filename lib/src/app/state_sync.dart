@@ -8,11 +8,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
-import 'package:rwkv_studio/src/bloc/model/model_provider.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
-import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -97,7 +95,12 @@ List<BlocListener> _buildStateSyncListeners() {
         logd(
           'model-service-settings updated: ${state.model.remoteServices.length} services',
         );
-        context.app.updateModelServices(state.model.remoteServices);
+        final app = context.app;
+        final rwkv = context.rwkv;
+        final modelManage = context.modelManage;
+        await app.updateModelServices(state.model.remoteServices);
+        rwkv.syncRemoteServiceInstances();
+        await modelManage.updateModelList(local: false);
       },
     ),
     BlocListener<SettingCubit, SettingState>(
@@ -137,24 +140,6 @@ List<BlocListener> _buildStateSyncListeners() {
           context.app.onModelServerSettingChanged(state.model.modelServer);
         },
       ),
-    BlocListener<AppCubit, AppState>(
-      listenWhen: (p, c) => p.modelServices != c.modelServices,
-      listener: (context, state) async {
-        final services = state.modelServices;
-        final providers = services.map(ModelListProvider.fromService).toList();
-
-        final m = services.flatten((e) => e.models);
-        logd(
-          'model-service connected: ${services.length} services, ${m.length} models',
-        );
-
-        /// NOTE: MUST BE CALLED BEFORE `setModelProviders`
-        /// avoid refreshing model list when model providers are not ready
-        context.rwkv.setRemoteServiceList(services);
-
-        context.modelManage.setModelProviders(providers);
-      },
-    ),
     BlocListener<RwkvCubit, RwkvState>(
       listenWhen: (p, c) => p.models != c.models,
       listener: (context, state) {
