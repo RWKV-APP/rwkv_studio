@@ -8,7 +8,7 @@ class RwkvTokenizer {
 
   static List<String> rwkvVocab20230424Data = [];
 
-  const RwkvTokenizer({required this.vocabPath});
+  const RwkvTokenizer({this.vocabPath = ''});
 
   static RwkvTokenizer get default_ => const RwkvTokenizer(vocabPath: '');
 

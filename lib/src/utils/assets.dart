@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 
 class AppAssets {
-  static const String rwkvVocab20230424 = '';
+  static String rwkvVocab20230424Path = '';
 
   AppAssets._();
 
@@ -22,6 +23,11 @@ class AppAssets {
         .where((String line) => line.isNotEmpty)
         .toList(growable: false);
     logd('b_rwkv_vocab_v20230424 loaded');
+
+    if (!kIsWeb) {
+      final f = await _assetsPath('assets/rwkv/$name', name);
+      rwkvVocab20230424Path = f.path;
+    }
   }
 
   static Future<File> _assetsPath(String assets, String file) async {

@@ -27,6 +27,13 @@ class WithGlobalProviders extends StatelessWidget {
             repository.dispose();
           },
         ),
+        RepositoryProvider(
+          create: (context) =>
+              LlmSessionRepository(context.read<RemoteServiceRepository>()),
+          dispose: (repository) {
+            repository.dispose();
+          },
+        ),
         RepositoryProvider(create: (_) => const DecodeParamRepository()),
         RepositoryProvider(
           create: (_) => ModelManagerRepository(),
@@ -59,7 +66,7 @@ class WithGlobalProviders extends StatelessWidget {
           BlocProvider(
             create: (context) => RwkvCubit(
               context.read<DecodeParamRepository>(),
-              context.read<RemoteServiceRepository>(),
+              context.read<LlmSessionRepository>(),
             ),
           ),
           BlocProvider(create: (_) => TextGenerationCubit()),

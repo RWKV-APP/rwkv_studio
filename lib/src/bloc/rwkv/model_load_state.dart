@@ -1,5 +1,3 @@
-part of 'rwkv_interface.dart';
-
 class ModelLoadState {
   final String modelId;
   final String modelName;

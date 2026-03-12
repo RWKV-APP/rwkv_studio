@@ -1,4 +1,6 @@
-part of 'rwkv_cubit.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 
 typedef InstanceId = String;
 
@@ -13,7 +15,7 @@ class ModelBaseInfo {
   String get detailName =>
       [providerName, name].where((e) => e.isNotEmpty).join(': ');
 
-  ModelBaseInfo._({
+  const ModelBaseInfo._({
     required this.id,
     required this.name,
     required this.providerName,
@@ -37,15 +39,17 @@ class ModelBaseInfo {
     );
   }
 
-  factory ModelBaseInfo.fromRemoteService(
-    ModelServiceWrap service,
-    LoadedModel m,
-  ) {
+  factory ModelBaseInfo.remote({
+    required String id,
+    required String name,
+    required String providerName,
+    required String serviceId,
+  }) {
     return ModelBaseInfo._(
-      id: m.info.id,
-      name: m.info.name,
-      providerName: service.sourceName,
-      serviceId: service.id,
+      id: id,
+      name: name,
+      providerName: providerName,
+      serviceId: serviceId,
     );
   }
 

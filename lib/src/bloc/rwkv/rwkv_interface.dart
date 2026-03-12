@@ -2,12 +2,13 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
-import 'package:rwkv_studio/src/python/albatross.dart';
+import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
-part 'model_load_state.dart';
+export 'model_load_state.dart';
 
 /// Interface for abstract RWKV
 mixin class RwkvInterface {
@@ -26,13 +27,9 @@ mixin class RwkvInterface {
     throw UnimplementedError();
   }
 
-  Stream<ModelLoadState> loadModel(ModelInfo modelInfo) {
-    throw UnimplementedError();
-  }
-
-  Stream<ModelLoadState> onExternalRWKVLoaded(
-    RWKV rwkv, {
-    required ModelInfo info,
+  Stream<ModelLoadState> loadModel(
+    ModelInfo modelInfo, {
+    AlbatrossLaunchConfig? albatrossConfig,
   }) {
     throw UnimplementedError();
   }
@@ -80,9 +77,8 @@ mixin class RwkvInterface {
         return;
       }
       try {
-        yield ModelLoadState.loading(modelInfo.id);
-        final r = await _loadAlbatross(context, modelInfo);
-        yield* onExternalRWKVLoaded(r, info: modelInfo);
+        final config = _resolveAlbatrossLaunchConfig(context);
+        yield* loadModel(modelInfo, albatrossConfig: config);
       } catch (e) {
         yield ModelLoadState.error(modelInfo.id, e);
       }
@@ -91,7 +87,7 @@ mixin class RwkvInterface {
     yield* loadModel(modelInfo);
   }
 
-  Future<RWKV> _loadAlbatross(BuildContext context, ModelInfo model) async {
+  AlbatrossLaunchConfig _resolveAlbatrossLaunchConfig(BuildContext context) {
     final python = context.app.getSelectedPython();
     if (python == null) {
       throw 'no python interpreter selected';
@@ -102,11 +98,6 @@ mixin class RwkvInterface {
       throw 'albatross script path not found';
     }
 
-    final cmd = AlbatrossLauncher(
-      python: python,
-      scriptPath: scriptPath,
-      modelPath: model.localPath,
-    );
-    return cmd.startup();
+    return AlbatrossLaunchConfig(python: python, scriptPath: scriptPath);
   }
 }
