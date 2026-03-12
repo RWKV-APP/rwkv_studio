@@ -19,7 +19,10 @@ class BottomBar extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             border: Border(
-              top: BorderSide(color: context.fluent.inactiveBackgroundColor),
+              top: BorderSide(
+                color: context.fluent.inactiveBackgroundColor,
+                width: .5,
+              ),
             ),
           ),
           padding: const .symmetric(vertical: 2, horizontal: 4),

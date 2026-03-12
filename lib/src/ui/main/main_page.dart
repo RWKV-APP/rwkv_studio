@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
@@ -15,11 +18,12 @@ import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
-
 part 'navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
+
+  static final isWindows = !kIsWeb && Platform.isWindows;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +35,13 @@ class MainPage extends StatelessWidget {
             p.navBarItems != c.navBarItems ||
             p.showNavBar != c.showNavBar,
         builder: (context, state) {
-          return _buildContent(context, dark, state);
+          return Column(
+            children: [
+              if (isWindows) const SizedBox(height: 12),
+              Expanded(child: _buildContent(context, dark, state)),
+              const BottomBar(),
+            ],
+          );
         },
       ),
     );
@@ -40,22 +50,13 @@ class MainPage extends StatelessWidget {
   Widget _buildContent(BuildContext context, bool dark, AppState state) {
     return NavigationView(
       paneBodyBuilder: (item, child) {
-        return Column(
-          children: [
-            Expanded(
-              child: ColoredBox(
-                color: dark
-                    ? Colors.black.withAlpha(100)
-                    : Colors.white.withAlpha(100),
-                child: child ?? const SizedBox(),
-              ),
-            ),
-            const BottomBar(),
-          ],
+        return ColoredBox(
+          color: dark ? Colors.black.withAlpha(80) : Colors.white.withAlpha(80),
+          child: child ?? const SizedBox(),
         );
       },
+      contentShape: isWindows ? null : const BeveledRectangleBorder(),
       pane: NavigationPane(
-        // header: const Text('RWKV Studio'),
         size: const NavigationPaneSize(openWidth: 160, openMinWidth: 120),
         selected: state.pane.clamp(0, state.expandedItems().length),
         customPane: !state.showNavBar ? _HiddenNavPane() : null,

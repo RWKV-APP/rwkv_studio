@@ -24,7 +24,6 @@ class Log {
   @override
   String toString() {
     return message;
-    return '$level/$tag: $message';
   }
 }
 
@@ -88,10 +87,10 @@ void _listenToLogs() {
     final log = Log(
       tag: record.loggerName,
       level: record.level.name.replaceAll('CONFIG', 'DEBUG'),
-      message: record.message,
+      message: _formatRecordMessage(record),
       datetime: record.time,
     );
-    print(log.toString());
+    AppLog.instance._log(log);
   });
 }
 
@@ -107,7 +106,7 @@ void logi(dynamic msg) {
 
 void logd(dynamic msg) {
   _listenToLogs();
-  _logger.config("${_fileName()}$msg");
+  _logger.config("$msg");
 }
 
 void logw(dynamic msg) {
@@ -120,7 +119,8 @@ void logw(dynamic msg) {
 
 void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
   _listenToLogs();
-  _logger.severe(msg, error, stackTrace);
+  final resolved = _resolveErrorLog(msg, error, stackTrace);
+  _logger.severe(resolved.message, resolved.error, resolved.stackTrace);
   if (!kIsWeb) {
     _logger.severe(StackTrace.current.toString().split('\n')[1].trim());
   }
@@ -131,8 +131,30 @@ void logwtf(dynamic msg) {
   _logger.shout(msg);
 }
 
-String _fileName() {
-  return '';
-  final line = StackTrace.current.toString().split('\n')[2].trim();
-  return "${line.substring(line.indexOf('(') + 1, line.indexOf(')'))}\n";
+String _formatRecordMessage(LogRecord record) {
+  final parts = <String>[record.message];
+  if (record.error != null &&
+      record.error.toString() != record.message.toString()) {
+    parts.add(record.error.toString());
+  }
+  if (record.stackTrace != null) {
+    parts.add(record.stackTrace.toString());
+  }
+  return parts.join('\n');
+}
+
+({String message, Object? error, StackTrace? stackTrace}) _resolveErrorLog(
+  dynamic msg,
+  Object? error,
+  StackTrace? stackTrace,
+) {
+  if (msg is StackTrace && error == null && stackTrace == null) {
+    return (message: msg.toString(), error: null, stackTrace: msg);
+  }
+
+  if (error is StackTrace && stackTrace == null) {
+    return (message: msg.toString(), error: null, stackTrace: error);
+  }
+
+  return (message: msg.toString(), error: error, stackTrace: stackTrace);
 }

@@ -25,8 +25,8 @@ class ChatTitleBar extends StatelessWidget {
             children: [
               IconButton(
                 icon: state.showConversationList
-                    ? const Icon(FluentIcons.open_pane)
-                    : const Icon(FluentIcons.close_pane),
+                    ? const Icon(FluentIcons.column_right_two_thirds)
+                    : const Icon(FluentIcons.column_right_two_thirds),
                 onPressed: () {
                   context.chat.toggleConversationListVisible();
                 },

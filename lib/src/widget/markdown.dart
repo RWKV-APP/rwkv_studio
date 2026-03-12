@@ -187,9 +187,7 @@ class _HighlightedText extends InlineMd {
         ),
         child: Text(
           highlightedText,
-          style: TextStyle(
-            color: isDark ? Colors.blue.light : Colors.blue.lightest,
-          ),
+          style: TextStyle(color: Colors.blue.lightest),
         ),
       ),
     );

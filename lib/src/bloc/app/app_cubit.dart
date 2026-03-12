@@ -57,14 +57,13 @@ class AppCubit extends Cubit<AppState> {
     final pythons = await _localMachineRepository
         .detectPythonInterpreters()
         .onError((e, st) => <Python>[]);
-    emit(state.copyWith(pythons: pythons));
-    return state.pythons;
+    return pythons;
   }
 
-  Python? getSelectedPython() {
-    return state.pythons
-        .where((e) => e.id == state.selectedPythonId)
-        .firstOrNull;
+  Future<Python?> getSelectedPython() async {
+    return await _localMachineRepository.resolvePythonById(
+      state.selectedPythonId,
+    );
   }
 
   void onModelServerSettingChanged(ModelServerSettingsModel setting) async {

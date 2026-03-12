@@ -20,7 +20,7 @@ class WithGlobalProviders extends StatelessWidget {
       providers: [
         RepositoryProvider(create: (_) => const ChatRepository()),
         RepositoryProvider(create: (_) => const SettingRepository()),
-        RepositoryProvider(create: (_) => const LocalMachineRepository()),
+        RepositoryProvider(create: (_) => LocalMachineRepository()),
         RepositoryProvider(
           create: (_) => RemoteServiceRepository(),
           dispose: (repository) {

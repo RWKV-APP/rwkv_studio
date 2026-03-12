@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 
 class LocalMachineRepository {
-  const LocalMachineRepository();
+  List<Python> _pythons = [];
+
+  LocalMachineRepository();
 
   Future<List<String>> getInterfaceIPAddress() async {
     if (kIsWeb) {
@@ -39,18 +41,21 @@ class LocalMachineRepository {
     final conda = await Python.detectCondaEnv().onError(
       (e, st) => <CondaEnv>[],
     );
-    return [
+    _pythons = [
       for (final item in python) Python.fromPath(item),
       for (final item in conda) Python.fromCondaEnv(item),
     ];
+    return _pythons;
   }
 
   Future<Python?> resolvePythonById(String id) async {
     if (id.isEmpty) {
       return null;
     }
-    final pythons = await detectPythonInterpreters();
-    for (final python in pythons) {
+    if (_pythons.isEmpty) {
+      await detectPythonInterpreters();
+    }
+    for (final python in _pythons) {
       if (python.id == id) {
         return python;
       }

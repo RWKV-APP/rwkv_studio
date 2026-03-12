@@ -40,7 +40,21 @@ class MessageListItem extends StatelessWidget {
         style: const TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
       );
       if (message.text.isEmpty) {
-        content = error;
+        content = Container(
+          padding: const .symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.errorPrimaryColor.withAlpha(10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: .min,
+            children: [
+              const Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
+              const SizedBox(width: 8),
+              error,
+            ],
+          ),
+        );
       } else {
         content = Column(
           mainAxisSize: .min,
@@ -53,12 +67,26 @@ class MessageListItem extends StatelessWidget {
       }
     } else {
       if (response.isEmpty && message.stopped && !message.paused) {
-        content = const Text(
-          '模型没有生成任何内容...',
-          style: TextStyle(
-            fontStyle: FontStyle.italic,
-            fontSize: 12,
-            color: Colors.errorPrimaryColor,
+        content = Container(
+          padding: const .symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.errorPrimaryColor.withAlpha(10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            mainAxisSize: .min,
+            children: [
+              Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
+              SizedBox(width: 8),
+              Text(
+                '模型没有生成任何内容...',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  fontSize: 12,
+                  color: Colors.errorPrimaryColor,
+                ),
+              ),
+            ],
           ),
         );
       } else if (response.isNotEmpty) {
@@ -73,7 +101,7 @@ class MessageListItem extends StatelessWidget {
 
     Widget box = _MessageBox(
       alignmentRight: message.isUser,
-      footer: message.isUser
+      footer: message.isUser || prefilling || !message.stopped
           ? null
           : ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 28),
@@ -121,43 +149,40 @@ class _MessageBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const .only(top: 16),
-      child: Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: alignmentRight ? .end : .start,
-        children: [
-          Container(
-            decoration: !alignmentRight
-                ? null
-                : BoxDecoration(
-                    color: context.theme.cardColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(10),
-                        offset: const Offset(1, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-            padding: !alignmentRight
-                ? const .only(left: 12, top: 16)
-                : const .symmetric(horizontal: 12, vertical: 12),
-            margin: .only(
-              right: alignmentRight ? 16 : 100,
-              left: alignmentRight ? 100 : 0,
-            ),
-            child: child,
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: alignmentRight ? .end : .start,
+      children: [
+        const SizedBox(height: 16),
+        Container(
+          decoration: !alignmentRight
+              ? null
+              : BoxDecoration(
+                  color: context.theme.cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      offset: const Offset(1, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+          padding: !alignmentRight
+              ? const .only(left: 12, top: 16)
+              : const .symmetric(horizontal: 12, vertical: 12),
+          margin: .only(
+            right: alignmentRight ? 16 : 100,
+            left: alignmentRight ? 100 : 0,
           ),
-          if (footer != null)
-            Padding(
-              padding: const .symmetric(horizontal: 4, vertical: 4),
-              child: footer,
-            ),
-        ],
-      ),
+          child: child,
+        ),
+        if (footer != null)
+          Padding(
+            padding: const .symmetric(horizontal: 4, vertical: 4),
+            child: footer,
+          ),
+      ],
     );
   }
 }
@@ -195,6 +220,7 @@ class _MessageItemFooter extends StatelessWidget {
             },
           ),
         if (isLast && !generating) const SizedBox(width: 4),
+        if (!isLast) const SizedBox(width: 8),
         Text(
           message.modelName,
           style: TextStyle(fontSize: 10, color: Colors.grey[80]),
@@ -240,10 +266,12 @@ class _ContextMenu extends StatelessWidget {
     _contextController.close();
     await Future.delayed(const Duration(milliseconds: 100));
     final controller = TextEditingController(text: message.text);
+    final full = message.text.length > 100;
     _contextController.showFlyout<void>(
-      autoModeConfiguration: FlyoutAutoConfiguration(
-        preferredMode: FlyoutPlacementMode.topCenter,
-      ),
+      autoModeConfiguration: !full
+          ? null
+          : FlyoutAutoConfiguration(preferredMode: .full),
+      placementMode: .auto,
       barrierDismissible: true,
       dismissOnPointerMoveAway: false,
       dismissWithEsc: true,

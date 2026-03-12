@@ -3,9 +3,10 @@ import 'package:gpt_markdown/gpt_markdown.dart';
 
 extension CustomeFluent on FluentThemeData {
   FluentThemeData custom({String? fontFamily}) {
+    final isDark = brightness == Brightness.dark;
     final textColor = brightness == Brightness.light
         ? Colors.black
-        : Colors.grey[40];
+        : Colors.grey[60];
 
     final defaultFontStyle = TextStyle(
       fontSize: 14,
@@ -24,8 +25,8 @@ extension CustomeFluent on FluentThemeData {
           brightness: brightness,
           hrLineThickness: .5,
           hrLineColor: Colors.grey[100],
-          h1: defaultFontStyle.copyWith(fontSize: 24),
-          h2: defaultFontStyle.copyWith(fontSize: 22),
+          h1: defaultFontStyle.copyWith(fontSize: 24, height: 2),
+          h2: defaultFontStyle.copyWith(fontSize: 22, height: 1.8),
           h3: defaultFontStyle.copyWith(fontSize: 20),
           h4: defaultFontStyle.copyWith(fontSize: 18),
           h5: defaultFontStyle.copyWith(fontSize: 16),
@@ -78,6 +79,9 @@ extension CustomeFluent on FluentThemeData {
           textStyle: WidgetStatePropertyAll(
             defaultFontStyle.copyWith(fontWeight: FontWeight.w500),
           ),
+          foregroundColor: !isDark
+              ? null
+              : WidgetStateColor.fromMap({WidgetState.any: Colors.grey[40]}),
         ),
         iconButtonStyle: ButtonStyle(
           padding: WidgetStateProperty.all(
@@ -88,6 +92,9 @@ extension CustomeFluent on FluentThemeData {
           padding: WidgetStateProperty.all(
             const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           ),
+          foregroundColor: !isDark
+              ? null
+              : WidgetStateColor.fromMap({WidgetState.any: Colors.grey[40]}),
           textStyle: WidgetStatePropertyAll(
             defaultFontStyle.copyWith(fontWeight: FontWeight.w500),
           ),

@@ -77,7 +77,7 @@ mixin class RwkvInterface {
         return;
       }
       try {
-        final config = _resolveAlbatrossLaunchConfig(context);
+        final config = await _resolveAlbatrossLaunchConfig(context);
         yield* loadModel(modelInfo, albatrossConfig: config);
       } catch (e) {
         yield ModelLoadState.error(modelInfo.id, e);
@@ -87,15 +87,17 @@ mixin class RwkvInterface {
     yield* loadModel(modelInfo);
   }
 
-  AlbatrossLaunchConfig _resolveAlbatrossLaunchConfig(BuildContext context) {
-    final python = context.app.getSelectedPython();
-    if (python == null) {
-      throw 'no python interpreter selected';
-    }
-
+  Future<AlbatrossLaunchConfig> _resolveAlbatrossLaunchConfig(
+    BuildContext context,
+  ) async {
     final scriptPath = context.app.state.albatrossPath;
     if (scriptPath.isEmpty) {
       throw 'albatross script path not found';
+    }
+
+    final python = await context.app.getSelectedPython();
+    if (python == null) {
+      throw 'no python interpreter selected';
     }
 
     return AlbatrossLaunchConfig(python: python, scriptPath: scriptPath);

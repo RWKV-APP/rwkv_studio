@@ -201,8 +201,7 @@ class LlmSessionRepository {
           .chat(ChatParam(messages: messages, model: instanceId))
           .timeout(const Duration(seconds: 60));
     } catch (e, s) {
-      loge(e);
-      loge(s);
+      loge(e, s);
       rethrow;
     }
   }

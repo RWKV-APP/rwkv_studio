@@ -90,7 +90,6 @@ class NavBarItem {
 
 class AppState {
   final int pane;
-  final List<Python> pythons;
   final String selectedPythonId;
   final String albatrossPath;
   final List<NavBarItem> navBarItems;
@@ -108,7 +107,6 @@ class AppState {
 
   AppState({
     required this.pane,
-    required this.pythons,
     required this.selectedPythonId,
     required this.albatrossPath,
     required this.navBarItems,
@@ -122,7 +120,6 @@ class AppState {
   factory AppState.initial() {
     return AppState(
       pane: -1,
-      pythons: [],
       selectedPythonId: '',
       albatrossPath: 'app.py',
       navBarItems: NavBarItem.defaultNavItems(),
@@ -136,7 +133,6 @@ class AppState {
 
   AppState copyWith({
     int? pane,
-    List<Python>? pythons,
     String? selectedPythonId,
     String? albatrossPath,
     List<NavBarItem>? navBarItems,
@@ -148,7 +144,6 @@ class AppState {
   }) {
     return AppState(
       pane: pane ?? this.pane,
-      pythons: pythons ?? this.pythons,
       selectedPythonId: selectedPythonId ?? this.selectedPythonId,
       albatrossPath: albatrossPath ?? this.albatrossPath,
       navBarItems: navBarItems ?? this.navBarItems,
