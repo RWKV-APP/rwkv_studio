@@ -5,6 +5,7 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
@@ -85,7 +86,7 @@ class LlmSessionRepository {
   }
 
   Future<void> setDecodeParam(String instanceId, DecodeParam param) async {
-    await _syncModelConfig(instanceId, param, null);
+    await _syncModelConfig(instanceId, param);
   }
 
   Future<void> release(String instanceId) async {
@@ -193,12 +194,21 @@ class LlmSessionRepository {
       throw 'Model not found';
     }
 
-    await _syncModelConfig(instanceId, decodeParam, config);
+    await _syncModelConfig(instanceId, decodeParam);
 
     logi('chat: ${instance.id}');
     try {
       yield* instance.rwkv
-          .chat(ChatParam(messages: messages, model: instanceId))
+          .chat(
+            ChatParam(
+              messages: messages,
+              model: instanceId,
+              maxTokens: decodeParam.maxTokens,
+              prompt: config.prompt,
+              stopSequence: config.stopTokens,
+              reasoning: config.reasoningEffort,
+            ),
+          )
           .timeout(const Duration(seconds: 60));
     } catch (e, s) {
       loge(e, s);
@@ -218,7 +228,7 @@ class LlmSessionRepository {
       throw AppException('model not found $instanceId');
     }
 
-    await _syncModelConfig(instanceId, decodeParam, null);
+    await _syncModelConfig(instanceId, decodeParam);
     await instance.clearState();
 
     if (batch > 1) {
@@ -227,6 +237,7 @@ class LlmSessionRepository {
           ChatRequest(
             contents: [for (int i = 0; i < batch; i++) prompt],
             stopTokens: [0, 261],
+            maxTokens: decodeParam.maxTokens,
           ),
         );
         return;
@@ -237,7 +248,11 @@ class LlmSessionRepository {
     if (fimSuffix != null) {
       if (instance is AlbatrossClient) {
         yield* instance.fimBatchStream(
-          FimRequest(prefix: [prompt], suffix: [fimSuffix]),
+          FimRequest(
+            prefix: [prompt],
+            suffix: [fimSuffix],
+            maxTokens: decodeParam.maxTokens,
+          ),
         );
       } else {
         throw const AppException('fim only supported by albatross');
@@ -248,7 +263,13 @@ class LlmSessionRepository {
 
     try {
       yield* instance
-          .generate(GenerationParam(prompt: prompt, model: instanceId))
+          .generate(
+            GenerationParam(
+              prompt: prompt,
+              model: instanceId,
+              maxTokens: decodeParam.maxTokens,
+            ),
+          )
           .timeout(const Duration(seconds: 30));
     } catch (e, s) {
       loge(e, s);
@@ -281,17 +302,11 @@ class LlmSessionRepository {
 
   Future<void> _syncModelConfig(
     String instanceId,
-    DecodeParam decodeParam, [
-    GenerationConfig? config,
-  ]) async {
+    DecodeParam decodeParam,
+  ) async {
     ModelInstanceState instance = _models[instanceId]!;
     var updated = false;
 
-    if (instance.config != config && config != null) {
-      await instance.rwkv.setGenerationConfig(config);
-      instance = instance.copyWith(config: config);
-      updated = true;
-    }
     if (instance.decodeParam != decodeParam) {
       await instance.rwkv.setDecodeParam(decodeParam);
       instance = instance.copyWith(decodeParam: decodeParam);

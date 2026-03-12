@@ -50,6 +50,9 @@ class AppSettingsModel extends Equatable {
   }
 
   factory AppSettingsModel.fromMap(Map<String, dynamic> map) {
+    if (map.isEmpty) {
+      return AppSettingsModel.initial();
+    }
     return AppSettingsModel(
       model: ModelSettingsModel.fromMap(map['model']),
       appearance: AppearanceSettingsModel.fromMap(map['appearance']),

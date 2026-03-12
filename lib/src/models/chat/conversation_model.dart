@@ -32,7 +32,7 @@ class ConversationModel {
 
   factory ConversationModel.create() {
     return ConversationModel(
-      id: DateTime.now().toString(),
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: '',
       updateAt: DateTime.now(),
       systemPrompt: '',

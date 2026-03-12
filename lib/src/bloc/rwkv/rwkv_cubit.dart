@@ -7,6 +7,7 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/repository/decode_param_repository.dart';
 import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';

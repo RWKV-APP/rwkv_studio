@@ -6,6 +6,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
+import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/repository/chat_repository.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/diff_utils.dart';

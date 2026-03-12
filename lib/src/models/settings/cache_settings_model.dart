@@ -23,7 +23,7 @@ class CacheSettingsModel extends Equatable {
         appCacheDir: defaultCacheDir,
       );
     }
-    return CacheSettingsModel(modelDownloadDir: '', appCacheDir: '');
+    return CacheSettingsModel.initial();
   }
 
   Map<String, dynamic> toMap() {

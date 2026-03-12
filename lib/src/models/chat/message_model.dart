@@ -1,27 +1,5 @@
 import 'package:rwkv_dart/rwkv_dart.dart';
 
-extension MessageModelExtras on MessageModel {
-  int get firstTokenTime => extra['first_token_time'] ?? 0;
-
-  int get thinkEndTime => extra['think_end_time'] ?? 0;
-
-  int get tokenCount => extra['token_count'] ?? -1;
-
-  MessageModel copyWithExtra({
-    int? firstTokenTime,
-    int? thinkEndTime,
-    int? tokenCount,
-  }) {
-    return copyWith(
-      extra: {
-        'first_token_time': firstTokenTime ?? this.firstTokenTime,
-        'think_end_time': thinkEndTime ?? this.thinkEndTime,
-        'token_count': tokenCount ?? this.tokenCount,
-      },
-    );
-  }
-}
-
 class MessageModel {
   final String id;
   final String convId;
@@ -35,34 +13,6 @@ class MessageModel {
   final StopReason stopReason;
   final ReasoningEffort reasoning;
   final Map<String, dynamic> extra;
-
-  bool get stopped => stopReason != StopReason.none;
-
-  bool get paused => stopReason == StopReason.canceled;
-
-  bool get isUser => role == 'user';
-
-  bool get hasThinkContent => thinkEndAt > 8;
-
-  bool get reasoningEnabled => reasoning != ReasoningEffort.none;
-
-  bool get thinking =>
-      thinkEndAt == text.length && stopReason == StopReason.none;
-
-  String get thinkContent {
-    return text
-        .substring(0, thinkEndAt)
-        .replaceFirst('<think>', '')
-        .replaceFirst('<think', '')
-        .trim();
-  }
-
-  String get bodyContent {
-    if (thinkEndAt <= 0) {
-      return text;
-    }
-    return text.substring(thinkEndAt).replaceAll('</think>', '').trim();
-  }
 
   MessageModel._({
     required this.id,
@@ -136,5 +86,59 @@ class MessageModel {
       thinkEndAt: thinkEndAt ?? this.thinkEndAt,
       reasoning: reasoning ?? this.reasoning,
     );
+  }
+}
+
+extension MessageModelExtras on MessageModel {
+  int get firstTokenTime => extra['first_token_time'] ?? 0;
+
+  int get thinkEndTime => extra['think_end_time'] ?? 0;
+
+  int get tokenCount => extra['token_count'] ?? -1;
+
+  MessageModel copyWithExtra({
+    int? firstTokenTime,
+    int? thinkEndTime,
+    int? tokenCount,
+  }) {
+    return copyWith(
+      extra: {
+        'first_token_time': firstTokenTime ?? this.firstTokenTime,
+        'think_end_time': thinkEndTime ?? this.thinkEndTime,
+        'token_count': tokenCount ?? this.tokenCount,
+      },
+    );
+  }
+}
+
+extension DeliveryStateExtras on MessageModel {
+  bool get waitingForResponse => !hasThinkContent && bodyContent.isEmpty && !stopped;
+
+  bool get stopped => stopReason != StopReason.none;
+
+  bool get paused => stopReason == StopReason.canceled;
+
+  bool get isUser => role == 'user';
+
+  bool get hasThinkContent => thinkEndAt > 8;
+
+  bool get reasoningEnabled => reasoning != ReasoningEffort.none;
+
+  bool get thinking =>
+      thinkEndAt == text.length && stopReason == StopReason.none;
+
+  String get thinkContent {
+    return text
+        .substring(0, thinkEndAt)
+        .replaceFirst('<think>', '')
+        .replaceFirst('<think', '')
+        .trim();
+  }
+
+  String get bodyContent {
+    if (thinkEndAt <= 0) {
+      return text;
+    }
+    return text.substring(thinkEndAt).replaceAll('</think>', '').trim();
   }
 }

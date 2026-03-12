@@ -24,12 +24,7 @@ class ModelSettingsModel extends Equatable {
   });
 
   factory ModelSettingsModel.initial() {
-    return const ModelSettingsModel(
-      enabledBackends: [],
-      remoteServices: [],
-      modelListUrl: '',
-      modelServer: ModelServerSettingsModel.empty,
-    );
+    return default_;
   }
 
   static final default_ = ModelSettingsModel(

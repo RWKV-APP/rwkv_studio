@@ -1,5 +1,6 @@
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 
 typedef InstanceId = String;
@@ -75,7 +76,7 @@ class ModelInstanceState {
     DecodeParam? decodeParam,
   }) : decodeParam = decodeParam ?? DecodeParam.initial(),
        state = state ?? GenerationState.initial(),
-       config = config ?? GenerationConfig.initial();
+       config = config ?? const GenerationConfig();
 
   ModelInstanceState copyWith({
     RWKV? rwkv,

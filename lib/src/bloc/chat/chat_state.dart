@@ -45,7 +45,7 @@ class ChatState {
         messages: {},
         inputController: TextEditingController(),
         generating: false,
-        generationConfig: GenerationConfig.initial(),
+        generationConfig: const GenerationConfig(),
         modelState: ModelLoadState.empty(),
         inputFocusNode: FocusNode(),
         showConversationList: true,

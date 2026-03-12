@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list_item.dart';
-import 'package:rwkv_studio/src/utils/logger.dart';
+
+import '_user_message.dart';
 
 class ChatMessageList extends StatefulWidget {
   final double? maxWidth;
@@ -15,110 +16,137 @@ class ChatMessageList extends StatefulWidget {
 }
 
 class _ChatMessageListState extends State<ChatMessageList> {
-  List<MessageModel> _messages = [];
   bool _autoScrolling = true;
-  late String chatId = context.chat.state.selected.id;
+  late String _chatId = context.chat.state.selected.id;
   final Map<String, double> _chatScrollOffsets = {};
-
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScrolling);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _onConversationChanged(context.chat.state);
-    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScrolling)
+      ..dispose();
+    super.dispose();
   }
 
   void _onScrolling() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
     final max = _scrollController.position.maxScrollExtent;
     final auto = (max - _scrollController.position.pixels) < 40;
     if (auto != _autoScrolling) {
       _autoScrolling = auto;
-      logd('auto scrolling=$auto');
     }
   }
 
   void _onConversationChanged(ChatState state) {
-    _chatScrollOffsets[chatId] = _scrollController.position.pixels;
-    final list = state.messages[state.selected.id] ?? [];
-    _messages = list.reversed.toList();
-    if (chatId != state.selected.id) {
-      chatId = state.selected.id;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          // _scrollController.jumpTo(
-          //   _chatScrollOffsets[chatId] ??
-          //       _scrollController.position.maxScrollExtent,
-          // );
-        }
-      });
+    if (_chatId == state.selected.id) {
+      return;
     }
-    setState(() {});
+
+    if (_scrollController.hasClients) {
+      _chatScrollOffsets[_chatId] = _scrollController.position.pixels;
+    }
+
+    _chatId = state.selected.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) {
+        return;
+      }
+
+      _scrollController.jumpTo(
+        _chatScrollOffsets[_chatId] ??
+            _scrollController.position.minScrollExtent,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ChatCubit, ChatState>(
-      listenWhen: (p, c) => p.currentChat != c.currentChat,
+    return BlocConsumer<ChatCubit, ChatState>(
+      listenWhen: (previous, current) =>
+          previous.selected.id != current.selected.id,
       listener: (context, state) {
         _onConversationChanged(state);
       },
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (_messages.isEmpty)
-            Center(
-              child: Text(
-                '没有内容...',
-                style: context.fluent.typography.bodyStrong,
-              ),
-            ),
-          LayoutBuilder(
-            builder: (ctx, cs) {
-              double? paddingHorizontal;
-              if (widget.maxWidth != null) {
-                paddingHorizontal = cs.maxWidth > widget.maxWidth!
-                    ? (cs.maxWidth - widget.maxWidth!) / 2
-                    : 0;
-              }
-              return ListView.builder(
-                controller: _scrollController,
-                itemCount: _messages.length,
-                reverse: true,
-                padding: EdgeInsets.symmetric(
-                  horizontal: paddingHorizontal ?? 12,
-                  vertical: 12,
+      buildWhen: (previous, current) =>
+          previous.selected.id != current.selected.id ||
+          previous.currentChat != current.currentChat,
+      builder: (context, state) {
+        final messages = state.currentChat;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (messages.isEmpty)
+              Center(
+                child: Text(
+                  '没有内容...',
+                  style: context.fluent.typography.bodyStrong,
                 ),
-                itemBuilder: (context, index) {
-                  final isLast = index == 0;
-                  final item = MessageListItem(
-                    message: _messages[index],
-                    isLast: isLast,
-                  );
+              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final horizontalPadding = _resolveHorizontalPadding(
+                  constraints,
+                );
 
-                  if (isLast) {
-                    return item;
-                    // return MeasureSize(
-                    //   onChange: (v) {
-                    //     if (_autoScrolling && context.chat.state.generating) {
-                    //       _scrollController.jumpTo(
-                    //         _scrollController.position.maxScrollExtent,
-                    //       );
-                    //     }
-                    //   },
-                    //   child: item,
-                    // );
-                  }
+                return ListView.builder(
+                  controller: _scrollController,
+                  itemCount: messages.length,
+                  reverse: true,
+                  cacheExtent: 1200,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final reversedIndex = messages.length - 1 - index;
+                    final message = messages[reversedIndex];
 
-                  return item;
-                },
-              );
-            },
-          ),
-        ],
-      ),
+                    if (message.isUser) {
+                      return UserMessageItem(
+                        key: ValueKey<String>(message.id),
+                        message: message,
+                      );
+                    }
+
+                    if (index == 0) {
+                      return LastAssistantMessageItem(
+                        key: ValueKey<String>(message.id),
+                        message: message,
+                      );
+                    }
+
+                    return HistoryAssistantMessageItem(
+                      key: ValueKey<String>(message.id),
+                      message: message,
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  double _resolveHorizontalPadding(BoxConstraints constraints) {
+    if (widget.maxWidth == null) {
+      return 12;
+    }
+    if (constraints.maxWidth <= widget.maxWidth!) {
+      return 0;
+    }
+    return (constraints.maxWidth - widget.maxWidth!) / 2;
   }
 }
