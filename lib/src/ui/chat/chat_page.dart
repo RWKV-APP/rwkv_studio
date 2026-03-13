@@ -105,6 +105,8 @@ class _ConversationListState extends State<_ConversationList> {
 }
 
 class _Chat extends StatelessWidget {
+  static const double maxWidth = 900;
+
   const _Chat();
 
   @override
@@ -118,7 +120,7 @@ class _Chat extends StatelessWidget {
           sidebar: const ChatSettingPanel(),
           content: LayoutBuilder(
             builder: (ctx, cs) {
-              final float = cs.maxWidth > 1100;
+              final float = cs.maxWidth > maxWidth;
 
               return ResizableSplitLayout(
                 restoreId: 'spit-chat',
@@ -126,7 +128,7 @@ class _Chat extends StatelessWidget {
                 fixed: Center(
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 600),
-                    constraints: const BoxConstraints(maxWidth: 1100),
+                    constraints: const BoxConstraints(maxWidth: maxWidth),
                     margin: const .only(bottom: 6),
                     decoration: !float
                         ? const BoxDecoration()
@@ -145,7 +147,7 @@ class _Chat extends StatelessWidget {
                   children: [
                     ChatTitleBar(),
                     Divider(),
-                    Expanded(child: ChatMessageList(maxWidth: 1100)),
+                    Expanded(child: ChatMessageList(maxWidth: maxWidth)),
                   ],
                 ),
                 flexibleAlignEnd: false,

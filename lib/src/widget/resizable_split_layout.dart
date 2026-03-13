@@ -37,20 +37,38 @@ class ResizableSplitLayout extends StatefulWidget {
 }
 
 class _ResizableSplitLayoutState extends State<ResizableSplitLayout> {
+  static const Duration _paneVisibilityDuration = Duration(milliseconds: 220);
+  static const Curve _paneVisibilityCurve = Curves.easeInOutCubic;
+  static const double _dividerExtent = 9;
+
   Offset _dragStartPosition = Offset.zero;
   late double _size;
   double _dragStartSize = 0;
   bool _isDividerHighlighted = false;
   bool _didRestoreSize = false;
+  bool _enableVisibilityAnimation = false;
 
   bool get _isHorizontal => widget.direction == Axis.horizontal;
 
   bool get _isFixedLeading => widget.flexibleAlignEnd;
 
+  Alignment get _fixedAlignment {
+    if (_isHorizontal) {
+      return _isFixedLeading ? Alignment.centerLeft : Alignment.centerRight;
+    }
+    return _isFixedLeading ? Alignment.topCenter : Alignment.bottomCenter;
+  }
+
   @override
   void initState() {
     super.initState();
     _size = _clampSize(widget.size);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _enableVisibilityAnimation = true;
+      });
+    });
   }
 
   @override
@@ -84,38 +102,113 @@ class _ResizableSplitLayoutState extends State<ResizableSplitLayout> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.hideFixedWidget) {
-      return widget.flexible;
-    }
-
-    final Widget fixed = SizedBox(
-      width: _isHorizontal ? _size : null,
-      height: _isHorizontal ? null : _size,
-      child: widget.fixed,
-    );
     final Widget flexible = Expanded(child: widget.flexible);
-    final List<Widget> children = <Widget>[
-      _isFixedLeading ? fixed : flexible,
-      _buildDivider(),
-      _isFixedLeading ? flexible : fixed,
-    ];
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: widget.hideFixedWidget ? 0 : 1),
+      duration: _enableVisibilityAnimation
+          ? _paneVisibilityDuration
+          : Duration.zero,
+      curve: _paneVisibilityCurve,
+      builder: (context, visibility, child) {
+        final Widget fixed = _buildFixedPane(visibility, child!);
+        final Widget divider = _buildDivider(visibility);
+        final List<Widget> children = <Widget>[
+          _isFixedLeading ? fixed : flexible,
+          divider,
+          _isFixedLeading ? flexible : fixed,
+        ];
 
-    if (_isHorizontal) {
-      return Row(
-        mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      );
-    }
+        if (_isHorizontal) {
+          return Row(
+            mainAxisSize: MainAxisSize.max,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          );
+        }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.max,
-      children: children,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.max,
+          children: children,
+        );
+      },
+      child: widget.fixed,
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildFixedPane(double visibility, Widget child) {
+    final hidden = visibility <= 0.001;
+
+    return SizedBox(
+      width: _isHorizontal ? _size * visibility : null,
+      height: _isHorizontal ? null : _size * visibility,
+      child: IgnorePointer(
+        ignoring: hidden,
+        child: Opacity(
+          opacity: visibility,
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: _fixedAlignment,
+              minWidth: _isHorizontal ? _size : null,
+              maxWidth: _isHorizontal ? _size : null,
+              minHeight: _isHorizontal ? null : _size,
+              maxHeight: _isHorizontal ? null : _size,
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider(double visibility) {
+    final hidden = visibility <= 0.001;
+    final extent = _dividerExtent * visibility;
+
+    if (_isHorizontal) {
+      return SizedBox(
+        width: extent,
+        child: IgnorePointer(
+          ignoring: hidden,
+          child: Opacity(
+            opacity: visibility,
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: _isFixedLeading
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
+                minWidth: _dividerExtent,
+                maxWidth: _dividerExtent,
+                child: _buildDividerContent(),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: extent,
+      child: IgnorePointer(
+        ignoring: hidden,
+        child: Opacity(
+          opacity: visibility,
+          child: ClipRect(
+            child: OverflowBox(
+              alignment: _isFixedLeading
+                  ? Alignment.topCenter
+                  : Alignment.bottomCenter,
+              minHeight: _dividerExtent,
+              maxHeight: _dividerExtent,
+              child: _buildDividerContent(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDividerContent() {
     BoxDecoration? decor = _isDividerHighlighted
         ? BoxDecoration(color: Colors.blue)
         : null;

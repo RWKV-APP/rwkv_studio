@@ -175,7 +175,9 @@ class _LineBreakEventListenerState extends State<_LineBreakEventListener> {
         }
         if (e.physicalKey == PhysicalKeyboardKey.enter && e is KeyDownEvent) {
           if (!shiftDown) {
-            context.chat.send(context.rwkv).withToast(context);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.chat.send(context.rwkv).withToast(context);
+            });
           }
         }
       },

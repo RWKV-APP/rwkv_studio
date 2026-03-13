@@ -9,7 +9,7 @@ class CacheSettingsModel extends Equatable {
   @override
   List<Object?> get props => [modelDownloadDir, appCacheDir];
 
-  CacheSettingsModel({
+  const CacheSettingsModel({
     required this.modelDownloadDir,
     required this.appCacheDir,
   });
@@ -23,7 +23,10 @@ class CacheSettingsModel extends Equatable {
         appCacheDir: defaultCacheDir,
       );
     }
-    return CacheSettingsModel.initial();
+    return const CacheSettingsModel(
+      modelDownloadDir: '',
+      appCacheDir: '',
+    );
   }
 
   Map<String, dynamic> toMap() {

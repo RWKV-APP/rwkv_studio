@@ -18,7 +18,7 @@ import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
-part 'navigation_panel_items.dart';
+part '_navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});

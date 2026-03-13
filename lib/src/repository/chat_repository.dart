@@ -72,7 +72,8 @@ class ChatRepository {
     await MessageBox.delete(id);
   }
 
-  Future<void> clearMessages() async {
+  Future<void> clear() async {
     await MessageBox.clear();
+    await ConversationBox.clear();
   }
 }

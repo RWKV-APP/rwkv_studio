@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:rwkv_studio/src/ui/bloc_builders/rwkv_builders.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 
 class DecodeSpeedInfo extends StatelessWidget {
   final String modelInstanceId;
@@ -8,9 +9,16 @@ class DecodeSpeedInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RwkvModelStateBuilder(
-      modelInstanceId: modelInstanceId,
-      builder: (ctx, model) {
+    return BlocSelector<RwkvCubit, RwkvState, ModelInstanceState?>(
+      selector: (state) => state.models[modelInstanceId],
+      builder: (context, model) {
+        if (model == null || model.info.isRemote) {
+          return const SizedBox();
+        }
+        final showPrefill =
+            model.state.prefillProgress < 1.0 &&
+            model.state.prefillProgress > 0;
+
         final decode = model.state.decodeSpeed.toInt();
         final prefill = model.state.prefillSpeed.toInt();
         final label = Text(
@@ -23,8 +31,7 @@ class DecodeSpeedInfo extends StatelessWidget {
             fontSize: 12,
           ),
         );
-        if (model.state.prefillProgress < 1.0 &&
-            model.state.prefillProgress > 0) {
+        if (showPrefill) {
           return Row(
             mainAxisAlignment: .end,
             children: [

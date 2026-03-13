@@ -51,7 +51,7 @@ class _ModelSelectorState extends State<ModelSelector> {
           p.runtimeLoading != c.runtimeLoading ||
           p.runtimeError != c.runtimeError,
       builder: (context, state) {
-        if (widget.modelState.loading || state.runtimeLoading) {
+        if (widget.modelState.loading) {
           return const Button(
             onPressed: null,
             child: Row(
@@ -59,7 +59,7 @@ class _ModelSelectorState extends State<ModelSelector> {
               children: [
                 SizedBox(width: 16, height: 16, child: ProgressRing()),
                 SizedBox(width: 8),
-                Text('Loading...'),
+                Text('加载中...'),
               ],
             ),
           );
@@ -82,19 +82,16 @@ class _ModelSelectorState extends State<ModelSelector> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text('Load failed'),
+              const Text('加载失败'),
             ],
           );
         } else if (state.runtimeError.isNotEmpty) {
           content = const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                FluentIcons.warning,
-                color: Colors.warningPrimaryColor,
-              ),
+              Icon(FluentIcons.warning, color: Colors.warningPrimaryColor),
               SizedBox(width: 8),
-              Text('Models unavailable'),
+              Text('模型不可用'),
             ],
           );
         } else {
@@ -106,7 +103,7 @@ class _ModelSelectorState extends State<ModelSelector> {
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
-                  name.isNotEmpty ? name : 'Select model',
+                  name.isNotEmpty ? name : '请选择模型',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13),
                 ),

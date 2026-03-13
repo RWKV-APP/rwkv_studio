@@ -3,7 +3,7 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_context_menu.dart';
-import 'package:rwkv_studio/src/ui/chat/text_message_content.dart';
+import 'package:rwkv_studio/src/ui/chat/_text_message_content.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 

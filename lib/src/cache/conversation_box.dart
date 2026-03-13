@@ -69,6 +69,10 @@ class ConversationBox {
     return HiveManager.conversationBox.values;
   }
 
+  static Future clear() async {
+    await HiveManager.conversationBox.clear();
+  }
+
   ConversationModel toChat() {
     return ConversationModel(
       id: id,

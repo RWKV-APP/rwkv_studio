@@ -183,8 +183,15 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future clear() async {
-    await _repository.clearMessages();
-    emit(state.copyWith(messages: {}));
+    await _repository.clear();
+    emit(
+      state.copyWith(
+        messages: {},
+        conversations: [],
+        selected: ConversationModel.create(),
+      ),
+    );
+    newChat();
   }
 
   Future newChat() async {
@@ -334,13 +341,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       return;
     }
 
+    if (state.modelInstanceId.isEmpty) {
+      state.inputController.text = text;
+      throw const AppException('请选择模型');
+    }
+
     String convId = state.selected.id;
 
-    // Send event is triggered by keyboard event,
-    // so we need to clear input after sending
-    Future.delayed(const Duration(milliseconds: 50), () {
-      state.inputController.clear();
-    });
     final model = await rwkv.getModelBaseInfo(state.modelInstanceId);
     final message = MessageModel.create(
       role: rwkv.roleUser,
@@ -394,6 +401,11 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       conv.decodeParamId,
       state.generationConfig.copyWith(prompt: systemPrompt),
     );
+
+    Future.delayed(const Duration(milliseconds: 20), () {
+      state.inputController.clear();
+    });
+
     emit(
       state.copyWith(
         generating: true,

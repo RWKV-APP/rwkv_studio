@@ -6,21 +6,134 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
-class ChatList extends StatelessWidget {
+class ChatList extends StatefulWidget {
   const ChatList({super.key});
 
   @override
+  State<ChatList> createState() => _ChatListState();
+}
+
+class _ChatListState extends State<ChatList> {
+  static const Duration _itemAnimationDuration = Duration(milliseconds: 220);
+
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final List<ConversationModel> _conversations = <ConversationModel>[];
+  bool _animateListChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _conversations.addAll(context.chat.state.conversations);
+    _animateListChanges = _conversations.isNotEmpty;
+  }
+
+  void _syncConversations(List<ConversationModel> next) {
+    final listState = _listKey.currentState;
+    final duration = _animateListChanges
+        ? _itemAnimationDuration
+        : Duration.zero;
+    _animateListChanges = true;
+
+    final nextIds = next.map((e) => e.id).toSet();
+    for (var index = _conversations.length - 1; index >= 0; index--) {
+      final conversation = _conversations[index];
+      if (nextIds.contains(conversation.id)) {
+        continue;
+      }
+
+      final removed = _conversations.removeAt(index);
+      listState?.removeItem(
+        index,
+        (context, animation) => _AnimatedConversationListEntry(
+          animation: animation,
+          child: _Item(
+            key: ValueKey<String>('conversation-${removed.id}'),
+            conversation: removed,
+          ),
+        ),
+        duration: duration,
+      );
+    }
+
+    for (var targetIndex = 0; targetIndex < next.length; targetIndex++) {
+      final nextConversation = next[targetIndex];
+      final currentIndex = _conversations.indexWhere(
+        (e) => e.id == nextConversation.id,
+      );
+
+      if (currentIndex == -1) {
+        _conversations.insert(targetIndex, nextConversation);
+        listState?.insertItem(targetIndex, duration: duration);
+        continue;
+      }
+
+      if (currentIndex != targetIndex) {
+        _conversations.removeAt(currentIndex);
+        _conversations.insert(targetIndex, nextConversation);
+        continue;
+      }
+
+      _conversations[targetIndex] = nextConversation;
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ChatCubit, ChatState>(
-      buildWhen: (p, c) => p.conversations != c.conversations,
-      builder: (context, state) {
-        return ListView.builder(
-          itemCount: state.conversations.length,
-          itemBuilder: (context, index) {
-            return _Item(conversation: state.conversations[index]);
-          },
-        );
-      },
+    return BlocListener<ChatCubit, ChatState>(
+      listenWhen: (previous, current) =>
+          previous.conversations != current.conversations,
+      listener: (context, state) => _syncConversations(state.conversations),
+      child: AnimatedList(
+        key: _listKey,
+        initialItemCount: _conversations.length,
+        itemBuilder: (context, index, animation) {
+          return _AnimatedConversationListEntry(
+            animation: animation,
+            child: _Item(
+              key: ValueKey<String>('conversation-${_conversations[index].id}'),
+              conversation: _conversations[index],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AnimatedConversationListEntry extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+
+  const _AnimatedConversationListEntry({
+    required this.animation,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    return FadeTransition(
+      opacity: curved,
+      child: SizeTransition(
+        sizeFactor: curved,
+        axisAlignment: -1,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(-0.08, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      ),
     );
   }
 }
@@ -28,7 +141,7 @@ class ChatList extends StatelessWidget {
 class _Item extends StatelessWidget {
   final ConversationModel conversation;
 
-  const _Item({required this.conversation});
+  const _Item({super.key, required this.conversation});
 
   void _onSelect(BuildContext context, ConversationModel conversation) async {
     await context.chat.mayPause(context.rwkv);
@@ -61,7 +174,7 @@ class _Item extends StatelessWidget {
                 ),
               ),
               title: Padding(
-                padding: const .only(top: 8, bottom: 8, right: 12),
+                padding: const .only(top: 6, bottom: 6, right: 12),
                 child: Text(
                   conversation.title.isEmpty ? 'untitled' : conversation.title,
                   maxLines: 1,

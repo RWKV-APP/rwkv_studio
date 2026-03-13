@@ -53,7 +53,9 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
 
   Future<void> _onModelSelected(BuildContext context, ModelInfo info) async {
     if (info.backend == ModelBackend.albatross && !info.isRemote) {
-      if (context.app.getSelectedPython() == null) {
+      final py = await context.app.getSelectedPython();
+      if (!context.mounted) return;
+      if (py == null) {
         showDialog(
           context: context,
           builder: (ctx) => ContentDialog(
@@ -101,6 +103,7 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
           buildWhen: (previous, current) => previous.models != current.models,
           builder: (context, rwkvState) {
             return MenuFlyout(
+              constraints: const BoxConstraints(minWidth: 300, maxHeight: 600),
               items: _buildItems(
                 context: context,
                 modelManageState: modelManageState,
@@ -129,25 +132,30 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
             children: [
               SizedBox(width: 16, height: 16, child: ProgressRing()),
               SizedBox(width: 8),
-              Text('Loading...'),
+              Text('正在初始化...'),
             ],
           ),
         ),
       );
     } else {
       final modelSetting = context.settings.state.model;
-      final models = [
-        ...modelManageState.remoteModels,
-        ...modelManageState.models.where(
-          (e) =>
-              e.localPath.isNotEmpty &&
-              e.groups.overlaps({'chat', 'albatross', 'roleplay'}),
-        ),
-      ].where(
-        (e) =>
-            !e.tags.contains('translate') &&
-            (modelSetting.enabledBackends.contains(e.backend) || e.isRemote),
-      ).where((e) => widget.filter == null || widget.filter!(e)).toList();
+      final models =
+          [
+                ...modelManageState.remoteModels,
+                ...modelManageState.models.where(
+                  (e) =>
+                      e.localPath.isNotEmpty &&
+                      e.groups.overlaps({'chat', 'albatross', 'roleplay'}),
+                ),
+              ]
+              .where(
+                (e) =>
+                    !e.tags.contains('translate') &&
+                    (modelSetting.enabledBackends.contains(e.backend) ||
+                        e.isRemote),
+              )
+              .where((e) => widget.filter == null || widget.filter!(e))
+              .toList();
 
       items.addAll(
         _buildModelItems(
@@ -158,9 +166,7 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
       );
 
       if (models.isEmpty) {
-        items.add(
-          MenuFlyoutItem(text: const Text('没有可用的模型'), onPressed: null),
-        );
+        items.add(MenuFlyoutItem(text: const Text('没有可用的模型'), onPressed: null));
       }
     }
 
@@ -173,12 +179,9 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  FluentIcons.warning,
-                  color: Colors.warningPrimaryColor,
-                ),
+                Icon(FluentIcons.warning, color: Colors.warningPrimaryColor),
                 SizedBox(width: 8),
-                Text('Models unavailable'),
+                Text('模型不可以'),
               ],
             ),
           ),

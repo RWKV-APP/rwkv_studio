@@ -6,7 +6,7 @@ extension CustomeFluent on FluentThemeData {
     final isDark = brightness == Brightness.dark;
     final textColor = brightness == Brightness.light
         ? Colors.black
-        : Colors.grey[60];
+        : Colors.grey[40];
 
     final defaultFontStyle = TextStyle(
       fontSize: 14,
