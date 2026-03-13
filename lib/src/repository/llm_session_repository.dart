@@ -267,7 +267,7 @@ class LlmSessionRepository {
             GenerationParam(
               prompt: prompt,
               model: instanceId,
-              maxTokens: decodeParam.maxTokens,
+              maxCompletionTokens: decodeParam.maxTokens,
             ),
           )
           .timeout(const Duration(seconds: 30));

@@ -16,7 +16,7 @@ void main() async {
     await windowManager.ensureInitialized();
     WindowOptions windowOptions = const WindowOptions(
       center: true,
-      size: Size(1000, 800),
+      // size: Size(1000, 800),
       title: 'RWKV Studio',
     );
     await windowManager.waitUntilReadyToShow(windowOptions, () async {

@@ -131,19 +131,17 @@ class AppStateCoordinator {
   }
 
   void _bootstrapRemoteServices(List<RemoteServiceModel> remoteServices) {
-    _remoteServiceBootstrap ??= _runStep(
-      'sync remote services',
-      () => onRemoteServicesChanged(remoteServices),
-    ).whenComplete(() {
-      _remoteServiceBootstrap = null;
-    });
+    _remoteServiceBootstrap ??=
+        _runStep(
+          'sync remote services',
+          () => onRemoteServicesChanged(remoteServices),
+        ).whenComplete(() {
+          _remoteServiceBootstrap = null;
+        });
     unawaited(_remoteServiceBootstrap);
   }
 
-  Future<void> _runStep(
-    String label,
-    Future<void> Function() action,
-  ) async {
+  Future<void> _runStep(String label, Future<void> Function() action) async {
     try {
       await action();
     } catch (e, s) {
@@ -212,13 +210,11 @@ class AppStateCoordinator {
   }
 
   void onRwkvStateChanged(RwkvState state) {
-    logd('model-instance updated: ${state.models.length} instances');
-
     if (!kIsWeb) {
-      _syncModelServerInstances(
-        modelServer: setting.state.model.modelServer,
-        state: state,
-      );
+      // _syncModelServerInstances(
+      //   modelServer: setting.state.model.modelServer,
+      //   state: state,
+      // );
     }
 
     final chatInstanceId = chat.state.modelInstanceId;
