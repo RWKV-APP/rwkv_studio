@@ -41,11 +41,6 @@ class AppCubit extends Cubit<AppState> {
 
     await AppAssets.init().catchError((e) => loge(e));
     await HiveManager.init().catchError((e) => loge(e));
-    try {
-      await HiveManager.openPreferencesBox();
-    } catch (e, s) {
-      loge(e, s);
-    }
     _initIPAddress();
   }
 

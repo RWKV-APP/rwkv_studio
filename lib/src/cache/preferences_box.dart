@@ -1,12 +1,14 @@
 import 'package:hive_ce/hive_ce.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 
-import 'hive_manager.dart';
-
 part 'preferences_box.g.dart';
 
 @HiveType(typeId: 1)
 class PreferencesBox {
+  static const _boxName = 'preferences';
+  static Box<PreferencesBox>? _box;
+  static Future<Box<PreferencesBox>>? _openingBox;
+
   @HiveField(0)
   Map<String, dynamic> model;
 
@@ -27,16 +29,50 @@ class PreferencesBox {
     required this.cache,
   });
 
-  static Future putRaw(AppSettingsModel value) {
-    return HiveManager.preferencesBox.put(
+  static Future<Box<PreferencesBox>> _instance() async {
+    final box = _box;
+    if (box != null) {
+      if (box.isOpen) {
+        return box;
+      }
+      _box = null;
+      _openingBox = null;
+    }
+
+    final openingBox = _openingBox;
+    if (openingBox != null) {
+      return openingBox;
+    }
+
+    final future = Hive.openBox<PreferencesBox>(_boxName);
+    _openingBox = future;
+    try {
+      final openedBox = await future;
+      _box = openedBox;
+      return openedBox;
+    } catch (_) {
+      _openingBox = null;
+      rethrow;
+    }
+  }
+
+  static Future<void> putRaw(AppSettingsModel value) async {
+    final box = await _instance();
+    await box.put(
       'default',
       PreferencesBox.fromSettings(value),
     );
   }
 
   static Future<AppSettingsModel?> getRaw() async {
-    final v = HiveManager.preferencesBox.get('default');
+    final box = await _instance();
+    final v = box.get('default');
     return v?.toSettings();
+  }
+
+  static Future<void> clear() async {
+    final box = await _instance();
+    await box.clear();
   }
 
   factory PreferencesBox.fromSettings(AppSettingsModel settings) {

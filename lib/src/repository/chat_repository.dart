@@ -1,5 +1,4 @@
 import 'package:rwkv_studio/src/cache/conversation_box.dart';
-import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/cache/message_box.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
@@ -22,8 +21,9 @@ class ChatRepository {
   const ChatRepository();
 
   Future<ChatPersistenceSnapshot> load() async {
-    final convBox = await HiveManager.openConversationBox();
-    final conversations = convBox.values.map((e) => e.toChat()).toList()
+    final conversations = (await ConversationBox.getAll())
+        .map((e) => e.toChat())
+        .toList()
       ..sort((a, b) => b.updateAt.compareTo(a.updateAt));
     final messages = (await MessageBox.getAll())
         .map((e) => e.toMessage())
@@ -40,21 +40,18 @@ class ChatRepository {
   }
 
   Future<void> saveConversation(ConversationModel conversation) async {
-    await HiveManager.openConversationBox();
     await ConversationBox.put(conversation);
   }
 
   Future<void> saveConversations(
     Iterable<ConversationModel> conversations,
   ) async {
-    await HiveManager.openConversationBox();
     for (final conversation in conversations) {
       await ConversationBox.put(conversation);
     }
   }
 
   Future<void> deleteConversation(String id) async {
-    await HiveManager.openConversationBox();
     await ConversationBox.delete(id);
   }
 

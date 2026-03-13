@@ -1,11 +1,14 @@
 import 'package:hive_ce/hive.dart';
-import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 
 part 'conversation_box.g.dart';
 
 @HiveType(typeId: 2)
 class ConversationBox {
+  static const _boxName = 'conversations';
+  static Box<ConversationBox>? _box;
+  static Future<Box<ConversationBox>>? _openingBox;
+
   @HiveField(0)
   String id;
 
@@ -41,6 +44,33 @@ class ConversationBox {
     required this.useGlobalSystemPrompt,
   });
 
+  static Future<Box<ConversationBox>> _instance() async {
+    final box = _box;
+    if (box != null) {
+      if (box.isOpen) {
+        return box;
+      }
+      _box = null;
+      _openingBox = null;
+    }
+
+    final openingBox = _openingBox;
+    if (openingBox != null) {
+      return openingBox;
+    }
+
+    final future = Hive.openBox<ConversationBox>(_boxName);
+    _openingBox = future;
+    try {
+      final openedBox = await future;
+      _box = openedBox;
+      return openedBox;
+    } catch (_) {
+      _openingBox = null;
+      rethrow;
+    }
+  }
+
   factory ConversationBox.fromChat(ConversationModel conv) {
     return ConversationBox(
       id: conv.id,
@@ -55,22 +85,26 @@ class ConversationBox {
   }
 
   static Future put(ConversationModel conv) async {
-    await HiveManager.conversationBox.put(
+    final box = await _instance();
+    await box.put(
       conv.id,
       ConversationBox.fromChat(conv),
     );
   }
 
   static Future delete(String id) async {
-    await HiveManager.conversationBox.delete(id);
+    final box = await _instance();
+    await box.delete(id);
   }
 
-  static Iterable<ConversationBox> getAll() {
-    return HiveManager.conversationBox.values;
+  static Future<List<ConversationBox>> getAll() async {
+    final box = await _instance();
+    return box.values.toList();
   }
 
   static Future clear() async {
-    await HiveManager.conversationBox.clear();
+    final box = await _instance();
+    await box.clear();
   }
 
   ConversationModel toChat() {

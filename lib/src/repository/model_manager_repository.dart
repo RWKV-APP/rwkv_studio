@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/cache/model_file_box.dart';
 
 class ModelCatalogSnapshot {
@@ -132,20 +131,17 @@ class ModelManagerRepository {
   }
 
   Future<List<ModelInfo>> loadImportedModels() async {
-    await HiveManager.openModelFileBox();
-    return ModelFileBox.getAllModels().toList();
+    return ModelFileBox.getAllModels();
   }
 
   Future<List<ModelInfo>> saveImportedModel(ModelInfo model) async {
-    await HiveManager.openModelFileBox();
     await ModelFileBox.put(model);
-    return ModelFileBox.getAllModels().toList();
+    return ModelFileBox.getAllModels();
   }
 
   Future<List<ModelInfo>> deleteImportedModel(String id) async {
-    await HiveManager.openModelFileBox();
     await ModelFileBox.delete(id);
-    return ModelFileBox.getAllModels().toList();
+    return ModelFileBox.getAllModels();
   }
 
   ModelCatalogSnapshot getCurrentCatalog() {

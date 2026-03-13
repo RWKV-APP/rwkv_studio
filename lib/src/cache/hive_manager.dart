@@ -14,10 +14,6 @@ import 'preferences_box.dart';
 class HiveManager {
   HiveManager._();
 
-  static Box<PreferencesBox>? _preferencesBox;
-  static Box<ConversationBox>? _conversationBox;
-  static Box<ModelFileBox>? _modelFileBox;
-
   /// Initialize Hive and register adapters
   static Future<void> init() async {
     if (!kIsWeb) {
@@ -39,61 +35,15 @@ class HiveManager {
     logd('hive initialized');
   }
 
-  /// Get preferences box
-  static Box<PreferencesBox> get preferencesBox {
-    return _preferencesBox!;
-  }
-
-  /// Open preferences box
-  static Future<Box<PreferencesBox>> openPreferencesBox() async {
-    _preferencesBox ??= await Hive.openBox<PreferencesBox>('preferences');
-    return _preferencesBox!;
-  }
-
-  /// Get conversation box
-  static Box<ConversationBox> get conversationBox {
-    assert(
-      _conversationBox != null,
-      'Conversation box not opened. Call openConversationBox() first.',
-    );
-    return _conversationBox!;
-  }
-
-  /// Open conversation box
-  static Future<Box<ConversationBox>> openConversationBox() async {
-    _conversationBox ??= await Hive.openBox<ConversationBox>('conversations');
-    return _conversationBox!;
-  }
-
-  /// Get model file box
-  static Box<ModelFileBox> get modelFileBox {
-    assert(
-      _modelFileBox != null,
-      'Model file box not opened. Call openModelFileBox() first.',
-    );
-    return _modelFileBox!;
-  }
-
-  /// Open model file box
-  static Future<Box<ModelFileBox>> openModelFileBox() async {
-    _modelFileBox ??= await Hive.openBox<ModelFileBox>('model_files');
-    return _modelFileBox!;
-  }
-
   /// Close all boxes
   static Future<void> close() async {
-    await _preferencesBox?.close();
-    await _conversationBox?.close();
-    await _modelFileBox?.close();
-    _preferencesBox = null;
-    _conversationBox = null;
-    _modelFileBox = null;
+    await Hive.close();
   }
 
   /// Clear all data
   static Future<void> clear() async {
-    await _preferencesBox?.clear();
-    await _conversationBox?.clear();
-    await _modelFileBox?.clear();
+    await PreferencesBox.clear();
+    await ConversationBox.clear();
+    await ModelFileBox.clear();
   }
 }

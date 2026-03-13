@@ -1,11 +1,14 @@
 import 'package:hive_ce/hive.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/cache/hive_manager.dart';
 
 part 'model_file_box.g.dart';
 
 @HiveType(typeId: 5)
 class ModelFileBox {
+  static const _boxName = 'model_files';
+  static Box<ModelFileBox>? _box;
+  static Future<Box<ModelFileBox>>? _openingBox;
+
   @HiveField(0)
   String id;
 
@@ -81,6 +84,33 @@ class ModelFileBox {
     required this.localPath,
   });
 
+  static Future<Box<ModelFileBox>> _instance() async {
+    final box = _box;
+    if (box != null) {
+      if (box.isOpen) {
+        return box;
+      }
+      _box = null;
+      _openingBox = null;
+    }
+
+    final openingBox = _openingBox;
+    if (openingBox != null) {
+      return openingBox;
+    }
+
+    final future = Hive.openBox<ModelFileBox>(_boxName);
+    _openingBox = future;
+    try {
+      final openedBox = await future;
+      _box = openedBox;
+      return openedBox;
+    } catch (_) {
+      _openingBox = null;
+      rethrow;
+    }
+  }
+
   factory ModelFileBox.fromModelInfo(ModelInfo info) {
     return ModelFileBox(
       id: info.id,
@@ -128,21 +158,27 @@ class ModelFileBox {
   }
 
   static Future put(ModelInfo info) async {
-    await HiveManager.modelFileBox.put(
-      info.id,
-      ModelFileBox.fromModelInfo(info),
-    );
+    final box = await _instance();
+    await box.put(info.id, ModelFileBox.fromModelInfo(info));
   }
 
   static Future delete(String id) async {
-    await HiveManager.modelFileBox.delete(id);
+    final box = await _instance();
+    await box.delete(id);
   }
 
-  static Iterable<ModelFileBox> getAll() {
-    return HiveManager.modelFileBox.values;
+  static Future<List<ModelFileBox>> getAll() async {
+    final box = await _instance();
+    return box.values.toList();
   }
 
-  static Iterable<ModelInfo> getAllModels() {
-    return getAll().map((e) => e.toModelInfo());
+  static Future<List<ModelInfo>> getAllModels() async {
+    final models = await getAll();
+    return models.map((e) => e.toModelInfo()).toList();
+  }
+
+  static Future<void> clear() async {
+    final box = await _instance();
+    await box.clear();
   }
 }
