@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/cache/model_file_box.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 
 class ModelCatalogSnapshot {
   final List<ModelInfo> localModels;
@@ -173,7 +174,9 @@ class ModelManagerRepository {
   ModelManager _requireManager() {
     final manager = _manager;
     if (manager == null) {
-      throw StateError('ModelManagerRepository is not initialized');
+      throw const AppException.configuration(
+        'Model manager repository is not initialized',
+      );
     }
     return manager;
   }

@@ -1,5 +1,6 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_dialog.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -11,7 +12,7 @@ class ImportModelDropArea extends StatelessWidget {
 
   const ImportModelDropArea({super.key, required this.child});
 
-  void onDragDone(BuildContext context, DropDoneDetails details) async {
+  Future<void> onDragDone(BuildContext context, DropDoneDetails details) async {
     if (_importing) {
       return;
     }
@@ -41,13 +42,17 @@ class ImportModelDropArea extends StatelessWidget {
     }
 
     _importing = true;
-    final model = await ImportModelDialog.show(context, files.first);
-    _importing = false;
+    ModelInfo? model;
+    try {
+      model = await ImportModelDialog.show(context, files.first);
+    } finally {
+      _importing = false;
+    }
 
     if (model == null || !context.mounted) {
       return;
     }
-    context.modelManage
+    await context.modelManage
         .onImportModel(model)
         .withToast(context, success: '导入成功');
   }
@@ -56,8 +61,8 @@ class ImportModelDropArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropTarget(
       enable: true,
-      onDragDone: (details) {
-        onDragDone(context, details);
+      onDragDone: (details) async {
+        await onDragDone(context, details);
       },
       child: child,
     );

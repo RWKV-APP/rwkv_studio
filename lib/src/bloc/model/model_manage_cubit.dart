@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/repository/model_manager_repository.dart';
 import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
@@ -224,8 +225,8 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     var importedModels = <ModelInfo>[];
     try {
       importedModels = await _repository.loadImportedModels();
-    } catch (e) {
-      logw(e);
+    } catch (e, s) {
+      logw(AppException.wrap(e, s));
     }
     emit(
       state.copyWith(
@@ -246,12 +247,14 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     try {
       await ensureRuntimeReady();
       await _repository.download(id);
-    } catch (e) {
+    } catch (e, s) {
+      final error = AppException.wrap(e, s);
       _emitTaskUpdate(
         modelId: id,
         update: TaskUpdate.initial().copyWith(state: TaskState.stopped),
-        error: e,
+        error: error,
       );
+      Error.throwWithStackTrace(error, error.stackTrace ?? s);
     }
   }
 
@@ -399,15 +402,16 @@ class ModelManageCubit extends Cubit<ModelManageState> {
         downloadDir: config.modelDownloadDir,
         runtimeReady: true,
       );
-    } catch (e) {
+    } catch (e, s) {
+      final error = AppException.wrap(e, s);
       emit(
         state.copyWith(
           runtimeReady: false,
           runtimeLoading: false,
-          runtimeError: e.toString(),
+          runtimeError: error.displayMessage,
         ),
       );
-      rethrow;
+      Error.throwWithStackTrace(error, error.stackTrace ?? s);
     }
   }
 
@@ -423,8 +427,8 @@ class ModelManageCubit extends Cubit<ModelManageState> {
           error: event.error,
         );
       },
-      onError: (e) {
-        loge(e);
+      onError: (e, s) {
+        loge(AppException.wrap(e, s));
       },
     );
   }
@@ -432,7 +436,9 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   _ModelManagerRuntimeConfig _requireRuntimeConfig() {
     final config = _desiredRuntimeConfig;
     if (config == null) {
-      throw StateError('Model manager runtime config has not been provided');
+      throw const AppException.configuration(
+        'Model manager runtime config has not been provided',
+      );
     }
     return config;
   }

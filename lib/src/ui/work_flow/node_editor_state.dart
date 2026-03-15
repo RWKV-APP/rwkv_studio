@@ -97,7 +97,7 @@ class NodeCardState {
       dx = bounds.size.width - nodeSocketSize / 2;
       index = node.allOutputs.indexOf(socket) + 1;
     } else {
-      throw UnimplementedError();
+      throw StateError('Unsupported socket type: ${socket.runtimeType}');
     }
     dy = getSocketDy(index);
     return bounds.topLeft + Offset(dx, dy);
@@ -114,7 +114,7 @@ class NodeCardState {
         return socket;
       }
     }
-    throw Exception('Socket not found');
+    throw StateError('Socket not found: $socketId');
   }
 
   double getSocketDy(int index) {
@@ -140,7 +140,7 @@ class NodeCardState {
       dx = bounds.size.width - nodeSocketSize / 2;
       index = node.allOutputs.indexOf(socket) + 1;
     } else {
-      throw UnimplementedError();
+      throw StateError('Unsupported socket type: ${socket.runtimeType}');
     }
     dy += nodeHeaderHeight;
     dy += (nodeSocketSpacing + nodeSocketSize) * index;

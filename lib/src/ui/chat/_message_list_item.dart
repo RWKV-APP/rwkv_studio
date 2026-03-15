@@ -260,15 +260,15 @@ class _LastAssistantFooter extends StatelessWidget {
         if (paused)
           IconButton(
             icon: const Icon(WindowsIcons.play),
-            onPressed: () {
-              context.chat.resume(context.rwkv).withToast(context);
+            onPressed: () async {
+              await context.chat.resume(context.rwkv).withToast(context);
             },
           ),
         if (!generating)
           IconButton(
             icon: const Icon(WindowsIcons.refresh),
-            onPressed: () {
-              context.chat.regenerate(context.rwkv).withToast(context);
+            onPressed: () async {
+              await context.chat.regenerate(context.rwkv).withToast(context);
             },
           ),
         if (!generating) const SizedBox(width: 4),

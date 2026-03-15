@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 class CondaEnv {
@@ -93,10 +94,10 @@ class Python {
     try {
       final output = await run(['--version']);
       _version = output.trim().split(' ')[1];
-    } catch (e) {
-      logw(e);
+    } catch (e, s) {
+      logw(AppException.wrap(e, s));
     }
-    return true;
+    return isValid;
   }
 
   Future<String> run(List<String> args) async {
@@ -109,8 +110,11 @@ class Python {
       res = await Process.run(path, args_);
     }
     if (res.exitCode != 0) {
-      throw 'process exited with code: ${res.exitCode}\n${res.stderr.toString()}'
-          .trim();
+      throw AppException.externalProcess(
+        'Process exited with code ${res.exitCode}: ${args_.join(' ')}',
+        code: res.exitCode.toString(),
+        cause: res.stderr.toString().trim(),
+      );
     }
     final output = res.stdout.toString();
     return output;

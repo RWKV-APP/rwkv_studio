@@ -51,12 +51,12 @@ class ChatMessageInput extends StatelessWidget {
 }
 
 class _SendButton extends StatelessWidget {
-  void _onTapSend(BuildContext context) {
-    context.chat.send(context.rwkv).withToast(context);
+  Future<void> _onTapSend(BuildContext context) async {
+    await context.chat.send(context.rwkv).withToast(context);
   }
 
-  void _onTapPause(BuildContext context) {
-    context.chat.pause(context.rwkv).withToast(context);
+  Future<void> _onTapPause(BuildContext context) async {
+    await context.chat.pause(context.rwkv).withToast(context);
   }
 
   @override
@@ -73,14 +73,14 @@ class _SendButton extends StatelessWidget {
                 Text('暂停'),
               ],
             ),
-            onPressed: () => _onTapPause(context),
+            onPressed: () async => _onTapPause(context),
           );
         }
 
         return Button(
           onPressed: !state.sendButtonEnabled
               ? null
-              : () => _onTapSend(context),
+              : () async => _onTapSend(context),
           child: const Row(
             children: [Text('发送'), SizedBox(width: 8), Icon(WindowsIcons.send)],
           ),
@@ -175,8 +175,8 @@ class _LineBreakEventListenerState extends State<_LineBreakEventListener> {
         }
         if (e.physicalKey == PhysicalKeyboardKey.enter && e is KeyDownEvent) {
           if (!shiftDown) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              context.chat.send(context.rwkv).withToast(context);
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              await context.chat.send(context.rwkv).withToast(context);
             });
           }
         }

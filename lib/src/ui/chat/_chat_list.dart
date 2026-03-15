@@ -228,8 +228,8 @@ void _showMenu(
             ),
             onPressed: () async {
               await context.chat.mayPause(context.rwkv);
-              if (!context.mounted) return;
-              context.chat.deleteConversation(conversation.id).withToast(ctx);
+              if (!ctx.mounted) return;
+              await ctx.chat.deleteConversation(conversation.id).withToast(ctx);
             },
           ),
           MenuFlyoutItem(

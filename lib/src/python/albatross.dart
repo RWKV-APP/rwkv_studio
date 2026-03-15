@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 import 'interpreter.dart';
@@ -59,7 +60,7 @@ class _AlbatrossWrap extends AlbatrossClient {
       );
     } on StateError {
       /// No output
-      throw Exception(
+      throw AppException.externalProcess(
         'albatross startup failed, exit code: ${process.exitCode}',
       );
     }

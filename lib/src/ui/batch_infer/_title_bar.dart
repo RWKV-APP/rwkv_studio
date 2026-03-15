@@ -31,8 +31,8 @@ class _TitleBar extends StatelessWidget {
             builder: (context, state) {
               return ModelSelector(
                 modelState: state,
-                onModelSelected: (s) {
-                  context.cubit
+                onModelSelected: (s) async {
+                  await context.cubit
                       .loadModel(context, context.rwkv, s)
                       .withToast(context);
                 },
@@ -128,9 +128,9 @@ class _TextBox extends StatelessWidget {
                       ],
                     )
                   : const Text('提交'),
-              onPressed: () {
+              onPressed: () async {
                 if (!state.isRunning) {
-                  context.cubit.submit(context.rwkv).withToast(context);
+                  await context.cubit.submit(context.rwkv).withToast(context);
                 } else {
                   context.cubit.stop();
                 }
@@ -234,9 +234,22 @@ class _PromptInputBoxState extends State<_PromptInputBox> {
                       const SizedBox(width: 8),
                       FilledButton(
                         child: const Text('确定'),
-                        onPressed: () {
-                          context.cubit.submit(context.rwkv).withToast(context);
-                          _editorController.close(editController.text);
+                        onPressed: () async {
+                          final value = editController.text;
+                          sourceController.value = sourceController.value
+                              .copyWith(
+                                text: value,
+                                selection: TextSelection.collapsed(
+                                  offset: value.length,
+                                ),
+                                composing: TextRange.empty,
+                              );
+                          await context.cubit
+                              .submit(context.rwkv)
+                              .withToast(context);
+                          if (ctx.mounted) {
+                            _editorController.close(value);
+                          }
                         },
                       ),
                     ],

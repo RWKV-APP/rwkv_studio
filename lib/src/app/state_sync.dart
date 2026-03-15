@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/app_state_coordinator.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 class WithGlobalStateSync extends StatefulWidget {
@@ -34,7 +35,12 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
       try {
         await coordinator.initialize();
       } catch (e, s) {
-        loge(e, s);
+        final error = AppException.wrap(e, s);
+        loge(
+          'WithGlobalStateSync initialize failed',
+          error,
+          error.stackTrace ?? s,
+        );
       }
     });
   }

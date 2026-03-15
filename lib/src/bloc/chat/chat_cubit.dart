@@ -69,7 +69,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             }
             await _repository.saveConversations([...e.added, ...e.changed]);
           } catch (error, stackTrace) {
-            loge(error, stackTrace);
+            final appError = AppException.wrap(error, stackTrace);
+            loge(
+              'ChatCubit persist conversations failed',
+              appError,
+              appError.stackTrace ?? stackTrace,
+            );
           }
         })
         .listen((_) {});
@@ -95,7 +100,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
               logd('add messages: ${e.added.length}');
             }
           } catch (error, stackTrace) {
-            loge(error, stackTrace);
+            final appError = AppException.wrap(error, stackTrace);
+            loge(
+              'ChatCubit persist messages failed',
+              appError,
+              appError.stackTrace ?? stackTrace,
+            );
           }
         })
         .listen((_) {});
@@ -118,7 +128,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             emit(state.copyWith(modelState: e));
           },
           onError: (e, s) {
-            emit(state.copyWith(modelState: ModelLoadState.error(model.id, e)));
+            emit(
+              state.copyWith(
+                modelState: ModelLoadState.error(
+                  model.id,
+                  AppException.wrap(e, s),
+                ),
+              ),
+            );
           },
         );
     addSubscription(sp);
@@ -286,7 +303,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       return;
     }
     if (state.modelInstanceId.isEmpty) {
-      throw '请选择模型';
+      throw const AppException.validation('请选择模型');
     }
     final convId = state.selected.id;
 
@@ -343,7 +360,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     if (state.modelInstanceId.isEmpty) {
       state.inputController.text = text;
-      throw const AppException('请选择模型');
+      throw const AppException.validation('请选择模型');
     }
 
     String convId = state.selected.id;
@@ -428,8 +445,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       }
       _onGenerateDone(conversationId: convId, history: history);
     } catch (e, s) {
-      _onGenerateError(conversationId: convId, history: history, e: e);
-      throw AppException('generate error', cause: e, stackTrace: s);
+      final error = AppException.wrap(e, s);
+      _onGenerateError(conversationId: convId, history: history, e: error);
+      Error.throwWithStackTrace(error, error.stackTrace ?? s);
     } finally {
       // support rwkv only for now
       final isRwkv = state.modelState.isRWKV;
@@ -438,9 +456,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         try {
           final count = RwkvTokenizer.default_.tokenCount(assistant.text);
           assistant = assistant.copyWithExtra(tokenCount: count);
-        } catch (e) {
+        } catch (e, s) {
+          final error = AppException.wrap(e, s);
           logw(assistant.text);
-          loge(e);
+          loge('ChatCubit token count failed', error, error.stackTrace ?? s);
         }
         emit(
           state.copyWith(
@@ -546,12 +565,16 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     required List<MessageModel> history,
     required dynamic e,
   }) {
+    final error = e is AppException ? e : AppException.wrap(e);
     var assistant = state.messages[conversationId]!.last;
     assistant = assistant.copyWith(updateAt: DateTime.now());
-    if (isCanceledException(e)) {
+    if (isCanceledException(error)) {
       assistant = assistant.copyWith(stopReason: StopReason.canceled);
     } else {
-      assistant = assistant.copyWith(error: "$e", stopReason: StopReason.error);
+      assistant = assistant.copyWith(
+        error: error.displayMessage,
+        stopReason: StopReason.error,
+      );
     }
     updateConversation(
       conversationId,

@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/repository/setting_repository.dart';
 import 'package:rwkv_studio/src/utils/equatable.dart';
@@ -41,7 +42,8 @@ class SettingCubit extends Cubit<SettingState> {
         emit(SettingState.fromSettings(settings, initialized: true));
       }
     } catch (e, s) {
-      loge(e, s);
+      final error = AppException.wrap(e, s);
+      loge('SettingCubit init failed', error, error.stackTrace ?? s);
     }
 
     emit(state.copyWith(initialized: true));
@@ -67,8 +69,13 @@ class SettingCubit extends Cubit<SettingState> {
     emit(state.copyWith(cache: validated));
   }
 
-  void _persist() async {
-    await _repository.save(state.settings);
-    logi('settings persisted');
+  Future<void> _persist() async {
+    try {
+      await _repository.save(state.settings);
+      logi('settings persisted');
+    } catch (e, s) {
+      final error = AppException.wrap(e, s);
+      loge('SettingCubit persist failed', error, error.stackTrace ?? s);
+    }
   }
 }

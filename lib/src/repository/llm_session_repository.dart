@@ -66,19 +66,12 @@ class LlmSessionRepository {
   }
 
   Future<ModelBaseInfo> getModelBaseInfo(String instanceId) async {
-    final model = _models[instanceId];
-    if (model == null) {
-      throw 'Model not found, instanceId: $instanceId';
-    }
-    return model.info;
+    return _requireInstance(instanceId).info;
   }
 
   Future<void> stop(String instanceId) async {
     logd('stop $instanceId');
-    final instance = _models[instanceId];
-    if (instance == null) {
-      throw 'Model not found';
-    }
+    final instance = _requireInstance(instanceId);
     if (!instance.state.isGenerating) {
       logw('not generating');
     }
@@ -90,10 +83,7 @@ class LlmSessionRepository {
   }
 
   Future<void> release(String instanceId) async {
-    final instance = _models[instanceId];
-    if (instance == null) {
-      throw 'Model not found';
-    }
+    final instance = _requireInstance(instanceId);
     await instance.rwkv.release();
     _detachGenerationState(instanceId);
     _models = {..._models}..remove(instanceId);
@@ -110,14 +100,17 @@ class LlmSessionRepository {
 
     if (modelInfo.backend == ModelBackend.albatross && !modelInfo.isRemote) {
       if (albatrossConfig == null) {
-        yield ModelLoadState.error(modelInfo.id, 'no albatross launch config');
+        yield ModelLoadState.error(
+          modelInfo.id,
+          const AppException.configuration('Missing Albatross launch config'),
+        );
         return;
       }
       try {
         yield ModelLoadState.loading(modelInfo.id);
         rwkv = await _startAlbatross(albatrossConfig, modelInfo);
-      } catch (e) {
-        yield ModelLoadState.error(modelInfo.id, e);
+      } catch (e, s) {
+        yield ModelLoadState.error(modelInfo.id, AppException.wrap(e, s));
         return;
       }
       instanceId = modelInfo.id;
@@ -141,7 +134,9 @@ class LlmSessionRepository {
       if (model == null) {
         yield ModelLoadState.error(
           modelInfo.id,
-          'no model found from ${modelInfo.providerName}, id: ${modelInfo.id}',
+          AppException.notFound(
+            'Remote model not found from ${modelInfo.providerName}: ${modelInfo.id}',
+          ),
         );
         return;
       }
@@ -160,8 +155,8 @@ class LlmSessionRepository {
           tokenizerPath: AppAssets.rwkvVocab20230424Path,
         ),
       );
-    } catch (e) {
-      yield ModelLoadState.error(modelInfo.id, e);
+    } catch (e, s) {
+      yield ModelLoadState.error(modelInfo.id, AppException.wrap(e, s));
       return;
     }
 
@@ -189,10 +184,7 @@ class LlmSessionRepository {
     DecodeParam decodeParam,
     GenerationConfig config,
   ) async* {
-    final instance = _models[instanceId];
-    if (instance == null) {
-      throw 'Model not found';
-    }
+    final instance = _requireInstance(instanceId);
 
     await _syncModelConfig(instanceId, decodeParam);
 
@@ -223,10 +215,7 @@ class LlmSessionRepository {
     int batch = 1,
     String? fimSuffix,
   }) async* {
-    final instance = _models[instanceId]?.rwkv;
-    if (instance == null) {
-      throw AppException('model not found $instanceId');
-    }
+    final instance = _requireInstance(instanceId).rwkv;
 
     await _syncModelConfig(instanceId, decodeParam);
     await instance.clearState();
@@ -242,7 +231,9 @@ class LlmSessionRepository {
         );
         return;
       }
-      throw const AppException('batch only implemented by albatross');
+      throw const AppException.unsupported(
+        'Batch inference is only supported by Albatross',
+      );
     }
 
     if (fimSuffix != null) {
@@ -255,7 +246,9 @@ class LlmSessionRepository {
           ),
         );
       } else {
-        throw const AppException('fim only supported by albatross');
+        throw const AppException.unsupported(
+          'FIM is only supported by Albatross',
+        );
       }
     }
 
@@ -304,7 +297,7 @@ class LlmSessionRepository {
     String instanceId,
     DecodeParam decodeParam,
   ) async {
-    ModelInstanceState instance = _models[instanceId]!;
+    ModelInstanceState instance = _requireInstance(instanceId);
     var updated = false;
 
     if (instance.decodeParam != decodeParam) {
@@ -390,5 +383,13 @@ class LlmSessionRepository {
       return;
     }
     _snapshotController.add(snapshot);
+  }
+
+  ModelInstanceState _requireInstance(String instanceId) {
+    final instance = _models[instanceId];
+    if (instance == null) {
+      throw AppException.notFound('Model instance not found: $instanceId');
+    }
+    return instance;
   }
 }

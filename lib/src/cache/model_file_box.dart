@@ -1,5 +1,6 @@
 import 'package:hive_ce/hive.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 
 part 'model_file_box.g.dart';
 
@@ -105,9 +106,16 @@ class ModelFileBox {
       final openedBox = await future;
       _box = openedBox;
       return openedBox;
-    } catch (_) {
+    } catch (e, s) {
       _openingBox = null;
-      rethrow;
+      Error.throwWithStackTrace(
+        AppException.storage(
+          'Failed to open model file box',
+          cause: e,
+          stackTrace: s,
+        ),
+        s,
+      );
     }
   }
 

@@ -14,8 +14,8 @@ class _TitleBar extends StatelessWidget {
             Button(
               onPressed: state.generating
                   ? null
-                  : () {
-                      context.cubit
+                  : () async {
+                      await context.cubit
                           .generate(context.rwkv, fim: true)
                           .withToast(context);
                     },
@@ -39,7 +39,9 @@ class _TitleBar extends StatelessWidget {
                       if (state.generating) {
                         context.cubit.stop(context.rwkv);
                       } else {
-                        context.cubit.generate(context.rwkv).withToast(context);
+                        await context.cubit
+                            .generate(context.rwkv)
+                            .withToast(context);
                       }
                     },
               child: Row(

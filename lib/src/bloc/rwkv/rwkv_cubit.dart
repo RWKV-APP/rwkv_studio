@@ -139,7 +139,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
         ? DecodeParam.initial()
         : state.decodeParams[decodeParamId];
     if (param == null) {
-      throw AppException('decode param not found $decodeParamId');
+      throw AppException.notFound('Decode param not found: $decodeParamId');
     }
     return param;
   }

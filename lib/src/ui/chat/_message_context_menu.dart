@@ -55,11 +55,10 @@ class _MessageContextMenuState extends State<MessageContextMenu> {
         return _EditMessageFlyout(
           initialValue: widget.message.text,
           onCancel: _contextController.close,
-          onSubmit: (value) {
-            context.chat
+          onSubmit: (value) async {
+            await context.chat
                 .updateMessageContent(widget.message.id, value)
                 .withToast(context);
-            _contextController.close();
           },
         );
       },
@@ -119,7 +118,7 @@ class _MessageContextMenuState extends State<MessageContextMenu> {
 class _EditMessageFlyout extends StatefulWidget {
   final String initialValue;
   final VoidCallback onCancel;
-  final ValueChanged<String> onSubmit;
+  final Future<void> Function(String value) onSubmit;
 
   const _EditMessageFlyout({
     required this.initialValue,
@@ -167,13 +166,16 @@ class _EditMessageFlyoutState extends State<_EditMessageFlyout> {
               Button(onPressed: widget.onCancel, child: const Text('取消')),
               const SizedBox(width: 6),
               FilledButton(
-                onPressed: () {
+                onPressed: () async {
                   final value = _controller.text.trim();
                   if (value.isEmpty) {
                     context.toast('内容不能为空');
                     return;
                   }
-                  widget.onSubmit(value);
+                  await widget.onSubmit(value);
+                  if (mounted) {
+                    widget.onCancel();
+                  }
                 },
                 child: const Text('确定'),
               ),

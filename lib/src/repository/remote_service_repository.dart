@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/models/settings/model_settings_model.dart';
@@ -208,12 +209,22 @@ class RemoteServiceRepository {
         logd(
           'synced ${remoteModels.length} models from ${service.id} (${service.url})',
         );
-      } on TimeoutException {
-        statuses[config.id] = RemoteServiceStatus.unavailable('timeout');
-        logw('timeout fetching models from ${config.id} (${config.url})');
+      } on TimeoutException catch (e, s) {
+        final error = AppException.timeout(
+          'Timeout fetching models from ${config.id} (${config.url})',
+          stackTrace: s,
+          cause: e,
+        );
+        statuses[config.id] = RemoteServiceStatus.unavailable(
+          error.displayMessage,
+        );
+        loge(error, null, error.stackTrace ?? s);
       } catch (e, s) {
-        statuses[config.id] = RemoteServiceStatus.unavailable(e);
-        loge(e, s);
+        final error = AppException.wrap(e, s);
+        statuses[config.id] = RemoteServiceStatus.unavailable(
+          error.displayMessage,
+        );
+        loge(error, null, error.stackTrace ?? s);
       }
       _services = List<ModelServiceWrap>.from(services);
       _cachedRemoteModels = List<RemoteModelInfo>.from(models);

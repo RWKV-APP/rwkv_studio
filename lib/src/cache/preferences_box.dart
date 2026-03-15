@@ -1,4 +1,5 @@
 import 'package:hive_ce/hive_ce.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 
 part 'preferences_box.g.dart';
@@ -50,9 +51,16 @@ class PreferencesBox {
       final openedBox = await future;
       _box = openedBox;
       return openedBox;
-    } catch (_) {
+    } catch (e, s) {
       _openingBox = null;
-      rethrow;
+      Error.throwWithStackTrace(
+        AppException.storage(
+          'Failed to open preferences box',
+          cause: e,
+          stackTrace: s,
+        ),
+        s,
+      );
     }
   }
 

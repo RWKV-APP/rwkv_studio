@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:hive_ce/hive.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'state_cache_box.g.dart';
@@ -37,8 +38,14 @@ class StateCacheBox {
   static Future<Box<StateCacheBox>> _instance() async {
     try {
       _stateCacheBox ??= await Hive.openBox<StateCacheBox>('state_cache');
-    } catch (e) {
-      loge('open state cache box failed: $e');
+    } catch (e, s) {
+      final error = AppException.storage(
+        'Failed to open state cache box',
+        cause: e,
+        stackTrace: s,
+      );
+      loge(error, s);
+      Error.throwWithStackTrace(error, s);
     }
     return _stateCacheBox!;
   }

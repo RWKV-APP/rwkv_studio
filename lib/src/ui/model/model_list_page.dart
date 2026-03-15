@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/model/_model_detail.dart';
@@ -76,8 +77,8 @@ class _ModelListPageState extends State<ModelListPage> {
   Future<void> _ensureRuntimeReady() async {
     try {
       await context.modelManage.ensureRuntimeReady();
-    } catch (e) {
-      loge(e);
+    } catch (e, s) {
+      loge(AppException.wrap(e, s));
     }
   }
 
@@ -364,8 +365,13 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
             ToggleMenuFlyoutItem(
               text: Text(s == DownloadSource.auto ? 'Auto' : s.name),
               value: s == selected,
-              onChanged: (bool value) {
-                context.modelManage.setDownloadSource(s);
+              onChanged: (bool value) async {
+                if (!value) {
+                  return;
+                }
+                await context.modelManage.setDownloadSource(s).withToast(
+                  context,
+                );
               },
             ),
         ],

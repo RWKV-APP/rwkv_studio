@@ -6,6 +6,7 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
@@ -40,8 +41,8 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
   Future<void> _initialize() async {
     try {
       await context.modelManage.ensureRuntimeReady();
-    } catch (e) {
-      loge(e);
+    } catch (e, s) {
+      loge(AppException.wrap(e, s));
     } finally {
       if (mounted) {
         setState(() {
@@ -86,7 +87,7 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
   }
 
   Future<void> _onModelReleased(BuildContext context, String instanceId) async {
-    context.rwkv.release(instanceId).withToast(context);
+    await context.rwkv.release(instanceId).withToast(context);
     Navigator.of(context).pop();
   }
 

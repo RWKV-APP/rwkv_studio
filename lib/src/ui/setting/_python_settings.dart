@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 
 class PythonSettings extends StatefulWidget {
   final PythonSettingsModel state;
@@ -57,8 +58,8 @@ class _PythonSettingsState extends State<PythonSettings> {
       } else {
         _selectedType = selected.isConda ? 'conda' : 'python';
       }
-    } catch (e) {
-      _error = e.toString();
+    } catch (e, s) {
+      _error = AppException.wrap(e, s).displayMessage;
     }
     _loading = false;
     if (mounted) {

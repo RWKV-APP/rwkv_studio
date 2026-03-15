@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/string_utils.dart';
@@ -50,17 +51,21 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
         if (!mounted) {
           return;
         }
-        backends = [ModelBackend.unknown, ...context.modelManage.state.backends];
+        backends = [
+          ModelBackend.unknown,
+          ...context.modelManage.state.backends,
+        ];
         tags = context.modelManage.state.getDisplayTags();
         groups = context.modelManage.state.getDisplayGroups();
         setState(() {
           message = 'Resolving model info...';
         });
         await resolve();
-      } catch (e) {
+      } catch (e, s) {
+        final error = AppException.wrap(e, s);
         if (mounted) {
           setState(() {
-            message = 'Failed to resolve model info\n$e';
+            message = 'Failed to resolve model info\n${error.displayMessage}';
           });
         }
       }
@@ -70,14 +75,23 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
   Future<void> calculateMd5() async {
     calculating = true;
     setState(() {});
-    final md5 = await File(widget.path).md5();
-    if (!mounted) {
-      return;
+    try {
+      final md5 = await File(widget.path).md5();
+      if (!mounted) {
+        return;
+      }
+      existingModel = context.modelManage.findModelByMD5(md5);
+      model = model?.copyWith(md5: md5);
+    } catch (e, s) {
+      if (mounted) {
+        context.toast(AppException.wrap(e, s).displayMessage);
+      }
+    } finally {
+      calculating = false;
+      if (mounted) {
+        setState(() {});
+      }
     }
-    existingModel = context.modelManage.findModelByMD5(md5);
-    model = model?.copyWith(md5: md5);
-    calculating = false;
-    setState(() {});
   }
 
   void resolveModelSizeFromName() {
@@ -92,34 +106,45 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
           model = model!.copyWith(modelSize: num.tryParse(size.trim()) ?? -1);
         }
       }
-    } catch (e) {
-      logw(e);
+    } catch (e, s) {
+      logw(AppException.wrap(e, s));
     }
   }
 
   Future<void> resolve() async {
-    final file = File(widget.path);
-    final size = await file.length();
-    const sha256 = '';
-    const md5 = '';
+    try {
+      final file = File(widget.path);
+      final size = await file.length();
+      const sha256 = '';
+      const md5 = '';
 
-    model = ModelInfo.base(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: file.name,
-      url: '',
-      groups: ['chat'],
-      fileSize: size,
-      backend: ModelBackend.conjecture(file.extension) ?? ModelBackend.unknown,
-      sha256: sha256,
-      md5: md5,
-      localPath: widget.path,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    resolveModelSizeFromName();
+      model = ModelInfo.base(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: file.name,
+        url: '',
+        groups: ['chat'],
+        fileSize: size,
+        backend:
+            ModelBackend.conjecture(file.extension) ?? ModelBackend.unknown,
+        sha256: sha256,
+        md5: md5,
+        localPath: widget.path,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      );
+      resolveModelSizeFromName();
 
-    setState(() {});
+      setState(() {});
 
-    await calculateMd5();
+      await calculateMd5();
+    } catch (e, s) {
+      final error = AppException.wrap(e, s);
+      if (!mounted) {
+        Error.throwWithStackTrace(error, error.stackTrace ?? s);
+      }
+      setState(() {
+        message = 'Failed to resolve model info\n${error.displayMessage}';
+      });
+    }
   }
 
   void onConfirmTap() {
@@ -248,7 +273,8 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
         Row(
           children: [
             const SizedBox(width: 90, child: Text('MD5')),
-            if (model.md5.isNotEmpty) Expanded(child: SelectableText(model.md5)),
+            if (model.md5.isNotEmpty)
+              Expanded(child: SelectableText(model.md5)),
             if (calculating)
               const SizedBox(width: 24, height: 24, child: ProgressRing()),
             if (!calculating)
@@ -326,7 +352,9 @@ class _ImportModelDialogState extends State<ImportModelDialog> {
                           );
                         } else {
                           this.model = model.copyWith(
-                            tags: model.tags.where((e) => e != tag.name).toList(),
+                            tags: model.tags
+                                .where((e) => e != tag.name)
+                                .toList(),
                           );
                         }
                         setState(() {});

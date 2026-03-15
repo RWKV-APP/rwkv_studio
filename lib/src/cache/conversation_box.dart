@@ -1,4 +1,5 @@
 import 'package:hive_ce/hive.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 
 part 'conversation_box.g.dart';
@@ -65,9 +66,16 @@ class ConversationBox {
       final openedBox = await future;
       _box = openedBox;
       return openedBox;
-    } catch (_) {
+    } catch (e, s) {
       _openingBox = null;
-      rethrow;
+      Error.throwWithStackTrace(
+        AppException.storage(
+          'Failed to open conversation box',
+          cause: e,
+          stackTrace: s,
+        ),
+        s,
+      );
     }
   }
 

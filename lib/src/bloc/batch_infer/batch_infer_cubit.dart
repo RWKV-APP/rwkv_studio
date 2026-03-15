@@ -60,7 +60,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
   Future submit(RwkvInterface rwkv) async {
     if (state.modelState.instanceId.isEmpty) {
-      throw const AppException('请先选择模型');
+      throw const AppException.validation('请先选择模型');
     }
 
     _speedSampler.close();
@@ -104,8 +104,9 @@ class BatchInferCubit extends Cubit<BatchInferState> {
             emit(state.copyWith(isRunning: false));
           },
           onError: (e, s) {
-            completer.completeError(e);
-            logd('batch infer error: $e, $s');
+            final error = AppException.wrap(e, s);
+            completer.completeError(error, error.stackTrace ?? s);
+            logd('batch infer error: $error');
             _speedSampler.close();
             emit(state.copyWith(isRunning: false));
           },

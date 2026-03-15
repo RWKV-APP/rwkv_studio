@@ -92,16 +92,20 @@ class _DownloadTaskFlyout extends StatelessWidget {
 
                     IconButton(
                       icon: const Icon(WindowsIcons.cancel),
-                      onPressed: () {
-                        context.modelManage.cancel(model.id);
+                      onPressed: () async {
+                        await context.modelManage.cancel(model.id).withToast(
+                          context,
+                        );
                       },
                     ),
 
                     if (state.update.isRunning && !state.update.requesting)
                       IconButton(
                         icon: const Icon(WindowsIcons.pause),
-                        onPressed: () {
-                          context.modelManage.pause(model.id);
+                        onPressed: () async {
+                          await context.modelManage.pause(model.id).withToast(
+                            context,
+                          );
                         },
                       ),
 
@@ -123,8 +127,8 @@ class _DownloadTaskFlyout extends StatelessWidget {
                     if (state.update.isStopped)
                       IconButton(
                         icon: const Icon(WindowsIcons.play),
-                        onPressed: () {
-                          context.modelManage
+                        onPressed: () async {
+                          await context.modelManage
                               .resume(model.id)
                               .withToast(context);
                         },

@@ -15,14 +15,15 @@ extension FutureExt<T> on Future<T> {
         context.toast(success);
       }
       return r;
-    } catch (e) {
-      if (e is AppException && !e.shouldToast()) {
-        rethrow;
+    } catch (e, s) {
+      final appException = AppException.wrap(e, s);
+      if (!_shouldToast(appException)) {
+        Error.throwWithStackTrace(appException, appException.stackTrace ?? s);
       }
       if (context.mounted) {
-        context.toast("${error ?? ''} $e".trim());
+        context.toast("${error ?? ''} ${appException.displayMessage}".trim());
       }
-      rethrow;
+      Error.throwWithStackTrace(appException, appException.stackTrace ?? s);
     }
   }
 
@@ -42,6 +43,25 @@ extension FutureExt<T> on Future<T> {
         context.hideLoading();
       }
     }
+  }
+}
+
+bool _shouldToast(AppException exception) {
+  switch (exception.kind) {
+    case AppExceptionKind.cancelled:
+      return false;
+    case AppExceptionKind.validation:
+    case AppExceptionKind.configuration:
+    case AppExceptionKind.notFound:
+    case AppExceptionKind.network:
+    case AppExceptionKind.timeout:
+    case AppExceptionKind.storage:
+    case AppExceptionKind.unsupported:
+    case AppExceptionKind.externalProcess:
+    case AppExceptionKind.internal:
+    case AppExceptionKind.unimplemented:
+    case AppExceptionKind.unknown:
+      return true;
   }
 }
 

@@ -1,9 +1,9 @@
-import 'package:dio/dio.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/subscription_mixin.dart';
 
@@ -44,7 +44,14 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
             emit(state.copyWith(modelState: e));
           },
           onError: (e, s) {
-            emit(state.copyWith(modelState: ModelLoadState.error(model.id, e)));
+            emit(
+              state.copyWith(
+                modelState: ModelLoadState.error(
+                  model.id,
+                  AppException.wrap(e, s),
+                ),
+              ),
+            );
           },
         );
     addSubscription(sp);
@@ -65,10 +72,10 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     if (fim) {
       offset = state.controllerText.selection.baseOffset;
       if (offset == prompt.length) {
-        throw const AppException('fim suffix is empty');
+        throw const AppException.validation('FIM suffix is empty');
       }
       if (offset == 0) {
-        throw const AppException('fim prefix is empty');
+        throw const AppException.validation('FIM prefix is empty');
       }
       prefix = prompt.substring(0, offset);
       suffix = prompt.substring(offset);
@@ -101,12 +108,12 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
           emit(state.copyWith(generating: true));
         }
       }
-    } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.cancel) {
+    } catch (e, s) {
+      if (isCanceledException(e)) {
         logd('generate canceled');
         return;
       }
-      throw AppException('generate error', cause: e);
+      Error.throwWithStackTrace(AppException.wrap(e, s), s);
     } finally {
       if (!isClosed) {
         emit(state.copyWith(generating: false));

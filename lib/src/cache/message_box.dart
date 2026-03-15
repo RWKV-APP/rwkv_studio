@@ -64,8 +64,12 @@ class MessageBox {
   static Future<Box<MessageBox>> _instance() async {
     try {
       _messageBox ??= await Hive.openBox<MessageBox>('messages');
-    } catch (e) {
-      throw AppException('Failed to open message box', cause: e);
+    } catch (e, s) {
+      throw AppException.storage(
+        'Failed to open message box',
+        cause: e,
+        stackTrace: s,
+      );
     }
     return _messageBox!;
   }

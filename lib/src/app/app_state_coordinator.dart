@@ -13,6 +13,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -85,22 +86,34 @@ class AppStateCoordinator {
 
     if (previous.appearance.theme.brightness !=
         state.appearance.theme.brightness) {
-      onAppearanceChanged(state.appearance);
+      await _runStep('apply appearance', () async {
+        onAppearanceChanged(state.appearance);
+      });
     }
     if (previous.appearance.userType != state.appearance.userType) {
-      onUserTypeChanged(state.appearance.userType);
+      await _runStep('apply user type', () async {
+        onUserTypeChanged(state.appearance.userType);
+      });
     }
     if (previous.model.remoteServices != state.model.remoteServices) {
-      await onRemoteServicesChanged(state.model.remoteServices);
+      await _runStep('sync remote services', () async {
+        await onRemoteServicesChanged(state.model.remoteServices);
+      });
     }
     if (previous.python != state.python) {
-      onPythonChanged(state.python);
+      await _runStep('apply python', () async {
+        onPythonChanged(state.python);
+      });
     }
     if (previous.model.modelListUrl != state.model.modelListUrl) {
-      await onModelListUrlChanged(state.model.modelListUrl);
+      await _runStep('apply model list url', () async {
+        await onModelListUrlChanged(state.model.modelListUrl);
+      });
     }
     if (!kIsWeb && previous.model.modelServer != state.model.modelServer) {
-      onModelServerChanged(state.model.modelServer);
+      await _runStep('apply model server', () async {
+        onModelServerChanged(state.model.modelServer);
+      });
     }
   }
 
@@ -145,7 +158,8 @@ class AppStateCoordinator {
     try {
       await action();
     } catch (e, s) {
-      loge('AppStateCoordinator $label failed: $e', s);
+      final error = AppException.wrap(e, s);
+      loge('AppStateCoordinator $label failed', error, error.stackTrace ?? s);
     }
   }
 

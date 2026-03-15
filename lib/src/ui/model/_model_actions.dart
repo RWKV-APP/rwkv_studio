@@ -29,8 +29,8 @@ class ModelItemActions extends StatelessWidget {
             icon: const Icon(WindowsIcons.delete),
             label: '删除',
             danger: true,
-            onPressed: () {
-              context.modelManage.delete(model.id);
+            onPressed: () async {
+              await context.modelManage.delete(model.id).withToast(ctx);
             },
           );
         }
@@ -40,8 +40,8 @@ class ModelItemActions extends StatelessWidget {
             icon: const Icon(WindowsIcons.download),
             primary: true,
             label: '下载',
-            onPressed: () {
-              context.modelManage.download(model.id).withToast(ctx);
+            onPressed: () async {
+              await context.modelManage.download(model.id).withToast(ctx);
             },
           );
         }
@@ -70,8 +70,8 @@ class ModelItemActions extends StatelessWidget {
             _buildButton(
               icon: const Icon(WindowsIcons.cancel),
               label: '取消下载',
-              onPressed: () {
-                context.modelManage.cancel(model.id);
+              onPressed: () async {
+                await context.modelManage.cancel(model.id).withToast(context);
               },
             ),
             const SizedBox(width: 4),
@@ -94,8 +94,8 @@ class ModelItemActions extends StatelessWidget {
                   ],
                 ),
                 label: '暂停',
-                onPressed: () {
-                  context.modelManage.pause(model.id);
+                onPressed: () async {
+                  await context.modelManage.pause(model.id).withToast(context);
                 },
               ),
 
@@ -104,8 +104,8 @@ class ModelItemActions extends StatelessWidget {
                 icon: const Icon(WindowsIcons.play),
                 primary: true,
                 label: '继续下载',
-                onPressed: () {
-                  context.modelManage.resume(model.id).withToast(context);
+                onPressed: () async {
+                  await context.modelManage.resume(model.id).withToast(context);
                 },
               ),
           ],

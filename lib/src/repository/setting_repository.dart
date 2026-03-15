@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:rwkv_studio/src/cache/preferences_box.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -68,7 +69,8 @@ class SettingRepository {
       }
       return dir.path;
     } catch (e, s) {
-      loge(e, s);
+      final error = AppException.wrap(e, s);
+      loge('$label is not available', error, error.stackTrace ?? s);
       logw('$label is not available, reset to $fallback');
       return fallback;
     }
