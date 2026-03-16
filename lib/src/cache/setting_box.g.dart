@@ -1,33 +1,34 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'preferences_box.dart';
+part of 'setting_box.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class PreferencesBoxAdapter extends TypeAdapter<PreferencesBox> {
+class SettingBoxAdapter extends TypeAdapter<SettingBox> {
   @override
   final typeId = 1;
 
   @override
-  PreferencesBox read(BinaryReader reader) {
+  SettingBox read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return PreferencesBox(
+    return SettingBox(
       model: (fields[0] as Map).cast<String, dynamic>(),
       appearance: (fields[1] as Map).cast<String, dynamic>(),
       python: (fields[2] as Map).cast<String, dynamic>(),
       cache: (fields[3] as Map).cast<String, dynamic>(),
+      mcp: (fields[4] as Map).cast<String, dynamic>(),
     );
   }
 
   @override
-  void write(BinaryWriter writer, PreferencesBox obj) {
+  void write(BinaryWriter writer, SettingBox obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.model)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class PreferencesBoxAdapter extends TypeAdapter<PreferencesBox> {
       ..writeByte(2)
       ..write(obj.python)
       ..writeByte(3)
-      ..write(obj.cache);
+      ..write(obj.cache)
+      ..writeByte(4)
+      ..write(obj.mcp);
   }
 
   @override
@@ -44,7 +47,7 @@ class PreferencesBoxAdapter extends TypeAdapter<PreferencesBox> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PreferencesBoxAdapter &&
+      other is SettingBoxAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

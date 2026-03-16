@@ -33,20 +33,26 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       return;
     }
 
-    emit(state.copyWith(initialized: true));
-
     final snapshot = await _repository.load();
-    final convs = snapshot.conversations;
-    final msgs = snapshot.messages;
-    logd('restored conversations: ${convs.length}, messages: ${msgs.length}');
-    emit(state.copyWith(conversations: convs, messages: msgs));
+    logd(
+      'restored conversations: ${snapshot.conversations.length},'
+      ' messages: ${snapshot.messages.length}',
+    );
+    emit(
+      state.copyWith(
+        conversations: snapshot.conversations,
+        messages: snapshot.messages,
+      ),
+    );
+
+    _initStatePersistence();
+
+    emit(state.copyWith(initialized: true));
 
     if (state.conversations.isEmpty) {
       await newChat();
     }
     selectConversation(state.conversations.first);
-
-    _initStatePersistence();
   }
 
   void _initStatePersistence() {

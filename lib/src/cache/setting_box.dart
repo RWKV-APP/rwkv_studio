@@ -2,13 +2,13 @@ import 'package:hive_ce/hive_ce.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 
-part 'preferences_box.g.dart';
+part 'setting_box.g.dart';
 
 @HiveType(typeId: 1)
-class PreferencesBox {
-  static const _boxName = 'preferences';
-  static Box<PreferencesBox>? _box;
-  static Future<Box<PreferencesBox>>? _openingBox;
+class SettingBox {
+  static const _boxName = 'setting';
+  static Box<SettingBox>? _box;
+  static Future<Box<SettingBox>>? _openingBox;
 
   @HiveField(0)
   Map<String, dynamic> model;
@@ -22,15 +22,19 @@ class PreferencesBox {
   @HiveField(3)
   Map<String, dynamic> cache;
 
+  @HiveField(4)
+  Map<String, dynamic> mcp;
+
   /// flatten all settings to one object
-  PreferencesBox({
+  SettingBox({
     required this.model,
     required this.appearance,
     required this.python,
     required this.cache,
+    required this.mcp,
   });
 
-  static Future<Box<PreferencesBox>> _instance() async {
+  static Future<Box<SettingBox>> _instance() async {
     final box = _box;
     if (box != null) {
       if (box.isOpen) {
@@ -45,7 +49,7 @@ class PreferencesBox {
       return openingBox;
     }
 
-    final future = Hive.openBox<PreferencesBox>(_boxName);
+    final future = Hive.openBox<SettingBox>(_boxName);
     _openingBox = future;
     try {
       final openedBox = await future;
@@ -66,10 +70,7 @@ class PreferencesBox {
 
   static Future<void> putRaw(AppSettingsModel value) async {
     final box = await _instance();
-    await box.put(
-      'default',
-      PreferencesBox.fromSettings(value),
-    );
+    await box.put('default', SettingBox.fromSettings(value));
   }
 
   static Future<AppSettingsModel?> getRaw() async {
@@ -83,12 +84,13 @@ class PreferencesBox {
     await box.clear();
   }
 
-  factory PreferencesBox.fromSettings(AppSettingsModel settings) {
-    return PreferencesBox(
+  factory SettingBox.fromSettings(AppSettingsModel settings) {
+    return SettingBox(
       model: settings.model.toMap(),
       appearance: settings.appearance.toMap(),
       python: settings.python.toMap(),
       cache: settings.cache.toMap(),
+      mcp: settings.mcp.toMap(),
     );
   }
 
@@ -98,6 +100,7 @@ class PreferencesBox {
       appearance: AppearanceSettingsModel.fromMap(appearance),
       python: PythonSettingsModel.fromMap(python),
       cache: CacheSettingsModel.fromMap(cache),
+      mcp: McpSettingsModel.fromMap(mcp),
     );
   }
 }

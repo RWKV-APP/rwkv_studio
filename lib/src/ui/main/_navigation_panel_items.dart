@@ -32,6 +32,8 @@ String _itemTitle(NavBarItemType type) {
       return '转换';
     case NavBarItemType.batchInfer:
       return '并行模式';
+    case .mcp:
+      return 'MCP';
   }
 }
 
@@ -65,6 +67,18 @@ Widget _itemIcon(NavBarItemType type) {
     case NavBarItemType.batchInfer:
       // return const WindowsIcon(FluentIcons.quad_column);
       return const WindowsIcon(FluentIcons.waffle);
+    case NavBarItemType.mcp:
+      return LayoutBuilder(
+        builder: (ctx, cs) => SvgPicture.asset(
+          'assets/img/icon_mcp.svg',
+          width: 14,
+          height: 14,
+          colorFilter: ColorFilter.mode(
+            ctx.fluent.iconTheme.color!,
+            BlendMode.srcIn,
+          ),
+        ),
+      );
   }
 }
 
@@ -94,6 +108,8 @@ Widget? _itemBody(NavBarItemType type) {
       return todo();
     case NavBarItemType.batchInfer:
       return BatchInferPage.create();
+    case NavBarItemType.mcp:
+      return const McpPage();
   }
 }
 

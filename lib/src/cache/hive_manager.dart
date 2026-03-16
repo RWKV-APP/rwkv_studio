@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
+import 'package:rwkv_studio/src/cache/setting_box.dart';
 import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
@@ -9,7 +10,6 @@ import 'package:rwkv_studio/src/utils/path.dart';
 import 'conversation_box.dart';
 import 'message_box.dart';
 import 'model_file_box.dart';
-import 'preferences_box.dart';
 
 class HiveManager {
   HiveManager._();
@@ -27,7 +27,7 @@ class HiveManager {
       Hive.init('hive');
     }
 
-    Hive.registerAdapter(PreferencesBoxAdapter());
+    Hive.registerAdapter(SettingBoxAdapter());
     Hive.registerAdapter(ConversationBoxAdapter());
     Hive.registerAdapter(MessageBoxAdapter());
     Hive.registerAdapter(ModelFileBoxAdapter());
@@ -42,7 +42,7 @@ class HiveManager {
 
   /// Clear all data
   static Future<void> clear() async {
-    await PreferencesBox.clear();
+    await SettingBox.clear();
     await ConversationBox.clear();
     await ModelFileBox.clear();
   }

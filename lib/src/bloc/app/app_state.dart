@@ -7,6 +7,7 @@ enum NavBarItemType {
   modelManage(title: '模型管理'),
   musicGeneration(title: '音乐生成'),
   imageGeneration(title: '图片生成'),
+  mcp(title: 'MCP'),
   workFlow(title: '工作流'),
   tools(title: '工具'),
   fineTuning(title: '微调'),
@@ -54,7 +55,7 @@ class NavBarItem {
     NavBarItem(type: NavBarItemType.textGeneration),
     NavBarItem(type: NavBarItemType.batchInfer),
     NavBarItem(type: NavBarItemType.modelManage),
-    NavBarItem(type: NavBarItemType.musicGeneration),
+    NavBarItem(type: NavBarItemType.mcp),
     NavBarItem(type: NavBarItemType.workFlow),
     NavBarItem(
       type: NavBarItemType.tools,

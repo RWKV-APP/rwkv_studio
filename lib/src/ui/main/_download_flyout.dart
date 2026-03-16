@@ -93,9 +93,9 @@ class _DownloadTaskFlyout extends StatelessWidget {
                     IconButton(
                       icon: const Icon(WindowsIcons.cancel),
                       onPressed: () async {
-                        await context.modelManage.cancel(model.id).withToast(
-                          context,
-                        );
+                        await context.modelManage
+                            .cancel(model.id)
+                            .withToast(context);
                       },
                     ),
 
@@ -103,9 +103,9 @@ class _DownloadTaskFlyout extends StatelessWidget {
                       IconButton(
                         icon: const Icon(WindowsIcons.pause),
                         onPressed: () async {
-                          await context.modelManage.pause(model.id).withToast(
-                            context,
-                          );
+                          await context.modelManage
+                              .pause(model.id)
+                              .withToast(context);
                         },
                       ),
 

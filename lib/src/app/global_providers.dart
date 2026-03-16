@@ -22,6 +22,12 @@ class WithGlobalProviders extends StatelessWidget {
         RepositoryProvider(create: (_) => const SettingRepository()),
         RepositoryProvider(create: (_) => LocalMachineRepository()),
         RepositoryProvider(
+          create: (_) => McpRepository(),
+          dispose: (repository) {
+            repository.dispose();
+          },
+        ),
+        RepositoryProvider(
           create: (_) => RemoteServiceRepository(),
           dispose: (repository) {
             repository.dispose();

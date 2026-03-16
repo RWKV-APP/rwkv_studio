@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:rwkv_studio/src/cache/preferences_box.dart';
+import 'package:rwkv_studio/src/cache/setting_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -10,7 +10,7 @@ class SettingRepository {
   const SettingRepository();
 
   Future<AppSettingsModel?> load() async {
-    final settings = await PreferencesBox.getRaw();
+    final settings = await SettingBox.getRaw();
     if (settings == null) {
       return null;
     }
@@ -20,7 +20,7 @@ class SettingRepository {
   }
 
   Future<void> save(AppSettingsModel settings) async {
-    await PreferencesBox.putRaw(settings);
+    await SettingBox.putRaw(settings);
   }
 
   Future<AppSettingsModel> reset() async {

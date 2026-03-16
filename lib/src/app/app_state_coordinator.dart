@@ -14,6 +14,7 @@ import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/repository/mcp_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -24,10 +25,12 @@ class AppStateCoordinator {
   final RwkvCubit rwkv;
   final SettingCubit setting;
   final TextGenerationCubit textGen;
+  final McpRepository mcpRepository;
   bool _initializing = false;
   bool _initialized = false;
   SettingState? _lastSettingState;
   Future<void>? _remoteServiceBootstrap;
+  Future<void>? _mcpBootstrap;
 
   AppStateCoordinator({
     required this.app,
@@ -36,6 +39,7 @@ class AppStateCoordinator {
     required this.rwkv,
     required this.setting,
     required this.textGen,
+    required this.mcpRepository,
   });
 
   factory AppStateCoordinator.fromContext(BuildContext context) {
@@ -46,6 +50,7 @@ class AppStateCoordinator {
       rwkv: context.read<RwkvCubit>(),
       setting: context.read<SettingCubit>(),
       textGen: context.read<TextGenerationCubit>(),
+      mcpRepository: context.read<McpRepository>(),
     );
   }
 
@@ -100,6 +105,11 @@ class AppStateCoordinator {
         await onRemoteServicesChanged(state.model.remoteServices);
       });
     }
+    if (previous.mcp != state.mcp) {
+      await _runStep('sync MCP services', () async {
+        await onMcpSettingsChanged(state.mcp);
+      });
+    }
     if (previous.python != state.python) {
       await _runStep('apply python', () async {
         onPythonChanged(state.python);
@@ -136,6 +146,7 @@ class AppStateCoordinator {
       );
     });
     _bootstrapRemoteServices(state.model.remoteServices);
+    _bootstrapMcpSettings(state.mcp);
     if (!kIsWeb) {
       await _runStep('apply model server', () async {
         onModelServerChanged(state.model.modelServer);
@@ -152,6 +163,17 @@ class AppStateCoordinator {
           _remoteServiceBootstrap = null;
         });
     unawaited(_remoteServiceBootstrap);
+  }
+
+  void _bootstrapMcpSettings(McpSettingsModel mcp) {
+    _mcpBootstrap ??=
+        _runStep(
+          'sync MCP services',
+          () => onMcpSettingsChanged(mcp),
+        ).whenComplete(() {
+          _mcpBootstrap = null;
+        });
+    unawaited(_mcpBootstrap);
   }
 
   Future<void> _runStep(String label, Future<void> Function() action) async {
@@ -198,6 +220,11 @@ class AppStateCoordinator {
   ) async {
     logd('model-service-settings updated: ${remoteServices.length} services');
     await app.updateModelServices(remoteServices);
+  }
+
+  Future<void> onMcpSettingsChanged(McpSettingsModel mcp) async {
+    logd('mcp-settings updated: ${mcp.servers.length} servers');
+    await mcpRepository.syncConnections(mcp.servers);
   }
 
   void onPythonChanged(PythonSettingsModel python) {

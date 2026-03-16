@@ -61,6 +61,10 @@ class SettingCubit extends Cubit<SettingState> {
     emit(state.copyWith(python: python));
   }
 
+  void setMcpSetting(McpSettingsModel mcp) {
+    emit(state.copyWith(mcp: mcp));
+  }
+
   Future setCacheSetting(CacheSettingsModel cache) async {
     final validated = await _repository.validateCacheSetting(
       cache,
