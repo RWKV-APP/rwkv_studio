@@ -5,6 +5,7 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
@@ -178,19 +179,32 @@ class LlmSessionRepository {
     );
   }
 
-  Stream<GenerationResponse> chat(
+  Stream<ChatEvent> chat(
     List<ChatMessage> messages,
     String instanceId,
     DecodeParam decodeParam,
-    GenerationConfig config,
-  ) async* {
+    GenerationConfig config, {
+    McpChatRunner? mcpRunner,
+  }) async* {
     final instance = _requireInstance(instanceId);
 
     await _syncModelConfig(instanceId, decodeParam);
 
     logi('chat: ${instance.id}');
+
+    if (mcpRunner != null && instance.info.supportFunctionCall) {
+      yield* _chatWithMcp(
+        instance: instance,
+        mcpRunner: mcpRunner,
+        messages: messages,
+        decodeParam: decodeParam,
+        config: config,
+      );
+      return;
+    }
+
     try {
-      yield* instance.rwkv
+      final stream = instance.rwkv
           .chat(
             ChatParam(
               messages: messages,
@@ -202,6 +216,14 @@ class LlmSessionRepository {
             ),
           )
           .timeout(const Duration(seconds: 60));
+
+      await for (final response in stream) {
+        yield ChatAssistantEvent(
+          deltaMessage: response.text,
+          stopReason: response.stopReason,
+          tokenCount: response.tokenCount,
+        );
+      }
     } catch (e, s) {
       loge(e, s);
       rethrow;
@@ -279,6 +301,46 @@ class LlmSessionRepository {
     _boundRwkvs.clear();
     _models = const {};
     await _snapshotController.close();
+  }
+
+  Stream<ChatEvent> _chatWithMcp({
+    required ModelInstanceState instance,
+    required McpChatRunner mcpRunner,
+    required List<ChatMessage> messages,
+    required DecodeParam decodeParam,
+    required GenerationConfig config,
+  }) async* {
+    final events = mcpRunner.run(
+      messages: messages,
+      maxTokens: decodeParam.maxTokens,
+      prompt: config.prompt,
+      reasoning: config.reasoningEffort,
+    );
+
+    await for (final event in events) {
+      switch (event) {
+        case McpAssistantChatEvent():
+          if (event.delta.isNotEmpty) {
+            yield ChatAssistantEvent(
+              deltaMessage: event.delta,
+              stopReason: StopReason.none,
+            );
+          }
+          if (event.isFinal) {
+            yield ChatCompletedEvent(text: event.content);
+          }
+        case McpToolCallChatEvent():
+          yield ChatToolCallEvent(
+            round: event.rounds,
+            toolCall: event.toolCall,
+          );
+        case McpToolResultChatEvent():
+          yield ChatToolResultEvent(
+            round: event.rounds,
+            result: event.toolResult,
+          );
+      }
+    }
   }
 
   Future<AlbatrossClient> _startAlbatross(

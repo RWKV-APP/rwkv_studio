@@ -8,6 +8,10 @@ import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/app_split_button.dart';
 
+part '_think_mode_button.dart';
+
+part '_mcp_button.dart';
+
 class ChatMessageInput extends StatelessWidget {
   const ChatMessageInput({super.key});
 
@@ -32,6 +36,8 @@ class ChatMessageInput extends StatelessWidget {
           children: [
             const SizedBox(width: 12),
             _ThinkModeButton(),
+            const SizedBox(width: 6),
+            _McpToggleButton(),
             const Spacer(),
             BlocBuilder<ChatCubit, ChatState>(
               buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
@@ -83,63 +89,6 @@ class _SendButton extends StatelessWidget {
               : () async => _onTapSend(context),
           child: const Row(
             children: [Text('发送'), SizedBox(width: 8), Icon(WindowsIcons.send)],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ThinkModeButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<ChatCubit, ChatState>(
-      buildWhen: (p, c) => p.generationConfig != c.generationConfig,
-      builder: (context, state) {
-        String label = '';
-        bool checked = true;
-        switch (state.generationConfig.reasoningEffort) {
-          case ReasoningEffort.none:
-            label = '推理-关';
-            checked = false;
-            break;
-          case ReasoningEffort.mini:
-          case ReasoningEffort.low:
-            label = '推理-低';
-            break;
-          case ReasoningEffort.medium:
-            label = '推理-中';
-            break;
-          case ReasoningEffort.high:
-          case ReasoningEffort.xhig:
-            label = '推理-高';
-            break;
-        }
-
-        return AppSplitButton.toggle(
-          checked: checked,
-          onInvoked: () {
-            context.chat.toggleReasoningEnable();
-          },
-          flyout: MenuFlyout(
-            items: [
-              MenuFlyoutItem(
-                text: const Text('推理-中'),
-                onPressed: () {
-                  context.chat.setReasoningMode(ReasoningEffort.medium);
-                },
-              ),
-              MenuFlyoutItem(
-                text: const Text('推理-高'),
-                onPressed: () {
-                  context.chat.setReasoningMode(ReasoningEffort.high);
-                },
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const .symmetric(horizontal: 8, vertical: 4),
-            child: Text(label),
           ),
         );
       },

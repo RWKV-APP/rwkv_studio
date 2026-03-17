@@ -73,6 +73,7 @@ class WithGlobalProviders extends StatelessWidget {
             create: (context) => RwkvCubit(
               context.read<DecodeParamRepository>(),
               context.read<LlmSessionRepository>(),
+              context.read<McpRepository>(),
             ),
           ),
           BlocProvider(create: (_) => TextGenerationCubit()),

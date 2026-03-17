@@ -5,6 +5,7 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
@@ -40,7 +41,7 @@ mixin class RwkvInterface {
     throw const AppException.unimplemented('loadModel is not implemented');
   }
 
-  Stream<GenerationResponse> chat(
+  Stream<ChatEvent> chat(
     List<ChatMessage> message,
     String instanceId,
     String decodeParamId,

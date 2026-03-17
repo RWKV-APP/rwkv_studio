@@ -7,9 +7,11 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/repository/decode_param_repository.dart';
 import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
+import 'package:rwkv_studio/src/repository/mcp_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 export 'model_load_state.dart';
@@ -25,9 +27,13 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   final DecodeParamRepository _decodeParamRepository;
   final LlmSessionRepository _llmSessionRepository;
   late final StreamSubscription<LlmSessionSnapshot> _sessionSubscription;
+  final McpRepository _mcpRepository;
 
-  RwkvCubit(this._decodeParamRepository, this._llmSessionRepository)
-    : super(RwkvState.initial()) {
+  RwkvCubit(
+    this._decodeParamRepository,
+    this._llmSessionRepository,
+    this._mcpRepository,
+  ) : super(RwkvState.initial()) {
     _sessionSubscription = _llmSessionRepository.watchSnapshot().listen((
       snapshot,
     ) {
@@ -83,17 +89,37 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   }
 
   @override
-  Stream<GenerationResponse> chat(
+  Stream<ChatEvent> chat(
     List<ChatMessage> message,
     String instanceId,
     String decodeParamId,
     GenerationConfig config,
   ) async* {
+    final llm = _llmSessionRepository.getModelInstance(instanceId);
+    if (llm == null) {
+      throw AppException('No model instance found for $instanceId');
+    }
+
     final decodeParam = _resolveDecodeParam(decodeParamId);
     logi(
       'chat: instance:$instanceId, decode:$decodeParamId, reasoning:${config.reasoningEffort}, prompt:${config.prompt}',
     );
-    yield* _llmSessionRepository.chat(message, instanceId, decodeParam, config);
+    McpChatRunner? mcpRunner;
+    if (config.enableMcp && _mcpRepository.clients.isNotEmpty) {
+      final hub = _mcpRepository.buildHub();
+      mcpRunner = McpChatRunner.withHub(
+        llm: llm.rwkv,
+        hub: hub,
+        model: llm.info.id,
+      );
+    }
+    yield* _llmSessionRepository.chat(
+      message,
+      instanceId,
+      decodeParam,
+      config,
+      mcpRunner: mcpRunner,
+    );
   }
 
   @override

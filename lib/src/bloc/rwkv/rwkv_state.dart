@@ -13,6 +13,9 @@ class ModelBaseInfo {
 
   bool get isRemote => providerName.isNotEmpty && serviceId.isNotEmpty;
 
+  bool get supportFunctionCall =>
+      isRemote && !name.toLowerCase().contains('rwkv');
+
   String get detailName =>
       [providerName, name].where((e) => e.isNotEmpty).join(': ');
 

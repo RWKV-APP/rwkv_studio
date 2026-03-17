@@ -7,7 +7,7 @@ import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
-import 'package:rwkv_studio/src/repository/chat_repository.dart';
+import 'package:rwkv_studio/src/repository/repositories.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/diff_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -185,6 +185,16 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
   void toggleConversationListVisible() {
     emit(state.copyWith(showConversationList: !state.showConversationList));
+  }
+
+  void toggleEnableMcp() {
+    emit(
+      state.copyWith(
+        generationConfig: state.generationConfig.copyWith(
+          enableMcp: !state.generationConfig.enableMcp,
+        ),
+      ),
+    );
   }
 
   void toggleReasoningEnable() {
@@ -439,17 +449,22 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       ),
     );
     try {
-      await for (final resp in stream) {
+      var receivedTerminalEvent = false;
+      await for (final event in stream) {
         if (isClosed) {
           return;
         }
-        _onGenerateResponse(
-          conversationId: convId,
-          history: history,
-          resp: resp,
-        );
+        receivedTerminalEvent =
+            _onChatEvent(
+              conversationId: convId,
+              history: history,
+              event: event,
+            ) ||
+            receivedTerminalEvent;
       }
-      _onGenerateDone(conversationId: convId, history: history);
+      if (!receivedTerminalEvent) {
+        _onGenerateDone(conversationId: convId, history: history);
+      }
     } catch (e, s) {
       final error = AppException.wrap(e, s);
       _onGenerateError(conversationId: convId, history: history, e: error);
@@ -480,17 +495,54 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     }
   }
 
-  void _onGenerateResponse({
+  bool _onChatEvent({
     required String conversationId,
     required List<MessageModel> history,
-    required GenerationResponse resp,
+    required ChatEvent event,
+  }) {
+    switch (event) {
+      case ChatAssistantEvent():
+        _onAssistantDelta(
+          conversationId: conversationId,
+          history: history,
+          event: event,
+        );
+        return false;
+      case ChatCompletedEvent():
+        _onChatCompleted(
+          conversationId: conversationId,
+          history: history,
+          event: event,
+        );
+        return true;
+      case ChatFailedEvent():
+        _onGenerateError(
+          conversationId: conversationId,
+          history: history,
+          e: AppException.internal(event.error),
+        );
+        return true;
+      case ChatToolCallEvent():
+      case ChatToolResultEvent():
+        return false;
+    }
+  }
+
+  void _onAssistantDelta({
+    required String conversationId,
+    required List<MessageModel> history,
+    required ChatAssistantEvent event,
   }) {
     var assistant = state.messages[conversationId]!.last;
     final thinkResolved =
         assistant.thinkEndAt == -1 ||
         assistant.thinkEndAt < assistant.text.length;
     int? thinkEndAt;
-    String content = (assistant.text + resp.text).trimLeft();
+    String content = assistant.text;
+
+    if (event.deltaMessage.isNotEmpty) {
+      content = (assistant.text + event.deltaMessage).trimLeft();
+    }
 
     /// NOTE: correct model output from rwkv_lightning
     if (assistant.reasoningEnabled && content.startsWith('>')) {
@@ -519,12 +571,17 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         firstTokenTime: DateTime.now().millisecondsSinceEpoch,
       );
     }
+    final stopReason = event.stopReason == StopReason.none
+        ? assistant.stopReason
+        : event.stopReason;
     assistant = assistant.copyWith(
       text: content,
-      stopReason: resp.stopReason,
+      stopReason: stopReason,
       thinkEndAt: thinkEndAt,
     );
-    assistant = assistant.copyWithExtra(tokenCount: resp.tokenCount);
+    if (event.tokenCount >= 0) {
+      assistant = assistant.copyWithExtra(tokenCount: event.tokenCount);
+    }
     emit(
       state.copyWith(
         generating: true,
@@ -534,6 +591,27 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         },
       ),
     );
+  }
+
+  void _onChatCompleted({
+    required String conversationId,
+    required List<MessageModel> history,
+    required ChatCompletedEvent event,
+  }) {
+    var assistant = state.messages[conversationId]!.last;
+    if (event.text.isNotEmpty && event.text != assistant.text) {
+      assistant = assistant.copyWith(text: event.text);
+      emit(
+        state.copyWith(
+          generating: true,
+          messages: {
+            ...state.messages,
+            conversationId: [...history, assistant],
+          },
+        ),
+      );
+    }
+    _onGenerateDone(conversationId: conversationId, history: history);
   }
 
   void _onGenerateDone({
