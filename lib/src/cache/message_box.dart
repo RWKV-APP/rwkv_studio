@@ -2,20 +2,20 @@ import 'package:hive_ce/hive.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
+import 'package:rwkv_studio/src/models/chat/message_content.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'message_box.g.dart';
 
 @HiveType(typeId: 3)
 class MessageBox {
+  static const String boxName = 'message_v1';
+
   @HiveField(0)
   String id;
 
   @HiveField(1)
   String text;
-
-  @HiveField(2)
-  int thinkEndAt;
 
   @HiveField(3)
   int updateAt;
@@ -44,16 +44,19 @@ class MessageBox {
   @HiveField(11)
   String reasoning;
 
+  @HiveField(12)
+  List<Map<String, dynamic>> contents;
+
   MessageBox({
     required this.id,
     required this.convId,
     required this.text,
-    required this.thinkEndAt,
     required this.role,
     required this.error,
     required this.modelName,
     required this.stopReason,
     required this.extra,
+    this.contents = const [],
     this.createAt = 0,
     this.updateAt = 0,
     this.reasoning = '',
@@ -63,7 +66,7 @@ class MessageBox {
 
   static Future<Box<MessageBox>> _instance() async {
     try {
-      _messageBox ??= await Hive.openBox<MessageBox>('messages');
+      _messageBox ??= await Hive.openBox<MessageBox>(boxName);
     } catch (e, s) {
       throw AppException.storage(
         'Failed to open message box',
@@ -74,7 +77,7 @@ class MessageBox {
     return _messageBox!;
   }
 
-  static Future clear() => Hive.deleteBoxFromDisk('messages');
+  static Future clear() => Hive.deleteBoxFromDisk(boxName);
 
   static Future put(MessageModel message) async {
     final box = await _instance();
@@ -97,8 +100,8 @@ class MessageBox {
     return MessageBox(
       id: message.id,
       convId: message.convId,
-      text: message.text,
-      thinkEndAt: message.thinkEndAt,
+      text: '',
+      contents: message.contents.map((e) => e.toMap()).toList(),
       updateAt: message.updateAt.millisecondsSinceEpoch,
       role: message.role,
       error: message.error,
@@ -117,12 +120,11 @@ class MessageBox {
     return MessageModel.create(
       role: role,
       convId: convId,
-      text: text,
       modelName: modelName,
       reasoning: ReasoningEffort.fromName(reasoning),
+      contents: [...contents.map(MessageContent.fromMap)],
     ).copyWith(
       id: id,
-      thinkEndAt: thinkEndAt,
       createAt: DateTime.fromMillisecondsSinceEpoch(createAt),
       updateAt: DateTime.fromMillisecondsSinceEpoch(updateAt),
       error: error,

@@ -2,9 +2,9 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
-import 'package:rwkv_studio/src/ui/chat/_message_list_item.dart';
+import 'package:rwkv_studio/src/ui/chat/message_item/_message_list_item.dart';
 
-import '_user_message.dart';
+import 'message_item/_user_message.dart';
 
 part '_empty_placeholder.dart';
 

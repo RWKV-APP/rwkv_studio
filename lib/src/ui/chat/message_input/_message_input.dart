@@ -35,6 +35,13 @@ class ChatMessageInput extends StatelessWidget {
           mainAxisSize: .max,
           children: [
             const SizedBox(width: 12),
+            IconButton(
+              icon: const Icon(FluentIcons.add),
+              onPressed: () {
+                context.chat.newChat();
+              },
+            ),
+            const SizedBox(width: 12),
             _ThinkModeButton(),
             const SizedBox(width: 6),
             _McpToggleButton(),

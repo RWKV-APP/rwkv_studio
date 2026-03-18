@@ -21,10 +21,9 @@ class ChatRepository {
   const ChatRepository();
 
   Future<ChatPersistenceSnapshot> load() async {
-    final conversations = (await ConversationBox.getAll())
-        .map((e) => e.toChat())
-        .toList()
-      ..sort((a, b) => b.updateAt.compareTo(a.updateAt));
+    final conversations =
+        (await ConversationBox.getAll()).map((e) => e.toChat()).toList()
+          ..sort((a, b) => b.updateAt.compareTo(a.updateAt));
     final messages = (await MessageBox.getAll())
         .map((e) => e.toMessage())
         .groupBy((e) => e.convId)

@@ -44,7 +44,7 @@ class _MessageContextMenuState extends State<MessageContextMenu> {
     }
 
     _contextController.showFlyout<void>(
-      autoModeConfiguration: widget.message.text.length > 400
+      autoModeConfiguration: widget.message.editeText().length > 400
           ? FlyoutAutoConfiguration(preferredMode: FlyoutPlacementMode.full)
           : null,
       placementMode: FlyoutPlacementMode.auto,
@@ -53,7 +53,7 @@ class _MessageContextMenuState extends State<MessageContextMenu> {
       dismissWithEsc: true,
       builder: (context) {
         return _EditMessageFlyout(
-          initialValue: widget.message.text,
+          initialValue: widget.message.editeText(),
           onCancel: _contextController.close,
           onSubmit: (value) async {
             await context.chat
@@ -82,9 +82,7 @@ class _MessageContextMenuState extends State<MessageContextMenu> {
               leading: const WindowsIcon(WindowsIcons.copy),
               text: const Text('复制'),
               onPressed: () async {
-                final text = widget.message.isUser
-                    ? widget.message.text
-                    : widget.message.bodyContent;
+                final text = widget.message.copyClipboardText();
                 await Clipboard.setData(ClipboardData(text: text));
               },
             ),

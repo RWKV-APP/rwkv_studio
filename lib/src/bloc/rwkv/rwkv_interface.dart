@@ -6,6 +6,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
+import 'package:rwkv_studio/src/models/chat/message_model.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
@@ -42,7 +43,7 @@ mixin class RwkvInterface {
   }
 
   Stream<ChatEvent> chat(
-    List<ChatMessage> message,
+    List<MessageModel> message,
     String instanceId,
     String decodeParamId,
     GenerationConfig config,

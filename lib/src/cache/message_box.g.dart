@@ -20,12 +20,16 @@ class MessageBoxAdapter extends TypeAdapter<MessageBox> {
       id: fields[0] as String,
       convId: fields[9] as String,
       text: fields[1] as String,
-      thinkEndAt: (fields[2] as num).toInt(),
       role: fields[4] as String,
       error: fields[5] as String,
       modelName: fields[6] as String,
       stopReason: (fields[7] as num).toInt(),
       extra: (fields[8] as Map).cast<String, dynamic>(),
+      contents: fields[12] == null
+          ? const []
+          : (fields[12] as List)
+                .map((e) => (e as Map).cast<String, dynamic>())
+                .toList(),
       createAt: fields[10] == null ? 0 : (fields[10] as num).toInt(),
       updateAt: fields[3] == null ? 0 : (fields[3] as num).toInt(),
       reasoning: fields[11] == null ? '' : fields[11] as String,
@@ -40,8 +44,6 @@ class MessageBoxAdapter extends TypeAdapter<MessageBox> {
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.text)
-      ..writeByte(2)
-      ..write(obj.thinkEndAt)
       ..writeByte(3)
       ..write(obj.updateAt)
       ..writeByte(4)
@@ -59,7 +61,9 @@ class MessageBoxAdapter extends TypeAdapter<MessageBox> {
       ..writeByte(10)
       ..write(obj.createAt)
       ..writeByte(11)
-      ..write(obj.reasoning);
+      ..write(obj.reasoning)
+      ..writeByte(12)
+      ..write(obj.contents);
   }
 
   @override

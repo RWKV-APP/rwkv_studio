@@ -338,8 +338,8 @@ class AppException implements Exception {
   @override
   String toString() {
     if (cause != null) {
-      return '$message: $cause';
+      return '$message: $cause\n$stackTrace';
     }
-    return message;
+    return '$message\n$stackTrace';
   }
 }

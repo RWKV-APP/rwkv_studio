@@ -1,29 +1,40 @@
 import 'package:rwkv_dart/rwkv_dart.dart';
 
+import 'message_content.dart';
+
+
 class MessageModel {
   final String id;
   final String convId;
-  final String text;
-  final int thinkEndAt;
+  final String role;
+  final StopReason stopReason;
+  final List<MessageContent> contents;
   final DateTime createAt;
   final DateTime updateAt;
-  final String role;
   final String error;
   final String modelName;
-  final StopReason stopReason;
   final ReasoningEffort reasoning;
   final Map<String, dynamic> extra;
 
-  MessageModel._({
+  bool get showProgress => role == 'assistant' && contents.isEmpty;
+
+  String copyClipboardText() {
+    return contents.map((e) => e.text).join('\n');
+  }
+
+  String editeText() {
+    return contents.lastOrNull?.text ?? '';
+  }
+
+  const MessageModel._({
     required this.id,
     required this.convId,
-    required this.text,
     required this.updateAt,
     required this.role,
     required this.modelName,
     required this.createAt,
     required this.reasoning,
-    this.thinkEndAt = 0,
+    this.contents = const [],
     this.stopReason = StopReason.none,
     this.error = '',
     this.extra = const {},
@@ -36,9 +47,9 @@ class MessageModel {
   }
 
   factory MessageModel.create({
-    required final String role,
-    required final String convId,
-    String? text,
+    required String role,
+    required String convId,
+    List<MessageContent> contents = const [],
     String? modelName,
     ReasoningEffort? reasoning,
   }) {
@@ -48,20 +59,19 @@ class MessageModel {
       reasoning: reasoning ?? ReasoningEffort.none,
       id: '$convId-$id-${_incrementalId++}',
       convId: convId,
-      text: text ?? '',
       updateAt: DateTime.now(),
       role: role,
       stopReason: StopReason.none,
       error: '',
-      extra: {},
+      extra: const {},
       modelName: modelName ?? '',
+      contents: contents,
     );
   }
 
   MessageModel copyWith({
     String? id,
     String? convId,
-    String? text,
     DateTime? createAt,
     DateTime? updateAt,
     String? role,
@@ -69,76 +79,61 @@ class MessageModel {
     String? modelName,
     StopReason? stopReason,
     Map<String, dynamic>? extra,
-    int? thinkEndAt,
     ReasoningEffort? reasoning,
+    List<MessageContent>? contents,
   }) {
     return MessageModel._(
       id: id ?? this.id,
       createAt: createAt ?? this.createAt,
       convId: convId ?? this.convId,
-      text: text ?? this.text,
       updateAt: updateAt ?? this.updateAt,
       role: role ?? this.role,
       error: error ?? this.error,
       modelName: modelName ?? this.modelName,
       stopReason: stopReason ?? this.stopReason,
       extra: extra ?? this.extra,
-      thinkEndAt: thinkEndAt ?? this.thinkEndAt,
       reasoning: reasoning ?? this.reasoning,
+      contents: contents ?? this.contents,
     );
+  }
+
+  ChatMessage toChatMessage() {
+    if (role.toLowerCase() == 'user') {
+      return ChatMessage(role: role, content: contents.first.text);
+    }
+    if (role.toLowerCase() == 'assistant') {
+      final answer = contents.where((e) => e.type == .answer).firstOrNull;
+
+      return ChatMessage(
+        role: role,
+        content: answer?.text ?? '',
+        toolCallId: '',
+        toolCalls: [
+          //
+        ],
+      );
+    }
+    return ChatMessage(role: role, content: '');
   }
 }
 
 extension MessageModelExtras on MessageModel {
   int get firstTokenTime => extra['first_token_time'] ?? 0;
 
-  int get thinkEndTime => extra['think_end_time'] ?? 0;
-
   int get tokenCount => extra['token_count'] ?? -1;
 
-  MessageModel copyWithExtra({
-    int? firstTokenTime,
-    int? thinkEndTime,
-    int? tokenCount,
-  }) {
+  MessageModel copyWithExtra({int? firstTokenTime, int? tokenCount}) {
     return copyWith(
       extra: {
         'first_token_time': firstTokenTime ?? this.firstTokenTime,
-        'think_end_time': thinkEndTime ?? this.thinkEndTime,
         'token_count': tokenCount ?? this.tokenCount,
       },
     );
   }
 }
 
-extension DeliveryStateExtras on MessageModel {
-  bool get waitingForResponse => !hasThinkContent && bodyContent.isEmpty && !stopped;
-
-  bool get stopped => stopReason != StopReason.none;
-
-  bool get paused => stopReason == StopReason.canceled;
-
+extension MessageModelView on MessageModel {
   bool get isUser => role == 'user';
 
-  bool get hasThinkContent => thinkEndAt > 8;
-
-  bool get reasoningEnabled => reasoning != ReasoningEffort.none;
-
-  bool get thinking =>
-      thinkEndAt == text.length && stopReason == StopReason.none;
-
-  String get thinkContent {
-    return text
-        .substring(0, thinkEndAt)
-        .replaceFirst('<think>', '')
-        .replaceFirst('<think', '')
-        .trim();
-  }
-
-  String get bodyContent {
-    if (thinkEndAt <= 0) {
-      return text;
-    }
-    return text.substring(thinkEndAt).replaceAll('</think>', '').trim();
-  }
+  bool get stopped => stopReason != StopReason.none;
 }

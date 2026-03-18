@@ -6,7 +6,7 @@ part 'conversation_box.g.dart';
 
 @HiveType(typeId: 2)
 class ConversationBox {
-  static const _boxName = 'conversations';
+  static const _boxName = 'conversations_v1';
   static Box<ConversationBox>? _box;
   static Future<Box<ConversationBox>>? _openingBox;
 
@@ -68,13 +68,10 @@ class ConversationBox {
       return openedBox;
     } catch (e, s) {
       _openingBox = null;
-      Error.throwWithStackTrace(
-        AppException.storage(
-          'Failed to open conversation box',
-          cause: e,
-          stackTrace: s,
-        ),
-        s,
+      throw AppException.storage(
+        'Failed to open conversation box',
+        cause: e,
+        stackTrace: s,
       );
     }
   }
@@ -94,10 +91,7 @@ class ConversationBox {
 
   static Future put(ConversationModel conv) async {
     final box = await _instance();
-    await box.put(
-      conv.id,
-      ConversationBox.fromChat(conv),
-    );
+    await box.put(conv.id, ConversationBox.fromChat(conv));
   }
 
   static Future delete(String id) async {

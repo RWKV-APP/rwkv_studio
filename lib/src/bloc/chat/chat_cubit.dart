@@ -6,6 +6,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
+import 'package:rwkv_studio/src/models/chat/message_content.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
@@ -33,18 +34,21 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       return;
     }
 
-    final snapshot = await _repository.load();
-    logd(
-      'restored conversations: ${snapshot.conversations.length},'
-      ' messages: ${snapshot.messages.length}',
-    );
-    emit(
-      state.copyWith(
-        conversations: snapshot.conversations,
-        messages: snapshot.messages,
-      ),
-    );
-
+    try {
+      final snapshot = await _repository.load();
+      logd(
+        'restored conversations: ${snapshot.conversations.length},'
+        ' messages: ${snapshot.messages.length}',
+      );
+      emit(
+        state.copyWith(
+          conversations: snapshot.conversations,
+          messages: snapshot.messages,
+        ),
+      );
+    } catch (e, s) {
+      loge('failed to restore message', e, s);
+    }
     _initStatePersistence();
 
     emit(state.copyWith(initialized: true));
@@ -74,12 +78,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
               await _repository.deleteConversation(conv.id);
             }
             await _repository.saveConversations([...e.added, ...e.changed]);
-          } catch (error, stackTrace) {
-            final appError = AppException.wrap(error, stackTrace);
+          } catch (error, s) {
+            final appError = AppException.wrap(error, s);
             loge(
               'ChatCubit persist conversations failed',
               appError,
-              appError.stackTrace ?? stackTrace,
+              appError.stackTrace ?? s,
             );
           }
         })
@@ -105,13 +109,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             if (e.added.isNotEmpty) {
               logd('add messages: ${e.added.length}');
             }
-          } catch (error, stackTrace) {
-            final appError = AppException.wrap(error, stackTrace);
-            loge(
-              'ChatCubit persist messages failed',
-              appError,
-              appError.stackTrace ?? stackTrace,
-            );
+          } catch (error, s) {
+            loge('ChatCubit persist messages failed', error, s);
           }
         })
         .listen((_) {});
@@ -246,7 +245,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final messages = state.messages[convId] ?? [];
     final msgs = messages.map((e) {
       if (e.id == id) {
-        return e.copyWith(text: content);
+        // TODO
+        return e.copyWith(contents: null);
       }
       return e;
     }).toList();
@@ -385,8 +385,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final message = MessageModel.create(
       role: rwkv.roleUser,
       convId: convId,
-      text: text,
       modelName: model.name,
+      contents: [MessageContent.question(text)],
     );
     final history = <MessageModel>[...(state.messages[convId] ?? []), message];
 
@@ -414,22 +414,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     MessageModel assistant,
     String convId,
   ) async {
-    final messages = history
-        .map((e) => ChatMessage(role: e.role, content: e.text))
-        .toList();
-    if (assistant.text.isNotEmpty) {
-      messages.add(ChatMessage(role: assistant.role, content: assistant.text));
-    }
-    if (assistant.text.startsWith('<') &&
-        !assistant.text.contains('</think>')) {
-      assistant = assistant.copyWith(thinkEndAt: assistant.text.length);
-    }
     final conv = state.conversations.firstWhere((e) => e.id == convId);
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
 
     assistant = assistant.copyWith(stopReason: StopReason.none);
     final stream = rwkv.chat(
-      messages,
+      history,
       state.modelInstanceId,
       conv.decodeParamId,
       state.generationConfig.copyWith(prompt: systemPrompt),
@@ -475,13 +465,21 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       if (!isClosed && isRwkv) {
         var assistant = state.messages[convId]!.last;
         try {
-          final count = RwkvTokenizer.default_.tokenCount(assistant.text);
+          // FIXME
+          final count = RwkvTokenizer.default_.tokenCount(
+            assistant.copyClipboardText(),
+          );
           assistant = assistant.copyWithExtra(tokenCount: count);
         } catch (e, s) {
           final error = AppException.wrap(e, s);
-          logw(assistant.text);
           loge('ChatCubit token count failed', error, error.stackTrace ?? s);
         }
+        assistant = assistant.copyWith(
+          contents: [
+            for (var content in assistant.contents)
+              content.copyWith(completed: true),
+          ],
+        );
         emit(
           state.copyWith(
             generating: false,
@@ -523,7 +521,18 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         );
         return true;
       case ChatToolCallEvent():
+        _onToolCall(
+          conversationId: conversationId,
+          history: history,
+          event: event,
+        );
+        return false;
       case ChatToolResultEvent():
+        _onToolResult(
+          conversationId: conversationId,
+          history: history,
+          event: event,
+        );
         return false;
     }
   }
@@ -534,52 +543,60 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     required ChatAssistantEvent event,
   }) {
     var assistant = state.messages[conversationId]!.last;
-    final thinkResolved =
-        assistant.thinkEndAt == -1 ||
-        assistant.thinkEndAt < assistant.text.length;
-    int? thinkEndAt;
-    String content = assistant.text;
+    final lastContent = assistant.contents.lastOrNull;
+    final data = lastContent?.text ?? '';
+    final contents = assistant.contents.toList();
+    MessageContent newContent;
 
-    if (event.deltaMessage.isNotEmpty) {
-      content = (assistant.text + event.deltaMessage).trimLeft();
-    }
-
-    /// NOTE: correct model output from rwkv_lightning
-    if (assistant.reasoningEnabled && content.startsWith('>')) {
-      content = "<think$content";
-    }
-
-    if (!thinkResolved) {
-      if (!content.startsWith('<')) {
-        thinkEndAt = -1;
-        logd('think resolved, no think tag');
+    if (lastContent != null) {
+      if (lastContent.type == .think) {
+        if (lastContent.completed) {
+          newContent = .answer(event.deltaMessage);
+        } else {
+          newContent = lastContent.copyWith(data: data + event.deltaMessage);
+          final index = newContent.text.indexOf('</think>');
+          if (index != -1) {
+            final think = newContent.text.substring(0, index);
+            final answer = newContent.text
+                .substring(index)
+                .replaceFirst('</think>', '');
+            newContent = lastContent.copyWith(data: think, completed: true);
+            contents.removeLast();
+            if (answer.trim().isNotEmpty) {
+              contents.add(newContent);
+              newContent = .answer(answer);
+            }
+          } else {
+            contents.removeLast();
+          }
+        }
+      } else if (lastContent.type == .answer) {
+        contents.removeLast();
+        newContent = .answer(data + event.deltaMessage);
+      } else if (lastContent.type == .unknown) {
+        contents.removeLast();
+        newContent = lastContent.copyWith(data: data + event.deltaMessage);
+        if (newContent.text.startsWith('<think>')) {
+          newContent = .think(newContent.text);
+        }
       } else {
-        final index = content.indexOf('</think>');
-        thinkEndAt = content.length;
-        if (index != -1) {
-          thinkEndAt = index;
-          logd('think resolved: $thinkEndAt');
-          assistant = assistant.copyWithExtra(
-            thinkEndTime: DateTime.now().millisecondsSinceEpoch,
-          );
+        if (event.deltaMessage.startsWith('<think>')) {
+          newContent = .think(event.deltaMessage);
+        } else {
+          newContent = .answer(event.deltaMessage);
         }
       }
+    } else {
+      if (event.deltaMessage.startsWith('<think>')) {
+        newContent = .think(event.deltaMessage);
+      } else {
+        newContent = .answer(event.deltaMessage);
+      }
     }
+    contents.add(newContent);
 
-    if (assistant.firstTokenTime <= 0) {
-      assistant = assistant.copyWithExtra(
-        firstTokenTime: DateTime.now().millisecondsSinceEpoch,
-      );
-    }
-    final stopReason = event.stopReason == StopReason.none
-        ? assistant.stopReason
-        : event.stopReason;
-    assistant = assistant.copyWith(
-      text: content,
-      stopReason: stopReason,
-      thinkEndAt: thinkEndAt,
-    );
-    if (event.tokenCount >= 0) {
+    assistant = assistant.copyWith(contents: contents);
+    if (event.tokenCount > 0) {
       assistant = assistant.copyWithExtra(tokenCount: event.tokenCount);
     }
     emit(
@@ -599,8 +616,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     required ChatCompletedEvent event,
   }) {
     var assistant = state.messages[conversationId]!.last;
-    if (event.text.isNotEmpty && event.text != assistant.text) {
-      assistant = assistant.copyWith(text: event.text);
+    if (event.text.isNotEmpty) {
       emit(
         state.copyWith(
           generating: true,
@@ -626,11 +642,6 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     var ns = state.copyWith(generating: false);
     if (assistant.stopReason == StopReason.none) {
       assistant = assistant.copyWith(stopReason: StopReason.unknown);
-    }
-    if (assistant.thinkEndTime <= 0) {
-      assistant = assistant.copyWithExtra(
-        thinkEndTime: DateTime.now().millisecondsSinceEpoch,
-      );
     }
     assistant = assistant.copyWith(updateAt: DateTime.now());
     ns = ns.copyWith(
@@ -658,6 +669,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       assistant = assistant.copyWith(
         error: error.displayMessage,
         stopReason: StopReason.error,
+        contents: [...assistant.contents, .error(e)],
       );
     }
     updateConversation(
@@ -667,6 +679,68 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     emit(
       state.copyWith(
         generating: false,
+        messages: {
+          ...state.messages,
+          conversationId: [...history, assistant],
+        },
+      ),
+    );
+  }
+
+  void _onToolCall({
+    required String conversationId,
+    required List<MessageModel> history,
+    required ChatToolCallEvent event,
+  }) {
+    var assistant = state.messages[conversationId]!.last;
+    assistant = assistant.copyWith(
+      contents: [
+        ...assistant.contents,
+        MessageContent.toolCall(
+          ToolCallInfo(tool: event.toolCall, result: null),
+        ),
+      ],
+    );
+    emit(
+      state.copyWith(
+        generating: true,
+        messages: {
+          ...state.messages,
+          conversationId: [...history, assistant],
+        },
+      ),
+    );
+  }
+
+  void _onToolResult({
+    required String conversationId,
+    required List<MessageModel> history,
+    required ChatToolResultEvent event,
+  }) {
+    var assistant = state.messages[conversationId]!.last;
+
+    final last = assistant.contents.lastOrNull;
+    if (last?.type == .toolCall) {
+      final contents = assistant.contents.toList();
+      contents.removeLast();
+      assistant = assistant.copyWith(
+        contents: [
+          ...contents,
+          last!.copyWith(
+            data: ToolCallInfo(
+              tool: last.tool,
+              result:
+                  event.result.result ??
+                  const McpToolResult(content: [], isError: true),
+            ),
+          ),
+        ],
+      );
+    }
+
+    emit(
+      state.copyWith(
+        generating: true,
         messages: {
           ...state.messages,
           conversationId: [...history, assistant],

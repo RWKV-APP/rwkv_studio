@@ -2,10 +2,14 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
-import 'package:rwkv_studio/src/ui/chat/_message_context_menu.dart';
-import 'package:rwkv_studio/src/ui/chat/_text_message_content.dart';
+import 'package:rwkv_studio/src/models/chat/message_content.dart';
+import 'package:rwkv_studio/src/ui/chat/message_item/_message_context_menu.dart';
+import 'package:rwkv_studio/src/ui/chat/message_item/_text_message_content.dart';
+import 'package:rwkv_studio/src/ui/chat/message_item/_tool_call.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
+
+import '_message_think.dart';
 
 class LastAssistantMessageItem extends StatefulWidget {
   final MessageModel message;
@@ -104,8 +108,6 @@ class _AssistantMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final response = message.bodyContent;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,22 +120,13 @@ class _AssistantMessageBubble extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (message.waitingForResponse)
+              if (message.showProgress)
                 const SizedBox(
                   height: 18,
                   width: 18,
                   child: ProgressRing(strokeWidth: 3),
                 ),
-              if (message.hasThinkContent)
-                MessageThink(
-                  content: message.thinkContent,
-                  thinking: message.thinking,
-                  duration: message.thinkEndTime - message.firstTokenTime,
-                  paused: message.paused,
-                ),
-              if (message.hasThinkContent && response.isNotEmpty)
-                const SizedBox(height: 6),
-              _AssistantMessageContent(message: message, response: response),
+              ..._buildContents(context),
             ],
           ),
         ),
@@ -145,40 +138,55 @@ class _AssistantMessageBubble extends StatelessWidget {
       ],
     );
   }
+
+  List<Widget> _buildContents(BuildContext context) {
+    final contents = <Widget>[];
+
+    for (final content in message.contents) {
+      if (!content.showDisplay) {
+        continue;
+      }
+
+      switch (content.type) {
+        case ContentType.unknown:
+          contents.add(
+            Text(content.text, style: TextStyle(color: Colors.grey[100])),
+          );
+        case ContentType.think:
+          contents.add(MessageThink(content: content));
+        case ContentType.toolCall:
+          contents.add(MessageToolCall(content: content));
+        case ContentType.answer:
+          contents.add(_AssistantMessageContent(content: content));
+        case ContentType.question:
+          contents.add(Text('Question: ${content.text}'));
+        case ContentType.error:
+          contents.add(
+            _ErrorMessageBox(
+              child: SelectableText(
+                '错误: ${content.text}',
+                style: const TextStyle(
+                  color: Colors.errorPrimaryColor,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          );
+      }
+      contents.add(const SizedBox(height: 12));
+    }
+    return contents;
+  }
 }
 
 class _AssistantMessageContent extends StatelessWidget {
-  final MessageModel message;
-  final String response;
+  final MessageContent content;
 
-  const _AssistantMessageContent({
-    required this.message,
-    required this.response,
-  });
+  const _AssistantMessageContent({required this.content});
 
   @override
   Widget build(BuildContext context) {
-    if (message.error.isNotEmpty) {
-      final error = SelectableText(
-        '错误: ${message.error.trim()}',
-        style: const TextStyle(color: Colors.errorPrimaryColor, fontSize: 12),
-      );
-
-      if (message.text.isEmpty) {
-        return _ErrorMessageBox(child: error);
-      }
-
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (response.isNotEmpty) TextMessageContent(content: response),
-          error,
-        ],
-      );
-    }
-
-    if (response.isEmpty && message.stopped && !message.paused) {
+    if (content.text.trim().isEmpty && content.completed) {
       return const _ErrorMessageBox(
         child: Text(
           '模型没有生成任何内容...',
@@ -191,11 +199,11 @@ class _AssistantMessageContent extends StatelessWidget {
       );
     }
 
-    if (response.isEmpty) {
+    if (content.text.trim().isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return TextMessageContent(content: response);
+    return TextMessageContent(content: content.text);
   }
 }
 
@@ -214,6 +222,7 @@ class _ErrorMessageBox extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: .start,
         children: [
           const Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
           const SizedBox(width: 8),
@@ -255,6 +264,10 @@ class _LastAssistantFooter extends StatelessWidget {
     final paused = message.stopReason == StopReason.canceled;
     final generating = !message.stopped;
 
+    if (generating) {
+      return const SizedBox(height: 12);
+    }
+
     return Row(
       children: [
         if (paused)
@@ -264,14 +277,13 @@ class _LastAssistantFooter extends StatelessWidget {
               await context.chat.resume(context.rwkv).withToast(context);
             },
           ),
-        if (!generating)
-          IconButton(
-            icon: const Icon(WindowsIcons.refresh),
-            onPressed: () async {
-              await context.chat.regenerate(context.rwkv).withToast(context);
-            },
-          ),
-        if (!generating) const SizedBox(width: 4),
+        IconButton(
+          icon: const Icon(WindowsIcons.refresh),
+          onPressed: () async {
+            await context.chat.regenerate(context.rwkv).withToast(context);
+          },
+        ),
+        const SizedBox(width: 4),
         _AssistantMetaText(message: message, leadingSpacing: false),
       ],
     );

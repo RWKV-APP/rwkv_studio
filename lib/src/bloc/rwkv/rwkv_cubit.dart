@@ -8,6 +8,7 @@ import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
+import 'package:rwkv_studio/src/models/chat/message_model.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/repository/decode_param_repository.dart';
 import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
@@ -90,7 +91,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
 
   @override
   Stream<ChatEvent> chat(
-    List<ChatMessage> message,
+    List<MessageModel> message,
     String instanceId,
     String decodeParamId,
     GenerationConfig config,
@@ -114,7 +115,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
       );
     }
     yield* _llmSessionRepository.chat(
-      message,
+      message.map((e) => e.toChatMessage()).toList(),
       instanceId,
       decodeParam,
       config,

@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
-import 'package:rwkv_studio/src/ui/chat/_message_context_menu.dart';
+import 'package:rwkv_studio/src/ui/chat/message_item/_message_context_menu.dart';
 
 class UserMessageItem extends StatelessWidget {
   final MessageModel message;
@@ -28,7 +28,8 @@ class UserMessageItem extends StatelessWidget {
               ),
             ],
           ),
-          child: Text(message.text),
+          // TODO optimize
+          child: Text(message.contents.first.text),
         ),
       ),
     );

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_markdown/custom_widgets/custom_divider.dart';
@@ -41,7 +43,24 @@ class Markdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GptMarkdown(text, style: style, components: _components);
+    return GptMarkdown(
+      text,
+      style: style,
+      components: _components,
+      imageBuilder: (ctx, uri) {
+        if (uri.startsWith("http://") || uri.startsWith("https://")) {
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Image.network(uri),
+          );
+        } else {
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Image.file(File(uri)),
+          );
+        }
+      },
+    );
   }
 }
 
