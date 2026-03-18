@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:rwkv_studio/src/theme/theme.dart';
 
 class CollapsibleSidebarLayout extends StatefulWidget {
   final Widget sidebar;
@@ -8,11 +9,13 @@ class CollapsibleSidebarLayout extends StatefulWidget {
   final Widget? divider;
   final bool? showOverlay;
   final double? spacing;
+  final VoidCallback onClose;
 
   const CollapsibleSidebarLayout({
     super.key,
     required this.sidebar,
     required this.content,
+    required this.onClose,
     this.sidebarWidth = 240,
     this.spacing,
     this.showOverlay,
@@ -27,8 +30,6 @@ class CollapsibleSidebarLayout extends StatefulWidget {
 
 class _CollapsibleSidebarLayoutState extends State<CollapsibleSidebarLayout> {
   late bool _open;
-
-  late final isNarrow = MediaQuery.of(context).size.width < 900;
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _CollapsibleSidebarLayoutState extends State<CollapsibleSidebarLayout> {
 
   @override
   Widget build(BuildContext context) {
+    late final isNarrow = MediaQuery.of(context).size.width < 900;
     final showOverlay = widget.showOverlay ?? isNarrow;
     final width = widget.sidebarWidth;
 
@@ -79,11 +81,7 @@ class _CollapsibleSidebarLayoutState extends State<CollapsibleSidebarLayout> {
           _OverlaySidebar(
             isOpen: _open,
             width: width,
-            onClose: () {
-              setState(() {
-                _open = false;
-              });
-            },
+            onClose: widget.onClose,
             sidebar: widget.sidebar,
           ),
       ],
@@ -110,12 +108,14 @@ class _OverlaySidebar extends StatelessWidget {
       ignoring: !isOpen,
       child: Stack(
         children: [
-          AnimatedOpacity(
-            opacity: isOpen ? 1 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: GestureDetector(
-              onTap: onClose,
-              child: ColoredBox(color: Colors.black.withAlpha(120)),
+          Positioned.fill(
+            child: AnimatedOpacity(
+              opacity: isOpen ? 1 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: GestureDetector(
+                onTap: onClose,
+                child: ColoredBox(color: Colors.black.withAlpha(60)),
+              ),
             ),
           ),
 
@@ -124,9 +124,9 @@ class _OverlaySidebar extends StatelessWidget {
             curve: Curves.easeOut,
             top: 0,
             bottom: 0,
-            left: isOpen ? 0 : -width,
+            right: isOpen ? 0 : -width,
             width: width,
-            child: sidebar,
+            child: ColoredBox(color: context.fluent.menuColor, child: sidebar),
           ),
         ],
       ),

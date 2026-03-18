@@ -53,7 +53,7 @@ class MainPage extends StatelessWidget {
     return NavigationView(
       paneBodyBuilder: (item, child) {
         return ColoredBox(
-          color: dark ? Colors.black.withAlpha(80) : Colors.white.withAlpha(80),
+          color: dark ? Colors.black.withAlpha(180) : Colors.white.withAlpha(180),
           child: child ?? const SizedBox(),
         );
       },

@@ -14,11 +14,13 @@ final class ChatAssistantEvent extends ChatEvent {
   final String deltaMessage;
   final StopReason stopReason;
   final int tokenCount;
+  final int? round;
 
   ChatAssistantEvent({
     required this.deltaMessage,
     required this.stopReason,
     this.tokenCount = -1,
+    this.round,
   });
 
   @override
@@ -27,6 +29,7 @@ final class ChatAssistantEvent extends ChatEvent {
     deltaMessage,
     stopReason,
     tokenCount,
+    round,
   ];
 }
 
@@ -60,11 +63,12 @@ final class ChatToolResultEvent extends ChatEvent {
 
 final class ChatCompletedEvent extends ChatEvent {
   final String text;
+  final int? round;
 
-  ChatCompletedEvent({required this.text, super.createdAt});
+  ChatCompletedEvent({required this.text, this.round, super.createdAt});
 
   @override
-  List<Object?> get props => [...super.props, text];
+  List<Object?> get props => [...super.props, text, round];
 }
 
 final class ChatFailedEvent extends ChatEvent {

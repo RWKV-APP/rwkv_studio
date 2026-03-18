@@ -324,10 +324,11 @@ class LlmSessionRepository {
             yield ChatAssistantEvent(
               deltaMessage: event.delta,
               stopReason: StopReason.none,
+              round: event.rounds,
             );
           }
           if (event.isFinal) {
-            yield ChatCompletedEvent(text: event.content);
+            yield ChatCompletedEvent(text: event.content, round: event.rounds);
           }
         case McpToolCallChatEvent():
           yield ChatToolCallEvent(

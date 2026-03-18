@@ -4,9 +4,9 @@ import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/chat/_chat_list.dart';
-import 'package:rwkv_studio/src/ui/chat/message_input/_message_input.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_title_bar.dart';
+import 'package:rwkv_studio/src/ui/chat/message_input/_message_input.dart';
 import 'package:rwkv_studio/src/widget/resizable_split_layout.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
 
@@ -116,6 +116,9 @@ class _Chat extends StatelessWidget {
       builder: (context, state) {
         return CollapsibleSidebarLayout(
           open: state.showSettingPanel,
+          onClose: () {
+            context.chat.toggleSettingPanelVisible();
+          },
           divider: const Divider(direction: .vertical),
           sidebar: const ChatSettingPanel(),
           content: LayoutBuilder(

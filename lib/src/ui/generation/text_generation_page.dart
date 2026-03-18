@@ -30,6 +30,9 @@ class TextGenerationPage extends StatelessWidget {
             builder: (context, state) {
               return CollapsibleSidebarLayout(
                 open: state.showSettingPane,
+                onClose: () {
+                  context.cubit.toggleSettingPane();
+                },
                 sidebar: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
