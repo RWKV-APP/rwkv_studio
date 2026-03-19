@@ -6,6 +6,8 @@ class ModelLoadState {
   final bool loading;
   final String error;
 
+  bool get succeed => !loading && error.isEmpty && instanceId.isEmpty;
+
   bool get isRWKV => modelName.toLowerCase().contains('rwkv');
 
   String get displayName =>

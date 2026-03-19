@@ -59,7 +59,11 @@ class LlmSessionRepository {
     return _models[instanceId];
   }
 
-  Future<List<String>> getLoadedInstance(String modelId) async {
+  ModelInstanceState? getInstanceByModelId(String modelId) {
+    return _models.values.where((e) => e.info.id == modelId).firstOrNull;
+  }
+
+  List<String> getLoadedInstance(String modelId) {
     return _models.values
         .where((e) => e.info.id == modelId)
         .map((e) => e.id)

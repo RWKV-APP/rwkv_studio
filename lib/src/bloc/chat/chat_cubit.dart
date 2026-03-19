@@ -27,8 +27,20 @@ extension Ext on BuildContext {
 
 class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   final ChatRepository _repository;
+  final LlmSessionRepository _llmSessionRepository;
 
-  ChatCubit(this._repository) : super(ChatState.empty());
+  ChatCubit(this._repository, this._llmSessionRepository)
+    : super(ChatState.empty());
+
+  Future initialized() async {
+    if (state.initialized) {
+      return;
+    }
+    await stream
+        .where((e) => e.initialized)
+        .first
+        .timeout(const Duration(seconds: 10));
+  }
 
   Future init() async {
     if (state.initialized) {
@@ -127,6 +139,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     LlmInterface llm,
     ModelInfo model,
   ) async {
+    updateConversation(state.selected.id, (e) => e.copyWith(modelId: model.id));
+
     final sp = llm
         .loadOrGetModelInstance(context, model)
         .listen(
@@ -237,8 +251,22 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
   }
 
-  void selectConversation(ConversationModel conv) {
+  void selectConversation(ConversationModel conv) async {
     emit(state.copyWith(selected: conv));
+
+    final instance = _llmSessionRepository.getInstanceByModelId(conv.modelId);
+    if (instance != null) {
+      emit(
+        state.copyWith(
+          modelState: ModelLoadState.loaded(
+            instance.info.id,
+            instance.info.name,
+            instance.id,
+            instance.info.providerName,
+          ),
+        ),
+      );
+    }
   }
 
   Future updateMessageContent(String id, String content) async {

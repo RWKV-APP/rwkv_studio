@@ -71,6 +71,8 @@ class AppStateCoordinator {
       await _syncInitialSettings(setting.state);
       onLlmStateChanged(llm.state);
       _initialized = true;
+
+      modelManage.ensureRuntimeReady();
     } finally {
       _initializing = false;
     }
@@ -251,12 +253,21 @@ class AppStateCoordinator {
     app.onModelServerSettingChanged(modelServer);
   }
 
+  void onModelManagerReady(ModelManageState state) async {
+    await chat.initialized();
+    final modelId = chat.state.selected.modelId;
+    if (modelId.isEmpty) {
+      return;
+    }
+    chat.selectConversation(chat.state.selected);
+  }
+
   void onLlmStateChanged(LlmState state) {
     if (!kIsWeb) {
-      // _syncModelServerInstances(
-      //   modelServer: setting.state.model.modelServer,
-      //   state: state,
-      // );
+      _syncModelServerInstances(
+        modelServer: setting.state.model.modelServer,
+        state: state,
+      );
     }
 
     final chatInstanceId = chat.state.modelInstanceId;

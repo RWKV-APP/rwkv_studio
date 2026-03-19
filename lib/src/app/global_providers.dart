@@ -67,7 +67,10 @@ class WithGlobalProviders extends StatelessWidget {
             ),
           ),
           BlocProvider(
-            create: (context) => ChatCubit(context.read<ChatRepository>()),
+            create: (context) => ChatCubit(
+              context.read<ChatRepository>(),
+              context.read<LlmSessionRepository>(),
+            ),
           ),
           BlocProvider(
             create: (context) => LlmCubit(

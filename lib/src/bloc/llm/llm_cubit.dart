@@ -76,7 +76,7 @@ class LlmCubit extends Cubit<LlmState> with LlmInterface {
   }
 
   @override
-  Future<List<String>> getLoadedInstance(String modelId) {
+  Future<List<String>> getLoadedInstance(String modelId) async {
     return _llmSessionRepository.getLoadedInstance(modelId);
   }
 
