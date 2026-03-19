@@ -3,8 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
+import 'package:rwkv_studio/src/utils/date_utils.dart';
 
-final _logger = Logger('RWKVStudio');
+final _logger = Logger('STUDIO');
 
 bool _loggerInitialized = false;
 
@@ -84,13 +85,9 @@ void _listenToLogs() {
   Logger.root.level = Level.ALL;
 
   Logger.root.onRecord.listen((record) {
-    final log = Log(
-      tag: record.loggerName,
-      level: record.level.name.replaceAll('CONFIG', 'DEBUG'),
-      message: _formatRecordMessage(record),
-      datetime: record.time,
+    print(
+      "${record.time.displayTime}: ${record.loggerName}/${record.level.name}: ${_formatRecordMessage(record)}",
     );
-    AppLog.instance._log(log);
   });
 }
 
@@ -113,7 +110,7 @@ void logw(dynamic msg) {
   _listenToLogs();
   _logger.warning(msg);
   if (!kIsWeb) {
-    _logger.warning(StackTrace.current.toString().split('\n')[1].trim());
+    // _logger.warning(StackTrace.current.toString().split('\n')[1].trim());
   }
 }
 
@@ -121,6 +118,9 @@ void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
   _listenToLogs();
   final resolved = _resolveErrorLog(msg, error, stackTrace);
   _logger.severe(resolved.message, resolved.error, resolved.stackTrace);
+  if (stackTrace != null) {
+    _logger.severe(stackTrace.toString());
+  }
   if (!kIsWeb) {
     _logger.severe(StackTrace.current.toString().split('\n')[1].trim());
   }

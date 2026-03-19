@@ -48,7 +48,7 @@ class ChatState {
         generationConfig: const GenerationConfig(),
         modelState: ModelLoadState.empty(),
         inputFocusNode: FocusNode(),
-        showConversationList: true,
+        showConversationList: false,
       );
 
   ChatState copyWith({

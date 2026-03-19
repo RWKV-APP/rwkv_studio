@@ -15,7 +15,6 @@ class _MessageToolCallState extends State<MessageToolCall> {
 
   @override
   Widget build(BuildContext context) {
-    final result = widget.content.toolCallResult;
 
     return Column(
       crossAxisAlignment: .start,
@@ -36,12 +35,12 @@ class _MessageToolCallState extends State<MessageToolCall> {
                 crossAxisAlignment: .center,
                 children: [
                   Text(
-                    'Tool-Call ${widget.content.tool.function?.name}',
+                    'Tool-Call ${widget.content.toolInfo.toolName}',
                     style: TextStyle(color: Colors.grey[100], height: 1),
                   ),
-                  if (widget.content.toolCallResult != null)
+                  if ( widget.content.completed)
                     const SizedBox(width: 8),
-                  if (widget.content.toolCallResult != null)
+                  if ( widget.content.completed)
                     AnimatedRotation(
                       duration: const Duration(milliseconds: 180),
                       curve: Curves.easeOutCubic,
@@ -79,7 +78,7 @@ class _MessageToolCallState extends State<MessageToolCall> {
                       ),
                     ),
                     child: Text(
-                      result != null ? result.content.toString() : '-',
+                      widget.content.toolInfo.result.toString(),
                       style: TextStyle(
                         color: Colors.grey[100],
                         fontSize: 14,

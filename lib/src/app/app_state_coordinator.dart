@@ -179,6 +179,7 @@ class AppStateCoordinator {
   Future<void> _runStep(String label, Future<void> Function() action) async {
     try {
       await action();
+      logd('AppStateCoordinator $label succeeded');
     } catch (e, s) {
       final error = AppException.wrap(e, s);
       loge('AppStateCoordinator $label failed', error, error.stackTrace ?? s);

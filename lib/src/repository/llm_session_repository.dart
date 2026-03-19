@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
@@ -319,7 +319,7 @@ class LlmSessionRepository {
 
     await for (final event in events) {
       switch (event) {
-        case McpAssistantChatEvent():
+        case McpAssistantEvent():
           if (event.delta.isNotEmpty) {
             yield ChatAssistantEvent(
               deltaMessage: event.delta,
@@ -330,12 +330,12 @@ class LlmSessionRepository {
           if (event.isFinal) {
             yield ChatCompletedEvent(text: event.content, round: event.rounds);
           }
-        case McpToolCallChatEvent():
+        case McpToolCallEvent():
           yield ChatToolCallEvent(
             round: event.rounds,
             toolCall: event.toolCall,
           );
-        case McpToolResultChatEvent():
+        case McpToolResultEvent():
           yield ChatToolResultEvent(
             round: event.rounds,
             result: event.toolResult,
@@ -382,6 +382,8 @@ class LlmSessionRepository {
 
     for (final service in snapshot.services) {
       for (final loadedModel in service.models) {
+        loadedModel.rwkv.setLogLevel(RWKVLogLevel.info);
+
         final instanceId = loadedModel.info.id;
         remoteInstanceIds.add(instanceId);
         final previous = _models[instanceId];

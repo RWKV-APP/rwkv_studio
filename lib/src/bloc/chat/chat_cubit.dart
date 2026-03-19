@@ -7,6 +7,7 @@ import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
 import 'package:rwkv_studio/src/models/chat/message_content.dart';
+import 'package:rwkv_studio/src/models/chat/tool_call_info.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
@@ -695,9 +696,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     assistant = assistant.copyWith(
       contents: [
         ...assistant.contents,
-        MessageContent.toolCall(
-          ToolCallInfo(tool: event.toolCall, result: null),
-        ),
+        MessageContent.toolCall(ToolCallInfo.fromCall(event.toolCall)),
       ],
     );
     emit(
@@ -726,12 +725,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         contents: [
           ...contents,
           last!.copyWith(
-            data: ToolCallInfo(
-              tool: last.tool,
-              result:
-                  event.result.result ??
-                  const McpToolResult(content: [], isError: true),
-            ),
+            data: last.toolInfo.copyWithResult(event.result),
+            completed: true,
           ),
         ],
       );

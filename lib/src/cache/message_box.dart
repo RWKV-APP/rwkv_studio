@@ -126,7 +126,7 @@ class MessageBox {
       convId: convId,
       modelName: modelName,
       reasoning: ReasoningEffort.fromName(reasoning),
-      contents: [...contents.map(MessageContent.fromMap)],
+      contents: [...contents.map(MessageContent.fromMap).nonNulls],
     ).copyWith(
       id: id,
       createAt: DateTime.fromMillisecondsSinceEpoch(createAt),

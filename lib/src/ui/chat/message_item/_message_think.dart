@@ -12,8 +12,7 @@ class MessageThink extends StatefulWidget {
   State<MessageThink> createState() => _MessageThinkState();
 }
 
-class _MessageThinkState extends State<MessageThink>
-    with SingleTickerProviderStateMixin {
+class _MessageThinkState extends State<MessageThink> {
   bool _collapsed = true;
 
   @override
@@ -46,17 +45,13 @@ class _MessageThinkState extends State<MessageThink>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: .center,
                 children: [
-                  if (thinking)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: ProgressRing(strokeWidth: 2),
+                  if (!thinking)
+                    Text(
+                      statusText,
+                      style: TextStyle(color: Colors.grey[100], height: 1),
                     ),
-                  if (thinking) const SizedBox(width: 8),
-                  Text(
-                    statusText,
-                    style: TextStyle(color: Colors.grey[100], height: 1),
-                  ),
+                  if (thinking)
+                    _ScanningText(text: statusText, color: Colors.grey[100]),
                   const SizedBox(width: 8),
                   AnimatedRotation(
                     duration: const Duration(milliseconds: 180),
@@ -107,5 +102,124 @@ class _MessageThinkState extends State<MessageThink>
         ),
       ],
     );
+  }
+}
+
+class _ScanningText extends StatefulWidget {
+  final String text;
+  final Color color;
+
+  const _ScanningText({required this.text, required this.color});
+
+  @override
+  State<_ScanningText> createState() => _ScanningTextState();
+}
+
+class _ScanningTextState extends State<_ScanningText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scanOffset;
+
+  Color get _baseColor =>
+      Color.lerp(widget.color, Colors.black, 0.32)?.withValues(alpha: 0.72) ??
+      widget.color.withValues(alpha: 0.72);
+
+  Color get _highlightColor =>
+      Color.lerp(widget.color, Colors.white, 0.78) ?? Colors.white;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    )..repeat(reverse: false);
+    _scanOffset = Tween<double>(
+      begin: -1.15,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scanOffset,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            Text(widget.text, style: TextStyle(color: _baseColor, height: 1)),
+            ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (bounds) {
+                return LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    _highlightColor.withValues(alpha: 0),
+                    _highlightColor.withValues(alpha: 0),
+                    _highlightColor.withValues(alpha: 0.28),
+                    _highlightColor.withValues(alpha: 0.76),
+                    _highlightColor,
+                    _highlightColor,
+                    _highlightColor,
+                    _highlightColor.withValues(alpha: 0.76),
+                    _highlightColor.withValues(alpha: 0.28),
+                    _highlightColor.withValues(alpha: 0),
+                    _highlightColor.withValues(alpha: 0),
+                  ],
+                  stops: const [
+                    0,
+                    0.12,
+                    0.24,
+                    0.36,
+                    0.44,
+                    0.5,
+                    0.56,
+                    0.64,
+                    0.76,
+                    0.88,
+                    1,
+                  ],
+                  transform: _SlidingGradientTransform(
+                    slidePercent: _scanOffset.value,
+                  ),
+                ).createShader(bounds);
+              },
+              child: Text(
+                widget.text,
+                style: TextStyle(
+                  color: _highlightColor,
+                  height: 1,
+                  shadows: [
+                    Shadow(
+                      color: _highlightColor.withValues(alpha: 0.42),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  @override
+  Matrix4 transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.identity()
+      ..translateByDouble(bounds.width * slidePercent, 0, 0, 1);
   }
 }

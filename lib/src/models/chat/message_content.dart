@@ -1,4 +1,5 @@
-import 'package:rwkv_dart/rwkv_dart.dart';
+import 'package:rwkv_studio/src/models/chat/tool_call_info.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
 
 enum ContentType {
   unknown(0),
@@ -16,27 +17,6 @@ enum ContentType {
       ContentType.values.firstWhere((e) => e.id == id);
 }
 
-class ToolCallInfo {
-  final ToolCall tool;
-  final McpToolResult? result;
-
-  const ToolCallInfo({required this.tool, required this.result});
-
-  Map<String, dynamic> toJson() => {
-    'tool': tool.toJson(),
-    'result': result?.raw,
-  };
-
-  factory ToolCallInfo.fromJson(Map<String, dynamic> json) {
-    return ToolCallInfo(
-      tool: ToolCall.fromJson(json['tool']),
-      result: json['result'] != null
-          ? McpToolResult(content: [], isError: false, raw: json['result'])
-          : null,
-    );
-  }
-}
-
 class MessageContent {
   final ContentType type;
   final dynamic data;
@@ -45,9 +25,7 @@ class MessageContent {
   final DateTime? updatedAt;
   final bool completed;
 
-  ToolCall get tool => (data as ToolCallInfo).tool;
-
-  McpToolResult? get toolCallResult => (data as ToolCallInfo).result;
+  ToolCallInfo get toolInfo => data as ToolCallInfo;
 
   Duration get duration =>
       updatedAt != null ? updatedAt!.difference(createdAt) : .zero;
@@ -156,7 +134,16 @@ class MessageContent {
     );
   }
 
-  factory MessageContent.fromMap(Map<String, dynamic> map) {
+  static MessageContent? fromMap(dynamic map) {
+    try {
+      return MessageContent._fromMap(map);
+    } catch (e, s) {
+      loge(e, s);
+      return null;
+    }
+  }
+
+  factory MessageContent._fromMap(dynamic map) {
     final updatedAt = _asInt(map['updated_at']);
     final createdAt = _asInt(map['created_at']) ?? 0;
     final type = ContentType.fromId(
@@ -166,7 +153,7 @@ class MessageContent {
     dynamic data = map['data'];
 
     if (type == ContentType.toolCall) {
-      // data = ToolCallInfo.fromJson(data);
+      data = ToolCallInfo.fromMap(data);
     }
     return MessageContent._(
       type,
@@ -193,11 +180,11 @@ class MessageContent {
     };
   }
 
-  Map _searchableData() {
+  dynamic _searchableData() {
     if (type == ContentType.toolCall) {
-      return (data as ToolCallInfo).toJson();
+      return (data as ToolCallInfo).toMap();
     }
-    return {'text': data};
+    return data;
   }
 }
 
