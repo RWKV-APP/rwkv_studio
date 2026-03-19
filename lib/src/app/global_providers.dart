@@ -4,7 +4,7 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/batch_infer/batch_infer_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
@@ -70,7 +70,7 @@ class WithGlobalProviders extends StatelessWidget {
             create: (context) => ChatCubit(context.read<ChatRepository>()),
           ),
           BlocProvider(
-            create: (context) => RwkvCubit(
+            create: (context) => LlmCubit(
               context.read<DecodeParamRepository>(),
               context.read<LlmSessionRepository>(),
               context.read<McpRepository>(),

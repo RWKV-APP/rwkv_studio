@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_form.dart';
 import 'package:rwkv_studio/src/ui/common/decode_param_preset_button.dart';
@@ -61,7 +61,7 @@ class ChatSettingPanel extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    BlocBuilder<RwkvCubit, RwkvState>(
+                    BlocBuilder<LlmCubit, LlmState>(
                       buildWhen: (p, c) => p.decodeParams != c.decodeParams,
                       builder: (context, state2) {
                         final param = state2.decodeParams[currentId];
@@ -69,7 +69,7 @@ class ChatSettingPanel extends StatelessWidget {
                           param: param ?? state2.decodeParams.values.first,
                           onChanged: state.generating
                               ? null
-                              : (v) => context.rwkv.setOrPutDecodeParam(
+                              : (v) => context.llm.setOrPutDecodeParam(
                                   currentId,
                                   v,
                                 ),

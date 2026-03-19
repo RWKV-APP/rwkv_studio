@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/ui/common/decode_speed.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/app_split_button.dart';
@@ -65,11 +65,11 @@ class ChatMessageInput extends StatelessWidget {
 
 class _SendButton extends StatelessWidget {
   Future<void> _onTapSend(BuildContext context) async {
-    await context.chat.send(context.rwkv).withToast(context);
+    await context.chat.send(context.llm).withToast(context);
   }
 
   Future<void> _onTapPause(BuildContext context) async {
-    await context.chat.pause(context.rwkv).withToast(context);
+    await context.chat.pause(context.llm).withToast(context);
   }
 
   @override
@@ -132,7 +132,7 @@ class _LineBreakEventListenerState extends State<_LineBreakEventListener> {
         if (e.physicalKey == PhysicalKeyboardKey.enter && e is KeyDownEvent) {
           if (!shiftDown) {
             WidgetsBinding.instance.addPostFrameCallback((_) async {
-              await context.chat.send(context.rwkv).withToast(context);
+              await context.chat.send(context.llm).withToast(context);
             });
           }
         }

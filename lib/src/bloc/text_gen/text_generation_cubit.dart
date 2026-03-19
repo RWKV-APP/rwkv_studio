@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -36,8 +36,8 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     emit(state.copyWith(decodeParamId: paramId));
   }
 
-  void loadModel(BuildContext context, RwkvInterface rwkv, ModelInfo model) {
-    final sp = rwkv
+  void loadModel(BuildContext context, LlmInterface llm, ModelInfo model) {
+    final sp = llm
         .loadOrGetModelInstance(context, model)
         .listen(
           (e) {
@@ -57,12 +57,12 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
     addSubscription(sp);
   }
 
-  void stop(RwkvInterface rwkv) {
-    rwkv.stop(state.modelInstanceId);
+  void stop(LlmInterface llm) {
+    llm.stop(state.modelInstanceId);
     emit(state.copyWith(generating: false));
   }
 
-  Future generate(RwkvInterface rwkv, {bool fim = false}) async {
+  Future generate(LlmInterface llm, {bool fim = false}) async {
     final prompt = state.controllerText.text.trim();
     String result = '';
 
@@ -81,7 +81,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
       suffix = prompt.substring(offset);
       result = '';
     }
-    final stream = rwkv.generate(
+    final stream = llm.generate(
       prompt,
       state.modelInstanceId,
       state.decodeParamId,

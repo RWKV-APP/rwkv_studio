@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
@@ -87,7 +87,7 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
   }
 
   Future<void> _onModelReleased(BuildContext context, String instanceId) async {
-    await context.rwkv.release(instanceId).withToast(context);
+    await context.llm.release(instanceId).withToast(context);
     Navigator.of(context).pop();
   }
 
@@ -100,15 +100,15 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
           previous.models != current.models ||
           previous.remoteModels != current.remoteModels,
       builder: (context, modelManageState) {
-        return BlocBuilder<RwkvCubit, RwkvState>(
+        return BlocBuilder<LlmCubit, LlmState>(
           buildWhen: (previous, current) => previous.models != current.models,
-          builder: (context, rwkvState) {
+          builder: (context, llmState) {
             return MenuFlyout(
               constraints: const BoxConstraints(minWidth: 300, maxHeight: 600),
               items: _buildItems(
                 context: context,
                 modelManageState: modelManageState,
-                id2instance: rwkvState.models,
+                id2instance: llmState.models,
               ),
             );
           },

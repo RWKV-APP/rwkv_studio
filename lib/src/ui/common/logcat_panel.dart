@@ -169,7 +169,7 @@ class _LogcatPanelState extends State<LogcatPanel> {
       color: Colors.grey[180],
       child: Row(
         children: [
-          const Text('Logcat', style: TextStyle(color: Colors.white)),
+          const Text('日志', style: TextStyle(color: Colors.white)),
           const Spacer(),
           IconButton(
             style: const ButtonStyle(

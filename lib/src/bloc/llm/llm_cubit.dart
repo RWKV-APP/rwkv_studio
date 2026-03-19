@@ -4,8 +4,8 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_interface.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/chat/message_model.dart';
@@ -16,25 +16,25 @@ import 'package:rwkv_studio/src/repository/mcp_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 export 'model_load_state.dart';
-export 'rwkv_state.dart';
+export 'llm_state.dart';
 
 extension Ext on BuildContext {
-  RwkvCubit get rwkv => BlocProvider.of<RwkvCubit>(this);
+  LlmCubit get llm => BlocProvider.of<LlmCubit>(this);
 
-  RwkvState get rwkvState => rwkv.state;
+  LlmState get llmState => llm.state;
 }
 
-class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
+class LlmCubit extends Cubit<LlmState> with LlmInterface {
   final DecodeParamRepository _decodeParamRepository;
   final LlmSessionRepository _llmSessionRepository;
   late final StreamSubscription<LlmSessionSnapshot> _sessionSubscription;
   final McpRepository _mcpRepository;
 
-  RwkvCubit(
+  LlmCubit(
     this._decodeParamRepository,
     this._llmSessionRepository,
     this._mcpRepository,
-  ) : super(RwkvState.initial()) {
+  ) : super(LlmState.initial()) {
     _sessionSubscription = _llmSessionRepository.watchSnapshot().listen((
       snapshot,
     ) {
@@ -43,7 +43,7 @@ class RwkvCubit extends Cubit<RwkvState> with RwkvInterface {
   }
 
   Future init() async {
-    logd('init rwkv');
+    logd('init llm cubit');
 
     final decodeParams = await _decodeParamRepository.getAll();
     logi(

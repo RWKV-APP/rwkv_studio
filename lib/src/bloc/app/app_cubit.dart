@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';

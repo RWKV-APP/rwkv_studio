@@ -2,7 +2,6 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 
 import 'message_content.dart';
 
-
 class MessageModel {
   final String id;
   final String convId;
@@ -18,12 +17,16 @@ class MessageModel {
 
   bool get showProgress => role == 'assistant' && contents.isEmpty;
 
+  bool get isUser => role == 'user';
+
+  bool get stopped => stopReason != StopReason.none;
+
   String copyClipboardText() {
     return contents.map((e) => e.text).join('\n');
   }
 
   String editeText() {
-    return contents.lastOrNull?.text ?? '';
+    return contents.where((e) => e.isTextContent).lastOrNull?.text ?? '';
   }
 
   const MessageModel._({
@@ -67,6 +70,27 @@ class MessageModel {
       modelName: modelName ?? '',
       contents: contents,
     );
+  }
+
+  MessageModel copyWithEditContent({required String content}) {
+    if (contents.isEmpty) return this;
+    if (isUser) {
+      return copyWith(
+        contents: [
+          ...contents.map(
+            (e) => e.isTextContent ? e.copyWith(data: content) : e,
+          ),
+        ],
+      );
+    } else {
+      if (stopped && contents.last.isTextContent) {
+        final n = contents.toList();
+        n.last = n.last.copyWith(data: content);
+        return copyWith(contents: n);
+      } else {
+        return this;
+      }
+    }
   }
 
   MessageModel copyWith({
@@ -118,22 +142,11 @@ class MessageModel {
 }
 
 extension MessageModelExtras on MessageModel {
-  int get firstTokenTime => extra['first_token_time'] ?? 0;
-
   int get tokenCount => extra['token_count'] ?? -1;
 
-  MessageModel copyWithExtra({int? firstTokenTime, int? tokenCount}) {
+  MessageModel copyWithTokenCount(int? tokenCount) {
     return copyWith(
-      extra: {
-        'first_token_time': firstTokenTime ?? this.firstTokenTime,
-        'token_count': tokenCount ?? this.tokenCount,
-      },
+      extra: {...extra, 'token_count': tokenCount ?? this.tokenCount},
     );
   }
-}
-
-extension MessageModelView on MessageModel {
-  bool get isUser => role == 'user';
-
-  bool get stopped => stopReason != StopReason.none;
 }

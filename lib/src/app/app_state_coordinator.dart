@@ -9,7 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
@@ -22,7 +22,7 @@ class AppStateCoordinator {
   final AppCubit app;
   final ChatCubit chat;
   final ModelManageCubit modelManage;
-  final RwkvCubit rwkv;
+  final LlmCubit llm;
   final SettingCubit setting;
   final TextGenerationCubit textGen;
   final McpRepository mcpRepository;
@@ -36,7 +36,7 @@ class AppStateCoordinator {
     required this.app,
     required this.chat,
     required this.modelManage,
-    required this.rwkv,
+    required this.llm,
     required this.setting,
     required this.textGen,
     required this.mcpRepository,
@@ -47,7 +47,7 @@ class AppStateCoordinator {
       app: context.read<AppCubit>(),
       chat: context.read<ChatCubit>(),
       modelManage: context.read<ModelManageCubit>(),
-      rwkv: context.read<RwkvCubit>(),
+      llm: context.read<LlmCubit>(),
       setting: context.read<SettingCubit>(),
       textGen: context.read<TextGenerationCubit>(),
       mcpRepository: context.read<McpRepository>(),
@@ -64,12 +64,12 @@ class AppStateCoordinator {
       await _runStep('app.init', app.init);
       await Future.wait([
         _runStep('setting.init', setting.init),
-        _runStep('rwkv.init', rwkv.init),
+        _runStep('llm.init', llm.init),
         _runStep('chat.init', chat.init),
         _runStep('modelManage.init', modelManage.init),
       ]);
       await _syncInitialSettings(setting.state);
-      onRwkvStateChanged(rwkv.state);
+      onLlmStateChanged(llm.state);
       _initialized = true;
     } finally {
       _initializing = false;
@@ -244,13 +244,13 @@ class AppStateCoordinator {
     logd('model-server setting updated: ${modelServer.toMap()}');
 
     if (!kIsWeb && modelServer.enabled) {
-      _syncModelServerInstances(modelServer: modelServer, state: rwkv.state);
+      _syncModelServerInstances(modelServer: modelServer, state: llm.state);
     }
 
     app.onModelServerSettingChanged(modelServer);
   }
 
-  void onRwkvStateChanged(RwkvState state) {
+  void onLlmStateChanged(LlmState state) {
     if (!kIsWeb) {
       // _syncModelServerInstances(
       //   modelServer: setting.state.model.modelServer,
@@ -271,7 +271,7 @@ class AppStateCoordinator {
 
   void _syncModelServerInstances({
     required ModelServerSettingsModel modelServer,
-    required RwkvState state,
+    required LlmState state,
   }) {
     final models = modelServer.onlyLocalModel
         ? state.localInstances

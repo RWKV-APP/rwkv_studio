@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/widget/labeled_slider.dart';
 
 class DecodeParamForm extends StatelessWidget {
@@ -14,7 +14,7 @@ class DecodeParamForm extends StatelessWidget {
     required String currentId,
     required bool editable,
   }) {
-    return BlocBuilder<RwkvCubit, RwkvState>(
+    return BlocBuilder<LlmCubit, LlmState>(
       buildWhen: (p, c) => p.decodeParams != c.decodeParams,
       builder: (context, state) {
         final param = state.decodeParams[currentId];
@@ -22,7 +22,7 @@ class DecodeParamForm extends StatelessWidget {
           param: param ?? state.decodeParams.values.first,
           onChanged: !editable
               ? null
-              : (v) => context.rwkv.setOrPutDecodeParam(currentId, v),
+              : (v) => context.llm.setOrPutDecodeParam(currentId, v),
         );
       },
     );

@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
-import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/pair.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
@@ -26,10 +25,10 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
   Future loadModel(
     BuildContext context,
-    RwkvInterface rwkv,
+    LlmInterface llm,
     ModelInfo model,
   ) async {
-    await for (var s in rwkv.loadOrGetModelInstance(context, model)) {
+    await for (var s in llm.loadOrGetModelInstance(context, model)) {
       emit(state.copyWith(modelState: s));
     }
   }
@@ -58,7 +57,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     emit(state.copyWith(isRunning: false));
   }
 
-  Future submit(RwkvInterface rwkv) async {
+  Future submit(LlmInterface llm) async {
     if (state.modelState.instanceId.isEmpty) {
       throw const AppException.validation('请先选择模型');
     }
@@ -81,7 +80,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
 
     _subscription?.cancel();
     emit(state.copyWith(isRunning: true));
-    Stream<Pair<List<String>, List<String>>> stream = _startBatchInfer(rwkv);
+    Stream<Pair<List<String>, List<String>>> stream = _startBatchInfer(llm);
 
     Completer completer = Completer();
     _subscription = stream
@@ -115,7 +114,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
   }
 
   Stream<Pair<List<String>, List<String>>> _startBatchInfer(
-    RwkvInterface rwkv,
+    LlmInterface llm,
   ) async* {
     final size = state.setting;
     List<String> cells = [for (var i = 0; i < size.size; i++) ''];
@@ -132,7 +131,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     }
     final prompt = state.textController.text;
 
-    final stream = rwkv.generate(
+    final stream = llm.generate(
       prompt,
       state.modelState.instanceId,
       state.decodeParamId,

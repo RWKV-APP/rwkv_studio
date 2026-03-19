@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class DecodeParamPresetButton extends StatelessWidget {
@@ -38,10 +38,10 @@ class DecodeParamPresetButton extends StatelessWidget {
                 maxLength: 20,
                 placeholder: '名称需唯一, 回车保存',
                 onSubmitted: (v) {
-                  if (context.rwkvState.decodeParams.containsKey(v.trim())) {
+                  if (context.llmState.decodeParams.containsKey(v.trim())) {
                     context.toast('名称已存在');
                   } else {
-                    context.rwkv.setOrPutDecodeParam(
+                    context.llm.setOrPutDecodeParam(
                       v.trim(),
                       DecodeParam.initial(),
                     );
@@ -58,7 +58,7 @@ class DecodeParamPresetButton extends StatelessWidget {
   }
 
   void showPresetMenu(BuildContext context) {
-    final presets = context.rwkvState.decodeParams;
+    final presets = context.llmState.decodeParams;
 
     menuController.showFlyout<void>(
       autoModeConfiguration: FlyoutAutoConfiguration(
@@ -83,7 +83,7 @@ class DecodeParamPresetButton extends StatelessWidget {
                     : IconButton(
                         icon: const Icon(FluentIcons.delete),
                         onPressed: () {
-                          context.rwkv.deleteDecodeParam(entry.key);
+                          context.llm.deleteDecodeParam(entry.key);
                           if (currentId == entry.key) {
                             onChange(presets.keys.first);
                           }

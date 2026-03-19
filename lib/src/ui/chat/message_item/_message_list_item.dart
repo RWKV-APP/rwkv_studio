@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/models/chat/message_content.dart';
 import 'package:rwkv_studio/src/ui/chat/message_item/_message_context_menu.dart';
 import 'package:rwkv_studio/src/ui/chat/message_item/_text_message_content.dart';
@@ -274,13 +274,13 @@ class _LastAssistantFooter extends StatelessWidget {
           IconButton(
             icon: const Icon(WindowsIcons.play),
             onPressed: () async {
-              await context.chat.resume(context.rwkv).withToast(context);
+              await context.chat.resume(context.llm).withToast(context);
             },
           ),
         IconButton(
           icon: const Icon(WindowsIcons.refresh),
           onPressed: () async {
-            await context.chat.regenerate(context.rwkv).withToast(context);
+            await context.chat.regenerate(context.llm).withToast(context);
           },
         ),
         const SizedBox(width: 4),

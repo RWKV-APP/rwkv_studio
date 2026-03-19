@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 
 class DecodeSpeedInfo extends StatelessWidget {
   final String modelInstanceId;
@@ -9,7 +9,7 @@ class DecodeSpeedInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<RwkvCubit, RwkvState, ModelInstanceState?>(
+    return BlocSelector<LlmCubit, LlmState, ModelInstanceState?>(
       selector: (state) => state.models[modelInstanceId],
       builder: (context, model) {
         if (model == null || model.info.isRemote) {

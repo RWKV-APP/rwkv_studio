@@ -2,8 +2,8 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/model_load_state.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/chat/message_model.dart';
@@ -14,8 +14,7 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 
 export 'model_load_state.dart';
 
-/// Interface for abstract RWKV
-mixin class RwkvInterface {
+mixin class LlmInterface {
   String roleAssistant = 'assistant';
   String roleUser = 'user';
 

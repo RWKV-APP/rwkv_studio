@@ -16,7 +16,7 @@ class _TitleBar extends StatelessWidget {
                   ? null
                   : () async {
                       await context.cubit
-                          .generate(context.rwkv, fim: true)
+                          .generate(context.llm, fim: true)
                           .withToast(context);
                     },
               child: const Text('FIM'),
@@ -27,7 +27,7 @@ class _TitleBar extends StatelessWidget {
               onModelSelected: state.generating
                   ? null
                   : (model) {
-                      context.cubit.loadModel(context, context.rwkv, model);
+                      context.cubit.loadModel(context, context.llm, model);
                     },
               filter: (model) => !model.name.toLowerCase().contains('neko'),
             ),
@@ -37,10 +37,10 @@ class _TitleBar extends StatelessWidget {
                   ? null
                   : () async {
                       if (state.generating) {
-                        context.cubit.stop(context.rwkv);
+                        context.cubit.stop(context.llm);
                       } else {
                         await context.cubit
-                            .generate(context.rwkv)
+                            .generate(context.llm)
                             .withToast(context);
                       }
                     },

@@ -2,7 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_interface.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_interface.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/chat_models.dart';
@@ -123,10 +123,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
   Future loadModel(
     BuildContext context,
-    RwkvInterface rwkv,
+    LlmInterface llm,
     ModelInfo model,
   ) async {
-    final sp = rwkv
+    final sp = llm
         .loadOrGetModelInstance(context, model)
         .listen(
           (e) {
@@ -245,8 +245,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final messages = state.messages[convId] ?? [];
     final msgs = messages.map((e) {
       if (e.id == id) {
-        // TODO
-        return e.copyWith(contents: null);
+        return e.copyWithEditContent(content: content);
       }
       return e;
     }).toList();
@@ -277,15 +276,15 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
   }
 
-  Future mayPause(RwkvInterface rwkv) async {
+  Future mayPause(LlmInterface llm) async {
     if (state.generating) {
-      pause(rwkv, conversationId: state.selected.id);
+      pause(llm, conversationId: state.selected.id);
     }
   }
 
-  Future pause(RwkvInterface rwkv, {String? conversationId}) async {
+  Future pause(LlmInterface llm, {String? conversationId}) async {
     final convId = conversationId ?? state.selected.id;
-    await rwkv.stop(state.modelInstanceId);
+    await llm.stop(state.modelInstanceId);
     emit(state.copyWith(generating: false));
     await Future.delayed(const Duration(milliseconds: 100));
     final history = state.messages[convId] ?? [];
@@ -307,14 +306,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
   }
 
-  Future resume(RwkvInterface rwkv) async {
+  Future resume(LlmInterface llm) async {
     final convId = state.selected.id;
     final history = state.messages[convId]!;
     final generated = history.removeLast();
-    await _sendInternal(rwkv, history, generated, convId);
+    await _sendInternal(llm, history, generated, convId);
   }
 
-  Future regenerate(RwkvInterface rwkv) async {
+  Future regenerate(LlmInterface llm) async {
     if (state.generating) {
       return;
     }
@@ -326,9 +325,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final history = state.messages[convId]!;
     history.removeAt(history.length - 1);
 
-    final model = await rwkv.getModelBaseInfo(state.modelInstanceId);
+    final model = await llm.getModelBaseInfo(state.modelInstanceId);
     MessageModel assistant = MessageModel.create(
-      role: rwkv.roleAssistant,
+      role: llm.roleAssistant,
       convId: convId,
       reasoning: state.generationConfig.reasoningEffort,
       modelName: model.name,
@@ -343,7 +342,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       ),
     );
 
-    await _sendInternal(rwkv, history, assistant, convId);
+    await _sendInternal(llm, history, assistant, convId);
   }
 
   void updateConversation(
@@ -368,7 +367,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
   }
 
-  Future send(RwkvInterface rwkv) async {
+  Future send(LlmInterface llm) async {
     final text = state.inputController.text.trim();
     if (text.isEmpty) {
       return;
@@ -381,9 +380,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     String convId = state.selected.id;
 
-    final model = await rwkv.getModelBaseInfo(state.modelInstanceId);
+    final model = await llm.getModelBaseInfo(state.modelInstanceId);
     final message = MessageModel.create(
-      role: rwkv.roleUser,
+      role: llm.roleUser,
       convId: convId,
       modelName: model.name,
       contents: [MessageContent.question(text)],
@@ -399,17 +398,17 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     emit(state.copyWith(messages: {...state.messages, convId: history}));
 
     MessageModel assistant = MessageModel.create(
-      role: rwkv.roleAssistant,
+      role: llm.roleAssistant,
       convId: convId,
       reasoning: state.generationConfig.reasoningEffort,
       modelName: model.name,
     );
 
-    await _sendInternal(rwkv, history, assistant, convId);
+    await _sendInternal(llm, history, assistant, convId);
   }
 
   Future _sendInternal(
-    RwkvInterface rwkv,
+    LlmInterface llm,
     List<MessageModel> history,
     MessageModel assistant,
     String convId,
@@ -418,7 +417,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
 
     assistant = assistant.copyWith(stopReason: StopReason.none);
-    final stream = rwkv.chat(
+    final stream = llm.chat(
       history,
       state.modelInstanceId,
       conv.decodeParamId,
@@ -460,7 +459,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       _onGenerateError(conversationId: convId, history: history, e: error);
       Error.throwWithStackTrace(error, error.stackTrace ?? s);
     } finally {
-      // support rwkv only for now
+      // Token counting post-processing currently uses the RWKV tokenizer only.
       final isRwkv = state.modelState.isRWKV;
       if (!isClosed && isRwkv) {
         var assistant = state.messages[convId]!.last;
@@ -469,7 +468,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
           final count = RwkvTokenizer.default_.tokenCount(
             assistant.copyClipboardText(),
           );
-          assistant = assistant.copyWithExtra(tokenCount: count);
+          assistant = assistant.copyWithTokenCount(count);
         } catch (e, s) {
           final error = AppException.wrap(e, s);
           loge('ChatCubit token count failed', error, error.stackTrace ?? s);
@@ -597,7 +596,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
 
     assistant = assistant.copyWith(contents: contents);
     if (event.tokenCount > 0) {
-      assistant = assistant.copyWithExtra(tokenCount: event.tokenCount);
+      assistant = assistant.copyWithTokenCount(event.tokenCount);
     }
     emit(
       state.copyWith(

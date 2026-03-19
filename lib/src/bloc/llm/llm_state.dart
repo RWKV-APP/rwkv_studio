@@ -99,27 +99,27 @@ class ModelInstanceState {
   }
 }
 
-class RwkvState {
+class LlmState {
   final Map<InstanceId, ModelInstanceState> models;
   final Map<String, DecodeParam> decodeParams;
 
   Iterable<ModelInstanceState> get localInstances =>
       models.values.where((e) => !e.info.isRemote);
 
-  RwkvState({required this.models, required this.decodeParams});
+  LlmState({required this.models, required this.decodeParams});
 
-  factory RwkvState.initial() {
-    return RwkvState(
+  factory LlmState.initial() {
+    return LlmState(
       models: {},
       decodeParams: {'default': DecodeParam.initial()},
     );
   }
 
-  RwkvState copyWith({
+  LlmState copyWith({
     Map<InstanceId, ModelInstanceState>? models,
     Map<String, DecodeParam>? decodeParams,
   }) {
-    return RwkvState(
+    return LlmState(
       models: models ?? this.models,
       decodeParams: decodeParams ?? this.decodeParams,
     );

@@ -33,7 +33,7 @@ class _TitleBar extends StatelessWidget {
                 modelState: state,
                 onModelSelected: (s) async {
                   await context.cubit
-                      .loadModel(context, context.rwkv, s)
+                      .loadModel(context, context.llm, s)
                       .withToast(context);
                 },
                 filter: (model) =>
@@ -130,7 +130,7 @@ class _TextBox extends StatelessWidget {
                   : const Text('提交'),
               onPressed: () async {
                 if (!state.isRunning) {
-                  await context.cubit.submit(context.rwkv).withToast(context);
+                  await context.cubit.submit(context.llm).withToast(context);
                 } else {
                   context.cubit.stop();
                 }
@@ -245,7 +245,7 @@ class _PromptInputBoxState extends State<_PromptInputBox> {
                                 composing: TextRange.empty,
                               );
                           await context.cubit
-                              .submit(context.rwkv)
+                              .submit(context.llm)
                               .withToast(context);
                           if (ctx.mounted) {
                             _editorController.close(value);

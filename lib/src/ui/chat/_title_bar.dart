@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
-import 'package:rwkv_studio/src/bloc/rwkv/rwkv_cubit.dart';
+import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/common/model_selector_button.dart';
 
@@ -52,7 +52,7 @@ class ChatTitleBar extends StatelessWidget {
                     onModelSelected: state.generating
                         ? null
                         : (s) =>
-                              context.chat.loadModel(context, context.rwkv, s),
+                              context.chat.loadModel(context, context.llm, s),
                   );
                 },
               ),
