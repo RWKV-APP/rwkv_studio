@@ -8,7 +8,6 @@ part 'conversation_box.g.dart';
 class ConversationBox {
   static const _boxName = 'conversations_v1';
   static Box<ConversationBox>? _box;
-  static Future<Box<ConversationBox>>? _openingBox;
 
   @HiveField(0)
   String id;
@@ -46,34 +45,16 @@ class ConversationBox {
   });
 
   static Future<Box<ConversationBox>> _instance() async {
-    final box = _box;
-    if (box != null) {
-      if (box.isOpen) {
-        return box;
-      }
-      _box = null;
-      _openingBox = null;
-    }
-
-    final openingBox = _openingBox;
-    if (openingBox != null) {
-      return openingBox;
-    }
-
-    final future = Hive.openBox<ConversationBox>(_boxName);
-    _openingBox = future;
     try {
-      final openedBox = await future;
-      _box = openedBox;
-      return openedBox;
+      _box ??= await Hive.openBox<ConversationBox>(_boxName);
     } catch (e, s) {
-      _openingBox = null;
       throw AppException.storage(
         'Failed to open conversation box',
         cause: e,
         stackTrace: s,
       );
     }
+    return _box!;
   }
 
   factory ConversationBox.fromChat(ConversationModel conv) {
@@ -105,8 +86,9 @@ class ConversationBox {
   }
 
   static Future clear() async {
-    final box = await _instance();
-    await box.clear();
+    await Hive.deleteBoxFromDisk(_boxName);
+    _box = null;
+    await _instance();
   }
 
   ConversationModel toChat() {

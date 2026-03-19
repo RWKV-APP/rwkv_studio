@@ -77,7 +77,11 @@ class MessageBox {
     return _messageBox!;
   }
 
-  static Future clear() => Hive.deleteBoxFromDisk(boxName);
+  static Future clear() async {
+    await Hive.deleteBoxFromDisk(boxName);
+    _messageBox = null;
+    await _instance();
+  }
 
   static Future put(MessageModel message) async {
     final box = await _instance();
