@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/model/model_identity.dart';
 import 'package:rwkv_studio/src/repository/model_manager_repository.dart';
 import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
-import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 part 'model_manage_state.dart';
@@ -55,15 +55,6 @@ class ModelManageCubit extends Cubit<ModelManageState> {
           emit(state.copyWith(remoteModels: snapshot.remoteModels));
         });
   }
-
-  Iterable<ModelInfo> get availableTextModels => [
-    ...state.remoteModels,
-    ...state.models.where(
-      (e) =>
-          (e.localPath.isNotEmpty) &&
-          (e.groups.overlaps({'chat', 'albatross', 'roleplay'})),
-    ),
-  ];
 
   Future<void> ensureRuntimeReady() async {
     if (kIsWeb) {
@@ -292,7 +283,12 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   Future updateModelList({bool local = true, bool remote = true}) async {
     if (remote) {
-      await _remoteServiceRepository.fetchRemoteModels(forceRefresh: true);
+      await _remoteServiceRepository
+          .fetchRemoteModels(forceRefresh: true)
+          .onError((e, s) {
+            loge('update failed', e, s);
+            return [];
+          });
     }
 
     if (local && !kIsWeb) {
@@ -328,6 +324,10 @@ class ModelManageCubit extends Cubit<ModelManageState> {
       configProviderUrl: config.configProviderUrl,
       downloadSource: source,
     );
+  }
+
+  void setDisabledModels(List<ModelIdentity> ids) {
+    emit(state.copyWith(disabledModelIds: ids));
   }
 
   Future onImportModel(ModelInfo model) async {

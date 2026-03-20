@@ -13,9 +13,11 @@ class ModelManageState {
   final bool runtimeLoading;
   final String runtimeError;
 
+  final bool remoteModelRefreshed;
   final List<ModelInfo> models;
   final List<ModelInfo> remoteModels;
   final List<ModelInfo> importedModels;
+  final List<ModelIdentity> disabledModelIds;
   final Map<String, ModelDownloadState?> modelStates;
   final DownloadSource downloadSource;
   final String downloadDir;
@@ -28,6 +30,9 @@ class ModelManageState {
     ...models,
     ...importedModels,
   ];
+
+  Iterable<ModelInfo> get enabledRemoteModels =>
+      remoteModels.where((e) => !disabledModelIds.contains(e.getIdentity()));
 
   List<ModelTag> getDisplayTags() {
     return tags.where((e) => e.name != 'mlx' && e.name != 'coreml').toList();
@@ -59,6 +64,8 @@ class ModelManageState {
     required this.backends,
     required this.importedModels,
     required this.remoteModels,
+    required this.disabledModelIds,
+    required this.remoteModelRefreshed,
   });
 
   factory ModelManageState.initial() {
@@ -66,6 +73,7 @@ class ModelManageState {
       initialized: false,
       runtimeReady: false,
       runtimeLoading: false,
+      remoteModelRefreshed: false,
       runtimeError: '',
       models: [],
       modelStates: {},
@@ -76,6 +84,7 @@ class ModelManageState {
       backends: [],
       importedModels: [],
       remoteModels: [],
+      disabledModelIds: [],
     );
   }
 
@@ -94,6 +103,8 @@ class ModelManageState {
     List<ModelBackend>? backends,
     List<ModelInfo>? importedModels,
     List<ModelInfo>? remoteModels,
+    List<ModelIdentity>? disabledModelIds,
+    bool? remoteModelRefreshed,
   }) {
     return ModelManageState._(
       initialized: initialized ?? this.initialized,
@@ -109,6 +120,8 @@ class ModelManageState {
       backends: backends ?? this.backends,
       importedModels: importedModels ?? this.importedModels,
       remoteModels: remoteModels ?? this.remoteModels,
+      disabledModelIds: disabledModelIds ?? this.disabledModelIds,
+      remoteModelRefreshed: remoteModelRefreshed ?? this.remoteModelRefreshed,
     );
   }
 }

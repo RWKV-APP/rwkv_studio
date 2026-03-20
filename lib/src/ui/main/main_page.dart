@@ -11,6 +11,7 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_page.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
+import 'package:rwkv_studio/src/ui/flow/flow_page.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/main/_bottom_bar.dart';
 import 'package:rwkv_studio/src/ui/mcp/mcp_page.dart';
@@ -41,7 +42,7 @@ class MainPage extends StatelessWidget {
             children: [
               if (isWindows) const SizedBox(height: 12),
               Expanded(child: _buildContent(context, dark, state)),
-              const BottomBar(),
+              // const BottomBar(),
             ],
           );
         },

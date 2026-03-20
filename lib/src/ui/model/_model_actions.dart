@@ -53,6 +53,12 @@ class ModelItemActions extends StatelessWidget {
           children: [
             const SizedBox(width: 4),
             if (running) ...[
+              if (state.update.requesting)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: ProgressRing(strokeWidth: 2),
+                ),
               if (!state.update.requesting)
                 Text(
                   '${state.update.progress.toStringAsFixed(2)}%',
@@ -75,24 +81,9 @@ class ModelItemActions extends StatelessWidget {
               },
             ),
             const SizedBox(width: 4),
-            if (state.update.state == TaskState.running)
+            if (running)
               _buildButton(
-                icon: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (state.update.requesting)
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: ProgressRing(
-                          value: state.update.progress.isNaN
-                              ? null
-                              : state.update.progress / 100,
-                        ),
-                      ),
-                    const Icon(WindowsIcons.pause),
-                  ],
-                ),
+                icon: const Icon(WindowsIcons.pause),
                 label: '暂停',
                 onPressed: () async {
                   await context.modelManage.pause(model.id).withToast(context);

@@ -4,7 +4,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/app_state_coordinator.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
-import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -73,14 +72,6 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
             listenWhen: (p, c) => p.models != c.models,
             listener: (context, state) {
               coordinator.onLlmStateChanged(state);
-            },
-          ),
-          BlocListener<ModelManageCubit, ModelManageState>(
-            listenWhen: (p, c) => p.runtimeReady != c.runtimeReady,
-            listener: (context, state) {
-              if (state.runtimeReady) {
-                coordinator.onModelManagerReady(state);
-              }
             },
           ),
         ],

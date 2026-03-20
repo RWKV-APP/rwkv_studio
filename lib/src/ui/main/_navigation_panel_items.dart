@@ -95,7 +95,7 @@ Widget? _itemBody(NavBarItemType type) {
     case NavBarItemType.imageGeneration:
       return todo();
     case NavBarItemType.workFlow:
-      return const WorkFlowPage();
+      return const FlowPage();
     case NavBarItemType.downloadTask:
       return const SizedBox();
     case NavBarItemType.settings:

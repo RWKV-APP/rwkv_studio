@@ -98,7 +98,8 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
           previous.runtimeLoading != current.runtimeLoading ||
           previous.runtimeError != current.runtimeError ||
           previous.models != current.models ||
-          previous.remoteModels != current.remoteModels,
+          previous.remoteModels != current.remoteModels ||
+          previous.disabledModelIds != current.disabledModelIds,
       builder: (context, modelManageState) {
         return BlocBuilder<LlmCubit, LlmState>(
           buildWhen: (previous, current) => previous.models != current.models,
@@ -142,7 +143,7 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
       final modelSetting = context.settings.state.model;
       final models =
           [
-                ...modelManageState.remoteModels,
+                ...modelManageState.enabledRemoteModels,
                 ...modelManageState.models.where(
                   (e) =>
                       e.localPath.isNotEmpty &&

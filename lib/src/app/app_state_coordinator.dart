@@ -17,6 +17,7 @@ import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/repository/mcp_repository.dart';
 import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:window_manager/window_manager.dart';
 
 class AppStateCoordinator {
@@ -78,6 +79,7 @@ class AppStateCoordinator {
       onLlmStateChanged(llm.state);
       _initialized = true;
 
+      _restoreConversationSelectedModelOnInitialized();
       modelManage.ensureRuntimeReady();
     } finally {
       _initializing = false;
@@ -271,15 +273,6 @@ class AppStateCoordinator {
     app.onModelServerSettingChanged(modelServer);
   }
 
-  void onModelManagerReady(ModelManageState state) async {
-    await chat.initialized();
-    final modelId = chat.state.selected.modelId;
-    if (modelId.isEmpty) {
-      return;
-    }
-    chat.selectConversation(chat.state.selected);
-  }
-
   void onLlmStateChanged(LlmState state) {
     if (!kIsWeb) {
       _syncModelServerInstances(
@@ -307,6 +300,33 @@ class AppStateCoordinator {
         ? state.localInstances
         : state.models.values;
     app.onModelInstanceListChanged(models);
+  }
+
+  void _restoreConversationSelectedModelOnInitialized() async {
+    await chat.initialized();
+    final modelId = chat.state.selected.modelId;
+    if (modelId.isEmpty) {
+      return;
+    }
+
+    //
+    llm.stream
+        .distinct((prev, next) => prev.models == next.models)
+        .mapNotNull((e) {
+          return e.models.values
+              .where((inst) => inst.info.id == modelId)
+              .firstOrNull;
+        })
+        .first
+        .timeout(const Duration(seconds: 10))
+        .then((e) {
+          chat.selectConversation(chat.state.selected);
+        })
+        .catchError((e) {
+          logw(
+            'restore conv model failed: await for model $modelId initialize timed out',
+          );
+        });
   }
 
   Future<void> dispose() async {

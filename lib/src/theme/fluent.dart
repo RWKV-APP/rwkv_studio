@@ -20,6 +20,7 @@ extension CustomeFluent on FluentThemeData {
     );
 
     return copyWith(
+      cardColor: isDark ? Colors.white.withAlpha(10) : Colors.white,
       extensions: [
         GptMarkdownThemeData(
           brightness: brightness,

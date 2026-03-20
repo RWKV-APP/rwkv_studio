@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
@@ -7,10 +5,9 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
-import 'package:rwkv_studio/src/ui/model/_model_detail.dart';
+import 'package:rwkv_studio/src/ui/model/_remote_provider_tab.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
-import 'package:rxdart/rxdart.dart';
 
 import '_model_list.dart';
 
@@ -33,45 +30,14 @@ enum _SortType {
 }
 
 class _ModelListPageState extends State<ModelListPage> {
-  late final StreamController<String> _controllerSearchChange;
-  late final TextEditingController _controllerSearch;
-
-  String? _selectedModelId;
-  List<ModelInfo> _allModels = [];
-  List<ModelInfo> _showModels = [];
-  List<String> _filters = [];
-  _SortType _sortType = _SortType.modelSize;
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _controllerSearchChange = StreamController<String>();
-    _controllerSearch = TextEditingController();
-
-    _controllerSearchChange.stream
-        .map((event) => true)
-        .timeout(const Duration(milliseconds: 500))
-        .onErrorReturn(false)
-        .distinct((p, n) => p == n)
-        .where((typing) => !typing)
-        .skip(1)
-        .listen((_) {
-          filterByKeywords(_controllerSearch.text.trim().toLowerCase());
-        });
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureRuntimeReady();
-      _allModels = context.modelManage.state.allModels;
-      _showModels = _allModels;
-      sortModel();
     });
-  }
-
-  @override
-  void dispose() {
-    _controllerSearchChange.close();
-    _controllerSearch.dispose();
-    super.dispose();
   }
 
   Future<void> _ensureRuntimeReady() async {
@@ -82,253 +48,242 @@ class _ModelListPageState extends State<ModelListPage> {
     }
   }
 
-  void filterByKeywords(String keywords) {
-    _filters = [];
-    if (keywords.isEmpty) {
-      _showModels = _allModels;
-      sortModel();
-      return;
-    }
-    logd('search: $keywords');
-
-    final filtered = _allModels.where(
-      (e) =>
-          e.name.toLowerCase().contains(keywords) ||
-          e.tags.any((t) => t.toLowerCase().contains(keywords)) ||
-          e.backend.name.toLowerCase().contains(keywords),
+  @override
+  Widget build(BuildContext context) {
+    return TabView(
+      currentIndex: _selectedTabIndex,
+      onChanged: (index) => setState(() => _selectedTabIndex = index),
+      closeButtonVisibility: CloseButtonVisibilityMode.never,
+      tabWidthBehavior: TabWidthBehavior.sizeToContent,
+      tabs: [
+        Tab(
+          icon: const Icon(FluentIcons.bulleted_list),
+          text: const Text('Catalog'),
+          body: const _LocalModel(),
+        ),
+        Tab(
+          icon: const Icon(FluentIcons.plug_connected),
+          text: const Text('Remote Providers'),
+          body: const RemoteModelProviderTabBody(),
+        ),
+      ],
     );
-    final selected = filtered.any((e) => e.id == _selectedModelId);
-    if (!selected) {
-      _selectedModelId = null;
-    }
-    _showModels = filtered.toList();
-    sortModel();
+  }
+}
+
+class _LocalModel extends StatefulWidget {
+  const _LocalModel();
+
+  @override
+  State<_LocalModel> createState() => _LocalModelState();
+}
+
+class _LocalModelState extends State<_LocalModel> {
+  List<String> _filters = [];
+
+  _SortType _sortType = _SortType.modelSize;
+  late final TextEditingController _catalogSearchController;
+
+  Future<void> _refreshCatalog() async {
+    await context.modelManage
+        .updateModelList(remote: false)
+        .withToast(context, success: 'Catalog refreshed');
   }
 
-  void filterByFilters(List<String> filters) {
-    _controllerSearch.text = '';
-    if (filters.isEmpty) {
-      _showModels = _allModels;
-      sortModel();
-      return;
-    }
-    final filtered = _allModels.where(
-      (e) =>
-          filters.contains(e.backend.name) ||
-          e.tags.any((t) => filters.contains(t)) ||
-          e.groups.any((t) => filters.contains(t)),
-    );
-    final selected = filtered.any((e) => e.id == _selectedModelId);
-    if (!selected) {
-      _selectedModelId = null;
-    }
-    _showModels = filtered.toList();
-    sortModel();
+  @override
+  void initState() {
+    super.initState();
+    _catalogSearchController = TextEditingController()
+      ..addListener(_onQueryChanged);
   }
 
-  void sortModel() {
-    _showModels.sort((a, b) {
-      final av = a.localPath.isNotEmpty ? 1 : 0;
-      final bv = b.localPath.isNotEmpty ? 1 : 0;
-      if (a.isRemote) {
-        return -1;
+  @override
+  void dispose() {
+    _catalogSearchController
+      ..removeListener(_onQueryChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onQueryChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  List<ModelInfo> _applyFilters(List<ModelInfo> models) {
+    final managerState = context.modelManage.state;
+    final groupNames = managerState.groups.map((e) => e.name).toSet();
+    final tagNames = managerState.tags.map((e) => e.name).toSet();
+    final selectedGroups = _filters.where(groupNames.contains).toSet();
+    final selectedTags = _filters.where(tagNames.contains).toSet();
+    final queryTerms = _catalogSearchController.text
+        .trim()
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    final filtered = models.where((model) {
+      final matchesGroup =
+          selectedGroups.isEmpty || model.groups.any(selectedGroups.contains);
+      final matchesTag =
+          selectedTags.isEmpty || model.tags.any(selectedTags.contains);
+      if (!matchesGroup || !matchesTag) {
+        return false;
       }
-      return bv - av;
+
+      if (queryTerms.isEmpty) {
+        return true;
+      }
+
+      final searchText = <String>[
+        model.id,
+        model.name,
+        model.description,
+        model.quantization,
+        model.backend.name,
+        model.backend.displayName,
+        model.providerName,
+        model.providerUrl,
+        model.fileName,
+        model.localPath,
+        ...model.groups,
+        ...model.tags,
+      ].where((e) => e.isNotEmpty).join(' ').toLowerCase();
+
+      return queryTerms.every(searchText.contains);
+    }).toList();
+
+    filtered.sort((a, b) {
+      int compareNum(num a, num b) => b.compareTo(a);
+
+      switch (_sortType) {
+        case _SortType.modelSize:
+          final value = compareNum(a.modelSize, b.modelSize);
+          return value != 0 ? value : a.name.compareTo(b.name);
+        case _SortType.updateAt:
+          final value = compareNum(a.updatedAt, b.updatedAt);
+          return value != 0 ? value : a.name.compareTo(b.name);
+        case _SortType.fileSize:
+          final value = compareNum(a.fileSize, b.fileSize);
+          return value != 0 ? value : a.name.compareTo(b.name);
+        case _SortType.download:
+          final aState = managerState.modelStates[a.id]?.update;
+          final bState = managerState.modelStates[b.id]?.update;
+          final aRank = _downloadSortRank(a, aState);
+          final bRank = _downloadSortRank(b, bState);
+          final rankCompare = aRank.compareTo(bRank);
+          if (rankCompare != 0) {
+            return rankCompare;
+          }
+          final progressCompare = compareNum(
+            aState?.progress.isFinite == true ? aState!.progress : -1,
+            bState?.progress.isFinite == true ? bState!.progress : -1,
+          );
+          return progressCompare != 0
+              ? progressCompare
+              : a.name.compareTo(b.name);
+      }
     });
-    if (_sortType != _SortType.download) {
-      _showModels.sort((a, b) {
-        int s = 0;
-        switch (_sortType) {
-          case _SortType.modelSize:
-            s = -a.modelSize.compareTo(b.modelSize);
-          case _SortType.updateAt:
-            s = -a.updatedAt.compareTo(b.updatedAt);
-          case _SortType.fileSize:
-            s = -a.fileSize.compareTo(b.fileSize);
-          case _SortType.download:
-            s = 0;
-        }
-        if (s == 0) {
-          return -a.name.compareTo(b.name);
-        }
-        return s;
-      });
+
+    return filtered;
+  }
+
+  int _downloadSortRank(ModelInfo model, TaskUpdate? update) {
+    if (model.localPath.isNotEmpty || update?.isCompleted == true) {
+      return 0;
     }
-    setState(() {});
+    if (update?.isRunning == true) {
+      return 1;
+    }
+    if (update?.isStopped == true) {
+      return 2;
+    }
+    if (update?.isIdle == true) {
+      return 3;
+    }
+    return 4;
   }
 
   @override
   Widget build(BuildContext context) {
-    final searchBar = SizedBox(
-      width: 200,
-      child: TextBox(
-        controller: _controllerSearch,
-        placeholder: 'name, tag, backend...',
-        onChanged: (v) {
-          _controllerSearchChange.add(v);
-        },
-        suffix: const Padding(
-          padding: EdgeInsets.only(right: 12),
-          child: Icon(FluentIcons.search, size: 16),
-        ),
-      ),
-    );
-
-    final listHeaderBar = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _SortButton(
-          sortType: _sortType,
-          onSortTypeChanged: (v) {
-            _sortType = v;
-            sortModel();
-          },
-        ),
-        _FilterButton(
-          filter: _filters,
-          onFilterChanged: (f) {
-            _filters = f;
-            filterByFilters(f);
-          },
-        ),
-        IconButton(
-          onPressed: () async {
-            await context.modelManage.updateModelList().withToast(
-              context,
-              success: 'Model list updated',
-            );
-            filterByFilters(_filters);
-            sortModel();
-          },
-          icon: const Row(
-            children: [
-              Icon(FluentIcons.refresh),
-              SizedBox(width: 8),
-              Text('Refresh'),
-            ],
-          ),
-        ),
-      ],
-    );
-
     return Column(
+      crossAxisAlignment: .stretch,
       children: [
-        BlocListener<ModelManageCubit, ModelManageState>(
-          listenWhen: (p, c) => c.shouldModelListUpdate(p),
-          listener: (context, state) {
-            _allModels = state.allModels;
-            _controllerSearch.text = '';
-            _showModels = _allModels;
-            sortModel();
-          },
-          child: const SizedBox(),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          margin: const .symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: context.fluent.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: context.fluent.inactiveBackgroundColor),
+          ),
           child: Row(
             children: [
-              Text('Models', style: context.typography.subtitle),
-              const Spacer(),
-              searchBar,
-              const SizedBox(width: 16),
-              const Divider(direction: Axis.vertical, size: 24),
-              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: .stretch,
+                  children: [
+                    Text('Model Catalog', style: AppTextStyle.heading),
+                    const SizedBox(height: 4),
+                    Text(
+                      'View, download, management model files',
+                      style: AppTextStyle.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+              Button(
+                onPressed: _refreshCatalog,
+                child: const Icon(FluentIcons.refresh),
+              ),
+              const SizedBox(width: 6),
               const _SourceSelector(),
             ],
           ),
         ),
-        const Divider(),
+
+        Row(
+          children: [
+            const SizedBox(width: 12),
+            _SortButton(
+              sortType: _sortType,
+              onSortTypeChanged: (v) {
+                _sortType = v;
+                _onQueryChanged();
+              },
+            ),
+            const SizedBox(width: 12),
+            _FilterButton(
+              filter: _filters,
+              onFilterChanged: (v) {
+                _filters = v;
+                _onQueryChanged();
+              },
+            ),
+            const Spacer(),
+            SizedBox(
+              width: 320,
+              child: TextBox(
+                controller: _catalogSearchController,
+                placeholder: 'Search name, group, tag, backend...',
+                suffix: const Padding(
+                  padding: EdgeInsets.only(right: 12),
+                  child: Icon(FluentIcons.search, size: 16),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
         Expanded(
           child: BlocBuilder<ModelManageCubit, ModelManageState>(
-            buildWhen: (p, c) =>
-                p.runtimeReady != c.runtimeReady ||
-                p.runtimeLoading != c.runtimeLoading ||
-                p.runtimeError != c.runtimeError,
+            buildWhen: (p, c) => p.models != c.models,
             builder: (context, state) {
-              if (state.runtimeLoading && !state.runtimeReady) {
-                return const Center(child: ProgressRing());
-              }
-              if (state.runtimeError.isNotEmpty && !state.runtimeReady) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        state.runtimeError,
-                        style: const TextStyle(color: Colors.errorPrimaryColor),
-                      ),
-                      const SizedBox(height: 12),
-                      Button(
-                        onPressed: _ensureRuntimeReady,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          child: LayoutBuilder(
-                            builder: (ctx, cs) {
-                              return SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: cs.maxWidth),
-                                  child: listHeaderBar,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const Divider(),
-                        Expanded(
-                          child: ModelList(
-                            models: _showModels,
-                            selectedModelId: _selectedModelId ?? '',
-                            onModelSelected: (model) {
-                              setState(() {
-                                _selectedModelId = model.id;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(direction: Axis.vertical),
-                  Expanded(
-                    flex: 5,
-                    child: _selectedModelId == null || _selectedModelId!.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No model selected',
-                              style: AppTextStyle.bodySecondary,
-                            ),
-                          )
-                        : BlocSelector<ModelManageCubit, ModelManageState, ModelInfo?>(
-                            selector: (state) => state.allModels
-                                .where((m) => m.id == _selectedModelId)
-                                .firstOrNull,
-                            builder: (context, state) {
-                              if (state == null) {
-                                return const SizedBox();
-                              }
-                              return ModelDetail(model: state);
-                            },
-                          ),
-                  ),
-                ],
-              );
+              final models = _applyFilters(state.models);
+              return ModelList(models: models);
             },
           ),
         ),
@@ -351,10 +306,7 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
     builder: (context) {
       return MenuFlyout(
         items: [
-          MenuFlyoutItem(
-            text: const Text('Download source'),
-            onPressed: null,
-          ),
+          MenuFlyoutItem(text: const Text('Download source'), onPressed: null),
           for (final s in [
             DownloadSource.auto,
             DownloadSource.aiFastHub,
@@ -369,9 +321,9 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
                 if (!value) {
                   return;
                 }
-                await context.modelManage.setDownloadSource(s).withToast(
-                  context,
-                );
+                await context.modelManage
+                    .setDownloadSource(s)
+                    .withToast(context);
               },
             ),
         ],
@@ -388,19 +340,11 @@ class _SourceSelector extends StatelessWidget {
     return BlocSelector<ModelManageCubit, ModelManageState, DownloadSource>(
       selector: (state) => state.downloadSource,
       builder: (context, state) {
-        return IconButton(
-          onPressed: () {
-            _showDownloadMenu(context, state);
-          },
-          icon: Row(
-            children: [
-              FlyoutTarget(
-                controller: _controller,
-                child: const Icon(FluentIcons.server),
-              ),
-              const SizedBox(width: 8),
-              Text('Source: ${state == DownloadSource.auto ? 'Auto' : state.name}'),
-            ],
+        return FlyoutTarget(
+          controller: _controller,
+          child: Button(
+            onPressed: () => _showDownloadMenu(context, state),
+            child: const Icon(FluentIcons.server),
           ),
         );
       },
@@ -419,15 +363,16 @@ class _SortButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FlyoutTarget(
       controller: controller,
-      child: IconButton(
-        icon: Row(
+      child: Button(
+        onPressed: _showMenu,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(FluentIcons.sort),
             const SizedBox(width: 8),
             Text(sortType.name),
           ],
         ),
-        onPressed: _showMenu,
       ),
     );
   }
@@ -471,17 +416,16 @@ class _FilterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FlyoutTarget(
       controller: controller,
-      child: IconButton(
-        icon: Row(
+      child: Button(
+        onPressed: () => _showFilter(context),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(FluentIcons.filter),
             const SizedBox(width: 8),
             Text(filter.isEmpty ? 'No filters' : '${filter.length} filters'),
           ],
         ),
-        onPressed: () {
-          _showFilter(context);
-        },
       ),
     );
   }
@@ -499,43 +443,37 @@ class _FilterButton extends StatelessWidget {
       builder: (context) {
         final filters = filter.toList();
         return FlyoutContent(
-          constraints: const BoxConstraints(maxWidth: 300),
+          constraints: const BoxConstraints(maxWidth: 320),
           child: StatefulBuilder(
             builder: (ctx, cs) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Groups',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12.0),
+                  Text('Groups', style: AppTextStyle.bodyBold),
+                  const SizedBox(height: 12),
                   Wrap(
                     runSpacing: 4,
                     spacing: 8,
                     children: [
-                      for (final g in managerState.getDisplayGroups())
+                      for (final group in managerState.getDisplayGroups())
                         Checkbox(
-                          checked: filters.contains(g.name),
-                          onChanged: (e) {
-                            if (e == true) {
-                              filters.add(g.name);
+                          checked: filters.contains(group.name),
+                          onChanged: (value) {
+                            if (value == true) {
+                              filters.add(group.name);
                             } else {
-                              filters.remove(g.name);
+                              filters.remove(group.name);
                             }
                             cs(() {});
                           },
-                          content: Text(g.name),
+                          content: Text(group.name),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12.0),
-                  const Text(
-                    'Tags',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12.0),
+                  const SizedBox(height: 16),
+                  Text('Tags', style: AppTextStyle.bodyBold),
+                  const SizedBox(height: 12),
                   Wrap(
                     runSpacing: 4,
                     spacing: 8,
@@ -544,8 +482,8 @@ class _FilterButton extends StatelessWidget {
                         Checkbox(
                           checked: filters.contains(tag.name),
                           content: Text(tag.name),
-                          onChanged: (e) {
-                            if (e == true) {
+                          onChanged: (value) {
+                            if (value == true) {
                               filters.add(tag.name);
                             } else {
                               filters.remove(tag.name);
@@ -555,19 +493,19 @@ class _FilterButton extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12.0),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       const Spacer(),
                       Button(
-                        child: const Text('Clear'),
                         onPressed: () {
                           filters.clear();
                           cs(() {});
                         },
+                        child: const Text('Clear'),
                       ),
-                      const SizedBox(width: 8.0),
-                      Button(
+                      const SizedBox(width: 8),
+                      FilledButton(
                         onPressed: () {
                           onFilterChanged(filters);
                           Flyout.of(context).close();
