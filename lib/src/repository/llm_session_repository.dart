@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
-import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
+import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
-import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -28,21 +28,13 @@ class LlmSessionSnapshot {
 }
 
 class LlmSessionRepository {
-  final RemoteServiceRepository _remoteServiceRepository;
   final _snapshotController = StreamController<LlmSessionSnapshot>.broadcast();
   final _subscriptions = <String, StreamSubscription>{};
   final _boundRwkvs = <String, RWKV>{};
-  late final StreamSubscription<RemoteServiceSnapshot>
-  _remoteServiceSubscription;
 
   Map<String, ModelInstanceState> _models = const {};
 
-  LlmSessionRepository(this._remoteServiceRepository) {
-    _remoteServiceSubscription = _remoteServiceRepository
-        .watchSnapshot()
-        .listen(_syncRemoteServiceInstances);
-    _syncRemoteServiceInstances(_remoteServiceRepository.snapshot);
-  }
+  LlmSessionRepository();
 
   Map<String, ModelInstanceState> get models => _models;
 
@@ -297,7 +289,6 @@ class LlmSessionRepository {
   }
 
   Future<void> dispose() async {
-    await _remoteServiceSubscription.cancel();
     for (final subscription in _subscriptions.values) {
       await subscription.cancel();
     }
@@ -378,13 +369,13 @@ class LlmSessionRepository {
     }
   }
 
-  void _syncRemoteServiceInstances(RemoteServiceSnapshot snapshot) {
+  void syncRemoteServiceInstances(Iterable<ModelServiceWrap> services) {
     final nextModels = Map<String, ModelInstanceState>.fromEntries(
       _models.entries.where((entry) => !entry.value.info.isRemote),
     );
     final remoteInstanceIds = <String>{};
 
-    for (final service in snapshot.services) {
+    for (final service in services) {
       for (final loadedModel in service.models) {
         loadedModel.rwkv.setLogLevel(RWKVLogLevel.info);
 

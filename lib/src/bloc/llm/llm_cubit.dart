@@ -10,6 +10,7 @@ import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/chat/message_model.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
+import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
 import 'package:rwkv_studio/src/repository/decode_param_repository.dart';
 import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
 import 'package:rwkv_studio/src/repository/mcp_repository.dart';
@@ -143,6 +144,10 @@ class LlmCubit extends Cubit<LlmState> with LlmInterface {
 
   Future release(String modelInstanceId) {
     return _llmSessionRepository.release(modelInstanceId);
+  }
+
+  void syncRemoteServiceInstances(Iterable<ModelServiceWrap> services) {
+    _llmSessionRepository.syncRemoteServiceInstances(services);
   }
 
   @override

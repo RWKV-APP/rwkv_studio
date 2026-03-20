@@ -7,10 +7,9 @@ import 'package:rwkv_studio/src/ui/chat/_chat_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_message_list.dart';
 import 'package:rwkv_studio/src/ui/chat/_title_bar.dart';
 import 'package:rwkv_studio/src/ui/chat/message_input/_message_input.dart';
+import 'package:rwkv_studio/src/ui/chat/setting_panel/chat_setting_panel.dart';
 import 'package:rwkv_studio/src/widget/resizable_split_layout.dart';
 import 'package:rwkv_studio/src/widget/side_bar.dart';
-
-import '_chat_setting_panel.dart';
 
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});

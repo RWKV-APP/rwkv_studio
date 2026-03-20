@@ -11,6 +11,8 @@ class ChatState {
   final bool showSettingPanel;
   final bool showConversationList;
 
+  final int maxChatHistoryLength;
+
   final TextEditingController inputController;
   final FocusNode inputFocusNode;
 
@@ -34,6 +36,7 @@ class ChatState {
     required this.modelState,
     required this.inputFocusNode,
     required this.showConversationList,
+    required this.maxChatHistoryLength,
   });
 
   ChatState.empty()
@@ -49,6 +52,7 @@ class ChatState {
         modelState: ModelLoadState.empty(),
         inputFocusNode: FocusNode(),
         showConversationList: false,
+        maxChatHistoryLength: 6,
       );
 
   ChatState copyWith({
@@ -63,6 +67,7 @@ class ChatState {
     ModelLoadState? modelState,
     FocusNode? inputFocusNode,
     bool? showConversationList,
+    int? maxChatHistoryLength,
   }) {
     return ChatState(
       initialized: initialized ?? this.initialized,
@@ -76,6 +81,7 @@ class ChatState {
       inputFocusNode: inputFocusNode ?? this.inputFocusNode,
       modelState: modelState ?? this.modelState,
       showConversationList: showConversationList ?? this.showConversationList,
+      maxChatHistoryLength: maxChatHistoryLength ?? this.maxChatHistoryLength,
     );
   }
 }

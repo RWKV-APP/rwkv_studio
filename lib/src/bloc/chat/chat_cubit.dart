@@ -197,6 +197,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     }
   }
 
+  void setMaxChatHistoryLength(int length) {
+    if (length <= 0 || state.maxChatHistoryLength == length) {
+      return;
+    }
+    emit(state.copyWith(maxChatHistoryLength: length));
+  }
+
   void toggleConversationListVisible() {
     emit(state.copyWith(showConversationList: !state.showConversationList));
   }

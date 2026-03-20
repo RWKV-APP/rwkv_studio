@@ -15,6 +15,7 @@ import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/repository/mcp_repository.dart';
+import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -25,12 +26,14 @@ class AppStateCoordinator {
   final LlmCubit llm;
   final SettingCubit setting;
   final TextGenerationCubit textGen;
+  final RemoteServiceRepository remoteServiceRepository;
   final McpRepository mcpRepository;
   bool _initializing = false;
   bool _initialized = false;
   SettingState? _lastSettingState;
   Future<void>? _remoteServiceBootstrap;
   Future<void>? _mcpBootstrap;
+  StreamSubscription<RemoteServiceSnapshot>? _remoteServiceSubscription;
 
   AppStateCoordinator({
     required this.app,
@@ -39,6 +42,7 @@ class AppStateCoordinator {
     required this.llm,
     required this.setting,
     required this.textGen,
+    required this.remoteServiceRepository,
     required this.mcpRepository,
   });
 
@@ -50,6 +54,7 @@ class AppStateCoordinator {
       llm: context.read<LlmCubit>(),
       setting: context.read<SettingCubit>(),
       textGen: context.read<TextGenerationCubit>(),
+      remoteServiceRepository: context.read<RemoteServiceRepository>(),
       mcpRepository: context.read<McpRepository>(),
     );
   }
@@ -68,6 +73,7 @@ class AppStateCoordinator {
         _runStep('chat.init', chat.init),
         _runStep('modelManage.init', modelManage.init),
       ]);
+      _bindRemoteServiceSync();
       await _syncInitialSettings(setting.state);
       onLlmStateChanged(llm.state);
       _initialized = true;
@@ -188,6 +194,18 @@ class AppStateCoordinator {
     }
   }
 
+  void _bindRemoteServiceSync() {
+    if (_remoteServiceSubscription != null) {
+      return;
+    }
+    _remoteServiceSubscription = remoteServiceRepository.watchSnapshot().listen(
+      (snapshot) {
+        llm.syncRemoteServiceInstances(snapshot.services);
+      },
+    );
+    llm.syncRemoteServiceInstances(remoteServiceRepository.snapshot.services);
+  }
+
   void syncAppearance(AppearanceSettingsModel appearance) {
     if (kIsWeb) {
       return;
@@ -289,5 +307,10 @@ class AppStateCoordinator {
         ? state.localInstances
         : state.models.values;
     app.onModelInstanceListChanged(models);
+  }
+
+  Future<void> dispose() async {
+    await _remoteServiceSubscription?.cancel();
+    _remoteServiceSubscription = null;
   }
 }

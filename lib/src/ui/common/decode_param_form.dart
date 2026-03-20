@@ -36,7 +36,7 @@ class DecodeParamForm extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         LabeledSlider(
-          title: '最大长度',
+          title: 'MaxTokens',
           max: 20000,
           min: 50,
           value: param.maxTokens,

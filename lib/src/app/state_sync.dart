@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/app_state_coordinator.dart';
@@ -44,6 +46,15 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
         );
       }
     });
+  }
+
+  @override
+  void dispose() {
+    final coordinator = _coordinator;
+    if (coordinator != null) {
+      unawaited(coordinator.dispose());
+    }
+    super.dispose();
   }
 
   @override

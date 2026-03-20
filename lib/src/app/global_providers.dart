@@ -34,8 +34,7 @@ class WithGlobalProviders extends StatelessWidget {
           },
         ),
         RepositoryProvider(
-          create: (context) =>
-              LlmSessionRepository(context.read<RemoteServiceRepository>()),
+          create: (context) => LlmSessionRepository(),
           dispose: (repository) {
             repository.dispose();
           },
