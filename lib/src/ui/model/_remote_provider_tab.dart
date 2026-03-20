@@ -6,7 +6,6 @@ import 'package:rwkv_studio/src/models/model/model_identity.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/theme/text_theme.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
-import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 class RemoteModelProviderTabBody extends StatefulWidget {
   const RemoteModelProviderTabBody({super.key});
@@ -18,6 +17,9 @@ class RemoteModelProviderTabBody extends StatefulWidget {
 
 class _RemoteModelProviderTabBodyState
     extends State<RemoteModelProviderTabBody> {
+  final TextEditingController _controllerSearch = TextEditingController();
+  String _keywords = '';
+
   late final Set<ModelIdentity> _disabled = context
       .modelManage
       .state
@@ -35,13 +37,25 @@ class _RemoteModelProviderTabBodyState
         final list = <dynamic>[];
         for (final k in e.entries) {
           list.add(k.key);
-          list.addAll(k.value);
+          for (final v in k.value) {
+            if (_keywords.isEmpty || v.id.toLowerCase().contains(_keywords)) {
+              list.add(v);
+            }
+          }
         }
 
         return Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
+            crossAxisAlignment: .stretch,
             children: [
+              TextBox(
+                controller: _controllerSearch,
+                onChanged: (v) {
+                  _keywords = v;
+                  setState(() {});
+                },
+              ),
               Expanded(
                 child: ListView.builder(
                   itemCount: list.length,

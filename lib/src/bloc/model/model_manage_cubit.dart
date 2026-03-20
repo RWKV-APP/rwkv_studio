@@ -219,11 +219,19 @@ class ModelManageCubit extends Cubit<ModelManageState> {
     } catch (e, s) {
       logw(AppException.wrap(e, s));
     }
+
+    List<ModelIdentity> disabledModelIds = [];
+    try {
+      disabledModelIds = await _repository.getDisabledIdentity();
+    } catch (e, s) {
+      logw(AppException.wrap(e, s));
+    }
     emit(
       state.copyWith(
         initialized: true,
         runtimeLoading: false,
         importedModels: importedModels,
+        disabledModelIds: disabledModelIds,
         backends: [
           ModelBackend.albatross,
           ModelBackend.llama_cpp,
@@ -327,6 +335,7 @@ class ModelManageCubit extends Cubit<ModelManageState> {
   }
 
   void setDisabledModels(List<ModelIdentity> ids) {
+    _repository.setDisabledModels(ids);
     emit(state.copyWith(disabledModelIds: ids));
   }
 

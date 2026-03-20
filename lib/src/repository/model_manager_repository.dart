@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/cache/model_file_box.dart';
+import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/models/model/model_identity.dart';
 
 class ModelCatalogSnapshot {
   final List<ModelInfo> localModels;
@@ -133,6 +136,23 @@ class ModelManagerRepository {
 
   Future<List<ModelInfo>> loadImportedModels() async {
     return ModelFileBox.getAllModels();
+  }
+
+  Future setDisabledModels(List<ModelIdentity> ids) async {
+    await StateCacheBox.put(
+      StateCacheBox.keyDisabledModels,
+      jsonEncode({'values': ids.map((e) => e.toMap()).toList()}),
+    );
+  }
+
+  Future<List<ModelIdentity>> getDisabledIdentity() async {
+    final v = await StateCacheBox.get(StateCacheBox.keyDisabledModels);
+    if (v == null) {
+      return [];
+    }
+    final json = jsonDecode(v.value);
+    final values = json['values'] as Iterable;
+    return values.map(ModelIdentity.fromMap).toList();
   }
 
   Future<List<ModelInfo>> saveImportedModel(ModelInfo model) async {

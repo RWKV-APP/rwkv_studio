@@ -28,7 +28,7 @@ class ModelIdentity extends Equatable {
     );
   }
 
-  factory ModelIdentity.fromMap(Map map) {
+  factory ModelIdentity.fromMap(dynamic map) {
     return ModelIdentity._(
       provider: map['provider'] ?? '',
       name: map['name'] ?? '',

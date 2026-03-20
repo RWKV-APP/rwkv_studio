@@ -9,6 +9,7 @@ part 'state_cache_box.g.dart';
 @HiveType(typeId: 6)
 class StateCacheBox {
   static const String nsSpaceDecodeParam = 'ns_decode_param';
+  static const String keyDisabledModels = 'key_disabled_models';
 
   @HiveField(0)
   String key;
