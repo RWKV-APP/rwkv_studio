@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 
 final _logger = Logger('STUDIO');
 
 bool _loggerInitialized = false;
+
+bool loggerIsWeb = false;
 
 class Log {
   final String tag;
@@ -28,6 +29,20 @@ class Log {
   }
 }
 
+mixin class ChangeNotifier {
+  final List<Function()> _listeners = [];
+
+  void addListener(Function() listener) => _listeners.add(listener);
+
+  void removeListener(Function() listener) => _listeners.remove(listener);
+
+  void notifyListeners() {
+    for (var listener in _listeners) {
+      listener();
+    }
+  }
+}
+
 class AppLog with ChangeNotifier {
   final List<Log> history = [];
 
@@ -45,7 +60,7 @@ class AppLog with ChangeNotifier {
     runZonedGuarded(
       entry,
       (error, stackTrace) {
-        if (kIsWeb) {
+        if (loggerIsWeb) {
           //
         } else {
           stderr.writeln(error.toString());
@@ -62,7 +77,7 @@ class AppLog with ChangeNotifier {
       },
       zoneSpecification: ZoneSpecification(
         print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
-          if (kIsWeb) {
+          if (loggerIsWeb) {
           } else {
             stdout.writeln(line);
           }
@@ -109,9 +124,6 @@ void logd(dynamic msg) {
 void logw(dynamic msg) {
   _listenToLogs();
   _logger.warning(msg);
-  if (!kIsWeb) {
-    // _logger.warning(StackTrace.current.toString().split('\n')[1].trim());
-  }
 }
 
 void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
@@ -121,7 +133,7 @@ void loge(dynamic msg, [Object? error, StackTrace? stackTrace]) {
   if (stackTrace != null) {
     _logger.severe(stackTrace.toString());
   }
-  if (!kIsWeb) {
+  if (!loggerIsWeb) {
     _logger.severe(StackTrace.current.toString().split('\n')[1].trim());
   }
 }

@@ -40,8 +40,7 @@ class ModelTaskUpdateEvent {
 class ModelManagerRepository {
   ModelManager? _manager;
   StreamSubscription<DownloadEvent>? _taskUpdateSubscription;
-  final StreamController<ModelTaskUpdateEvent> _taskUpdates =
-      StreamController<ModelTaskUpdateEvent>.broadcast();
+  final _taskUpdates = StreamController<ModelTaskUpdateEvent>.broadcast();
 
   bool get isInitialized => _manager != null;
 
