@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/mcp_settings_model.dart';
@@ -171,15 +172,65 @@ class McpRepository {
   }
 
   Future<void> syncConnections(Iterable<McpServerModel> configs) async {
-    _configs = configs.toList();
-    _statuses = {
-      for (final config in _configs)
-        config.id: config.enabled
+    final nextConfigs = configs.toList(growable: false);
+    final previousConfigs = {for (final config in _configs) config.id: config};
+    final previousClients = Map<String, McpClient>.from(_clients);
+    final previousStatuses = Map<String, McpServerStatus>.from(_statuses);
+    final nextClients = <String, McpClient>{};
+    final nextStatuses = <String, McpServerStatus>{};
+    final reconnectIds = <String>{};
+
+    _configs = nextConfigs;
+
+    for (final config in nextConfigs) {
+      final previous = previousConfigs[config.id];
+      final shouldReconnect =
+          previous == null || _requiresReconnect(previous, config);
+      if (shouldReconnect) {
+        reconnectIds.add(config.id);
+        nextStatuses[config.id] = config.enabled
             ? const McpServerStatus.checking()
-            : const McpServerStatus.disabled(),
-    };
+            : const McpServerStatus.disabled();
+        continue;
+      }
+
+      if (!config.enabled) {
+        nextStatuses[config.id] = const McpServerStatus.disabled();
+        continue;
+      }
+
+      final client = previousClients[config.id];
+      final status = previousStatuses[config.id];
+      if (client != null) {
+        nextClients[config.id] = client;
+      }
+      nextStatuses[config.id] = status ?? const McpServerStatus.checking();
+    }
+
+    _clients = Map<String, McpClient>.from(nextClients);
+    _statuses = Map<String, McpServerStatus>.from(nextStatuses);
     _emitSnapshot();
-    await _refreshRuntime();
+
+    final clientsToClose = <McpClient>[
+      for (final entry in previousClients.entries)
+        if (!nextClients.containsKey(entry.key)) entry.value,
+    ];
+    await _closeClients(clientsToClose);
+
+    for (final config in nextConfigs) {
+      if (!reconnectIds.contains(config.id) || !config.enabled) {
+        continue;
+      }
+      await _connectConfig(
+        config,
+        nextClients: nextClients,
+        nextStatuses: nextStatuses,
+      );
+    }
+
+    _clients = Map<String, McpClient>.from(nextClients);
+    _statuses = Map<String, McpServerStatus>.from(nextStatuses);
+    _emitSnapshot();
   }
 
   Future<void> refreshConnections() async {
@@ -235,44 +286,11 @@ class McpRepository {
 
     final nextClients = <String, McpClient>{};
     for (final config in _configs.where((item) => item.enabled)) {
-      McpClient? client;
-      try {
-        client = await connectServer(config);
-        if (client == null) {
-          nextStatuses[config.id] = McpServerStatus.unavailable(
-            'invalid MCP server config',
-          );
-          _statuses = Map<String, McpServerStatus>.from(nextStatuses);
-          _emitSnapshot();
-          continue;
-        }
-
-        await client.connect();
-        final tools = await client.listTools(refresh: true);
-        nextClients[config.id] = client;
-        nextStatuses[config.id] = McpServerStatus.connected(
-          toolCount: tools.length,
-          serverName: client.serverInfo?.name ?? '',
-          serverVersion: client.serverInfo?.version ?? '',
-        );
-        logd(
-          'connected MCP server ${config.id} tools=${tools.length} '
-          'server=${client.serverInfo?.name ?? '-'}',
-        );
-      } catch (e, s) {
-        final error = AppException.wrap(e, s);
-        nextStatuses[config.id] = McpServerStatus.unavailable(
-          error.displayMessage,
-        );
-        loge('McpRepository connect failed: ${config.id}', error, s);
-        if (client != null) {
-          await client.close();
-        }
-      }
-
-      _clients = Map<String, McpClient>.from(nextClients);
-      _statuses = Map<String, McpServerStatus>.from(nextStatuses);
-      _emitSnapshot();
+      await _connectConfig(
+        config,
+        nextClients: nextClients,
+        nextStatuses: nextStatuses,
+      );
     }
 
     _clients = nextClients;
@@ -295,5 +313,67 @@ class McpRepository {
       return;
     }
     _snapshotController.add(snapshot);
+  }
+
+  Future<void> _connectConfig(
+    McpServerModel config, {
+    required Map<String, McpClient> nextClients,
+    required Map<String, McpServerStatus> nextStatuses,
+  }) async {
+    McpClient? client;
+    try {
+      client = await connectServer(config);
+      if (client == null) {
+        nextStatuses[config.id] = McpServerStatus.unavailable(
+          'invalid MCP server config',
+        );
+        _clients = Map<String, McpClient>.from(nextClients);
+        _statuses = Map<String, McpServerStatus>.from(nextStatuses);
+        _emitSnapshot();
+        return;
+      }
+
+      await client.connect();
+      final tools = await client.listTools(refresh: true);
+      nextClients[config.id] = client;
+      nextStatuses[config.id] = McpServerStatus.connected(
+        toolCount: tools.length,
+        serverName: client.serverInfo?.name ?? '',
+        serverVersion: client.serverInfo?.version ?? '',
+      );
+      logd(
+        'connected MCP server ${config.id} tools=${tools.length} '
+        'server=${client.serverInfo?.name ?? '-'}',
+      );
+    } catch (e, s) {
+      final error = AppException.wrap(e, s);
+      nextClients.remove(config.id);
+      nextStatuses[config.id] = McpServerStatus.unavailable(
+        error.displayMessage,
+      );
+      loge('McpRepository connect failed: ${config.id}', error, s);
+      if (client != null) {
+        await client.close();
+      }
+    }
+
+    _clients = Map<String, McpClient>.from(nextClients);
+    _statuses = Map<String, McpServerStatus>.from(nextStatuses);
+    _emitSnapshot();
+  }
+
+  bool _requiresReconnect(McpServerModel previous, McpServerModel next) {
+    return previous.enabled != next.enabled ||
+        previous.transportType != next.transportType ||
+        previous.command != next.command ||
+        !listEquals(previous.args, next.args) ||
+        previous.workingDirectory != next.workingDirectory ||
+        !mapEquals(previous.environment, next.environment) ||
+        previous.includeParentEnvironment != next.includeParentEnvironment ||
+        previous.url != next.url ||
+        !mapEquals(previous.headers, next.headers) ||
+        previous.requestTimeoutMs != next.requestTimeoutMs ||
+        previous.openEventStream != next.openEventStream ||
+        previous.deleteSessionOnClose != next.deleteSessionOnClose;
   }
 }
