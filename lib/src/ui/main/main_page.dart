@@ -10,14 +10,11 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_page.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
-import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
 import 'package:rwkv_studio/src/ui/flow/flow_page.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
-import 'package:rwkv_studio/src/ui/main/_bottom_bar.dart';
 import 'package:rwkv_studio/src/ui/mcp/mcp_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
-import 'package:rwkv_studio/src/ui/work_flow/work_flow_page.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
@@ -31,31 +28,34 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = context.fluent.brightness == Brightness.dark;
-    return ImportModelDropArea(
-      child: BlocBuilder<AppCubit, AppState>(
-        buildWhen: (p, c) =>
-            p.pane != c.pane ||
-            p.navBarItems != c.navBarItems ||
-            p.showNavBar != c.showNavBar,
-        builder: (context, state) {
-          return Column(
-            children: [
-              if (isWindows) const SizedBox(height: 12),
-              Expanded(child: _buildContent(context, dark, state)),
-              // const BottomBar(),
-            ],
-          );
-        },
-      ),
+    return BlocBuilder<AppCubit, AppState>(
+      buildWhen: (p, c) =>
+          p.pane != c.pane ||
+          p.navBarItems != c.navBarItems ||
+          p.showNavBar != c.showNavBar,
+      builder: (context, state) {
+        return Column(
+          children: [
+            if (isWindows) const SizedBox(height: 12),
+            Expanded(child: _buildContent(context, dark, state)),
+            // const BottomBar(),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildContent(BuildContext context, bool dark, AppState state) {
     return NavigationView(
       paneBodyBuilder: (item, child) {
-        return ColoredBox(
-          color: dark ? Colors.black.withAlpha(180) : Colors.white.withAlpha(180),
-          child: child ?? const SizedBox(),
+        return KeyedSubtree(
+          key: ValueKey<int>(state.pane),
+          child: ColoredBox(
+            color: dark
+                ? Colors.black.withAlpha(180)
+                : Colors.white.withAlpha(180),
+            child: child ?? const SizedBox(),
+          ),
         );
       },
       contentShape: isWindows ? null : const BeveledRectangleBorder(),

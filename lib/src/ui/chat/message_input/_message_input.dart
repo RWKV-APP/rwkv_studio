@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -118,28 +120,79 @@ class _LineBreakEventListener extends StatefulWidget {
 }
 
 class _LineBreakEventListenerState extends State<_LineBreakEventListener> {
-  final focusNode = FocusNode();
-  bool shiftDown = false;
+  @override
+  void initState() {
+    super.initState();
+    _scheduleFocus();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LineBreakEventListener oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      _scheduleFocus();
+    }
+  }
+
+  void _scheduleFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.focusNode.hasFocus) {
+        return;
+      }
+      widget.focusNode.requestFocus();
+    });
+  }
+
+  bool get _isComposing {
+    final composing = widget.controller.value.composing;
+    return composing.isValid && !composing.isCollapsed;
+  }
+
+  Future<void> _sendMessage() async {
+    await context.chat.send(context.llm).withToast(context);
+    if (!mounted || widget.focusNode.hasFocus) {
+      return;
+    }
+    widget.focusNode.requestFocus();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    final isEnter =
+        event.logicalKey == LogicalKeyboardKey.enter ||
+        event.logicalKey == LogicalKeyboardKey.numpadEnter;
+    if (!isEnter || event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isShiftPressed ||
+        keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isAltPressed ||
+        _isComposing ||
+        widget.controller.text.trim().isEmpty ||
+        context.chat.state.generating) {
+      return KeyEventResult.ignored;
+    }
+
+    unawaited(_sendMessage());
+    return KeyEventResult.handled;
+  }
+
+  @override
+  void deactivate() {
+    widget.focusNode.unfocus();
+    super.deactivate();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: focusNode,
-      onKeyEvent: (e) {
-        if (e.physicalKey == PhysicalKeyboardKey.shiftLeft) {
-          shiftDown = e is KeyDownEvent;
-        }
-        if (e.physicalKey == PhysicalKeyboardKey.enter && e is KeyDownEvent) {
-          if (!shiftDown) {
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              await context.chat.send(context.llm).withToast(context);
-            });
-          }
-        }
-      },
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: _handleKeyEvent,
       child: TextBox(
         focusNode: widget.focusNode,
-        autofocus: true,
+        autofocus: false,
         controller: widget.controller,
         foregroundDecoration: const WidgetStatePropertyAll(
           BoxDecoration(border: Border(), color: Colors.transparent),
