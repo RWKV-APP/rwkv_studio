@@ -25,6 +25,7 @@ dependencies:
     path: ../rwkv_libs
 
   flutter_bloc: ^9.1.1
+  freezed_annotation: ^3.1.0
   dio: ^5.9.2
   rxdart: ^0.28.0
   hive_ce: ^2.19.3

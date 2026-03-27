@@ -94,11 +94,9 @@ void _listenToLogs() {
   if (_loggerInitialized) {
     return;
   }
-
+  Logger.root.level = Level.CONFIG;
   _loggerInitialized = true;
   Logger.root.clearListeners();
-  Logger.root.level = Level.ALL;
-
   Logger.root.onRecord.listen((record) {
     print(
       "${record.time.displayTime}: ${record.loggerName}/${record.level.name}: ${_formatRecordMessage(record)}",

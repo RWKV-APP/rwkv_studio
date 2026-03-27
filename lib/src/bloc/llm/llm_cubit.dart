@@ -113,6 +113,7 @@ class LlmCubit extends Cubit<LlmState> with LlmInterface {
         llm: llm.rwkv,
         hub: hub,
         model: llm.info.id,
+        maxToolRounds: 20,
       );
     }
     yield* _llmSessionRepository.chat(

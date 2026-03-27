@@ -54,9 +54,10 @@ class Markdown extends StatelessWidget {
             child: Image.network(uri),
           );
         } else {
+
           return ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Image.file(File(uri)),
+            constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+            child: Image.file(File(uri.replaceFirst('file:///', ''))),
           );
         }
       },

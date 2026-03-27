@@ -5,6 +5,7 @@ import 'package:rwkv_studio/src/bloc/batch_infer/batch_infer_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
+import 'package:rwkv_studio/src/bloc/node_flow/node_flow_bloc.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
@@ -49,6 +50,7 @@ class WithGlobalProviders extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<NodeFlowBloc>(create: (context) => NodeFlowBloc()),
           BlocProvider(
             create: (context) => AppCubit(
               context.read<LocalMachineRepository>(),

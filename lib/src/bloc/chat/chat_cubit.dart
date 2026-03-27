@@ -453,6 +453,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
 
     assistant = assistant.copyWith(stopReason: StopReason.none);
+    logd("start chat: conv-id:$convId, history=${history.length}");
     final stream = llm.chat(
       history,
       state.modelInstanceId,
@@ -491,15 +492,18 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         _onGenerateDone(conversationId: convId, history: history);
       }
     } catch (e, s) {
+      logw('chat generation error');
       final error = AppException.wrap(e, s);
       _onGenerateError(conversationId: convId, history: history, e: error);
-      Error.throwWithStackTrace(error, error.stackTrace ?? s);
+      // Error.throwWithStackTrace(error, error.stackTrace ?? s);
     } finally {
-      // Token counting post-processing currently uses the RWKV tokenizer only.
-      final isRwkv = state.modelState.isRWKV;
-      if (!isClosed && isRwkv) {
-        var assistant = state.messages[convId]!.last;
+      logd('chat generation completed');
+
+      var assistant = state.messages[convId]!.last;
+
+      if (state.modelState.isRWKV) {
         try {
+          // Token counting post-processing currently uses the RWKV tokenizer only.
           // FIXME
           final count = RwkvTokenizer.default_.tokenCount(
             assistant.copyClipboardText(),
@@ -509,22 +513,26 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
           final error = AppException.wrap(e, s);
           loge('ChatCubit token count failed', error, error.stackTrace ?? s);
         }
-        assistant = assistant.copyWith(
-          contents: [
-            for (var content in assistant.contents)
-              content.copyWith(completed: true),
-          ],
-        );
-        emit(
-          state.copyWith(
-            generating: false,
-            messages: {
-              ...state.messages,
-              convId: [...history, assistant],
-            },
-          ),
-        );
       }
+
+      final contents = assistant.contents.toList();
+      for (var i = 0; i < contents.length; i++) {
+        final content = contents[i];
+        if (!content.completed) {
+          contents[i] = content.copyWith(completed: true);
+        }
+      }
+
+      assistant = assistant.copyWith(contents: contents);
+      emit(
+        state.copyWith(
+          generating: false,
+          messages: {
+            ...state.messages,
+            convId: [...history, assistant],
+          },
+        ),
+      );
     }
   }
 
