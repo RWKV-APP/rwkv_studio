@@ -220,19 +220,10 @@ class _LocalModelState extends State<_LocalModel> {
             border: Border.all(color: context.fluent.inactiveBackgroundColor),
           ),
           child: Row(
+            crossAxisAlignment: .center,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: .stretch,
-                  children: [
-                    Text('Model Catalog', style: AppTextStyle.heading),
-                    const SizedBox(height: 4),
-                    Text(
-                      'View, download, management model files',
-                      style: AppTextStyle.bodySecondary,
-                    ),
-                  ],
-                ),
+                child: Text('Model Catalog', style: AppTextStyle.heading),
               ),
               Button(
                 onPressed: _refreshCatalog,

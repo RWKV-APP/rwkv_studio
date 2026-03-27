@@ -78,52 +78,42 @@ class _ModelListItemState extends State<_ModelListItem> {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: Text(
-                      model.name,
-                      style: AppTextStyle.bodyBold,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                  Text(
+                    model.name,
+                    style: AppTextStyle.bodyBold,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [for (final t in tags) _InfoChip(text: t)],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              for (final t in tags) _InfoChip(text: t),
-                            ],
-                          ),
-                        ),
+                  const SizedBox(width: 12),
+
+                  if (model.localPath.isNotEmpty)
+                    Tooltip(
+                      message: 'Open folder',
+                      child: IconButton(
+                        icon: const Icon(WindowsIcons.folder),
+                        onPressed: () => NativeUtils.showInFolder(
+                          model.localPath,
+                        ).withToast(context),
                       ),
-                      const SizedBox(width: 12),
+                    ),
 
-                      if (model.localPath.isNotEmpty)
-                        Tooltip(
-                          message: 'Open folder',
-                          child: IconButton(
-                            icon: const Icon(WindowsIcons.folder),
-                            onPressed: () => NativeUtils.showInFolder(
-                              model.localPath,
-                            ).withToast(context),
-                          ),
-                        ),
-
-                      if (!model.isRemote && !model.isImportManually)
-                        ModelItemActions(model: model, compact: true),
-                    ],
-                  ),
+                  if (!model.isRemote && !model.isImportManually)
+                    ModelItemActions(model: model, compact: true),
                 ],
               ),
             ),
@@ -153,7 +143,7 @@ class _InfoChip extends StatelessWidget {
             ? Colors.white.withValues(alpha: 0.06)
             : Colors.black.withValues(alpha: 0.04),
       ),
-      child: Text(text, style: AppTextStyle.caption),
+      child: Text(text, style: AppTextStyle.caption.copyWith(height: 1)),
     );
   }
 }

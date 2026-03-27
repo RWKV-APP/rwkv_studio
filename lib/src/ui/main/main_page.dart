@@ -18,6 +18,7 @@ import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
 
 part '_download_flyout.dart';
+
 part '_navigation_panel_items.dart';
 
 class MainPage extends StatelessWidget {
@@ -48,14 +49,11 @@ class MainPage extends StatelessWidget {
   Widget _buildContent(BuildContext context, bool dark, AppState state) {
     return NavigationView(
       paneBodyBuilder: (item, child) {
-        return KeyedSubtree(
-          key: ValueKey<int>(state.pane),
-          child: ColoredBox(
-            color: dark
-                ? Colors.black.withAlpha(180)
-                : Colors.white.withAlpha(180),
-            child: child ?? const SizedBox(),
-          ),
+        return ColoredBox(
+          color: dark
+              ? Colors.black.withAlpha(180)
+              : Colors.white.withAlpha(180),
+          child: child ?? const SizedBox(),
         );
       },
       contentShape: isWindows ? null : const BeveledRectangleBorder(),
