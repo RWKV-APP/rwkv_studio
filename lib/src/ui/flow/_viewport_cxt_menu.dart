@@ -1,15 +1,22 @@
 part of 'flow_page.dart';
 
 class _AddNodeMenu extends StatelessWidget {
+  final Offset position;
+
+  const _AddNodeMenu({required this.position});
+
   @override
   Widget build(BuildContext context) {
-    return FlyoutContent(
-      shape: RoundedRectangleBorder(borderRadius: .circular(8)),
-      constraints: const BoxConstraints(maxHeight: 400, maxWidth: 300),
-      child: Column(
-        mainAxisSize: .min,
-        children: [SizedBox(height: 36, width: 100)],
-      ),
+    return MenuFlyout(
+      items: [
+        for (var def in NodeFactory.nodeDefinitions)
+          MenuFlyoutItem(
+            text: Text(def.type),
+            onPressed: () {
+              context.nodeFlow.add(NodeFlowNodeAdded(position, def.type));
+            },
+          ),
+      ],
     );
   }
 }

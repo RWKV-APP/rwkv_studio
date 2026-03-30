@@ -1,24 +1,31 @@
+import 'dart:math';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_studio/src/bloc/node_flow/node_flow_bloc.dart';
+import 'package:rwkv_studio/src/graph/node_factory.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/theme/work_flow.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/widget/resizable_split_layout.dart';
 import 'package:vyuh_node_flow/vyuh_node_flow.dart';
 
-part '_viewport_cxt_menu.dart';
-
 part '_node_widget.dart';
+
+part '_viewport_cxt_menu.dart';
 
 class FlowPage extends StatelessWidget {
   static final FlyoutController flyoutController = FlyoutController();
 
   const FlowPage({super.key});
 
-  void _showCanvasContextMenu(BuildContext context, Offset position) {
+  void _showCanvasContextMenu(
+    BuildContext context,
+    Offset screenPos,
+    Offset graphPos,
+  ) {
     flyoutController.showFlyout(
-      position: position,
-      builder: (c) => _AddNodeMenu(),
+      position: screenPos,
+      builder: (c) => _AddNodeMenu(position: graphPos),
     );
   }
 
@@ -37,29 +44,40 @@ class FlowPage extends StatelessWidget {
           onCanvasContextMenu: (c) => _showCanvasContextMenu(
             context,
             editorController.graphToScreen(c).offset,
+            c.offset,
           ),
+        ),
+        connection: ConnectionEvents(
+          onConnectEnd: (node, port, pos) {
+            logd('${node?.id}, ${port?.id}, $pos');
+          }
         ),
         node: NodeEvents<String>(
           onSelected: (s) {
-            logd('==');
+            //
           },
           onContextMenu: (s, c) {
-            logd('==');
+            //
           },
         ),
       ),
-      labelBuilder:
-          (
-            BuildContext context,
-            Connection connection,
-            ConnectionLabel label,
-            Rect position,
-            VoidCallback? onTap,
-          ) {
-            return const Text('1', style: TextStyle(fontSize: 12));
-          },
+      connectionStyleBuilder: (conn, node1, node2) {
+        return ConnectionStyles.bezier;
+      },
+      portBuilder: (ctx, node, port) {
+        return PortWidget(
+          port: port,
+          theme: theme.portTheme,
+          controller: editorController,
+          nodeId: node.id,
+          isOutput: !port.isInput,
+          size: port.size,
+          isConnected: editorController.isPortConnected(node.id, port.id),
+          nodeBounds: editorController.getNodeBounds(node.id)!,
+        );
+      },
       behavior: .design,
-      nodeBuilder: (context, node) => NodeWidget(node: node),
+      nodeBuilder: (context, node) => _NodeWidget(node: node),
     );
 
     return ResizableSplitLayout(

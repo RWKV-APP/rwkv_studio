@@ -42,3 +42,10 @@ final class NodeFlowSelectionCleared extends NodeFlowEvent {
 final class NodeFlowStateRefreshed extends NodeFlowEvent {
   const NodeFlowStateRefreshed();
 }
+
+final class NodeFlowNodeAdded extends NodeFlowEvent {
+  final Offset position;
+  final String type;
+
+  const NodeFlowNodeAdded(this.position, this.type);
+}

@@ -1,6 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/graph/node_factory.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:uuid/uuid.dart';
 import 'package:vyuh_node_flow/vyuh_node_flow.dart';
 
 part 'node_flow_event.dart';
@@ -22,41 +24,13 @@ extension Ext on BuildContext {
 
 class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
   final NodeFlowCanvasController controller;
-  late final NodeFlowCanvasEvents events;
+  final uuid = const Uuid();
 
   NodeFlowBloc()
     : controller = NodeFlowCanvasController(
         config: NodeFlowConfig.defaultConfig.copyWith(showAttribution: false),
       ),
       super(NodeFlowState.initial()) {
-    events = NodeFlowCanvasEvents(
-      node: NodeEvents<String>(
-        onContextMenu: (c, x) {
-          logd('===');
-        },
-        onSelected: (v) {
-          logd('===');
-        },
-      ),
-      viewport: ViewportEvents(
-        onCanvasContextMenu: (c) {
-          logd('===');
-        },
-      ),
-      connection: NodeFlowCanvasConnectionEvents(
-        onBeforeComplete: _onBeforeConnectionComplete,
-      ),
-      onInit: () {
-        controller.centerViewport();
-      },
-      onError: (error) {
-        loge(error);
-      },
-      onSelectionChange: (s) {
-        logd('selection changed: $s');
-      },
-    );
-
     on<NodeFlowStarted>(_onStarted);
     on<NodeFlowGraphReplaced>(_onGraphReplaced);
     on<NodeFlowGraphCleared>(_onGraphCleared);
@@ -64,7 +38,15 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
     on<NodeFlowViewportFitRequested>(_onViewportFitRequested);
     on<NodeFlowSelectionCleared>(_onSelectionCleared);
     on<NodeFlowStateRefreshed>(_onStateRefreshed);
-
+    on<NodeFlowNodeAdded>((event, emit) {
+      final node = NodeFactory.create(
+        event.type,
+        position: event.position,
+        data: '',
+      );
+      controller.addNode(node);
+      emit(_snapshot());
+    });
     controller.minimap?.setVisible(true);
 
     start();
@@ -73,6 +55,9 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
   bool _started = false;
 
   void start({NodeFlowCanvasGraph? graph, bool force = false}) {
+    logd(
+      'NodeFlowBloc start called with graph: ${graph != null}, force: $force',
+    );
     add(NodeFlowStarted(graph: graph, force: force));
   }
 
@@ -250,6 +235,8 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
     }
 
     emit(_snapshot(status: NodeFlowStatus.ready));
+
+    controller.centerViewport();
   }
 
   Future<void> _onGraphReplaced(
@@ -350,47 +337,26 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
   }
 
   NodeFlowCanvasGraph _buildInitialGraph() {
+    final start = NodeFactory.create(
+      'Start',
+      data: '',
+      position: const Offset(0, 0),
+    );
+    final end = NodeFactory.create(
+      'End',
+      data: '',
+      position: const Offset(400, 0),
+    );
+
     return NodeFlowCanvasGraph(
-      nodes: [
-        NodeFlowCanvasNode(
-          id: 'node-1',
-          type: 'input',
-          position: const Offset(100, 100),
-          data: 'Start',
-          size: const Size(100, 50),
-          ports: [
-            Port(
-              id: 'out',
-              name: 'Output',
-              offset: const Offset(2, 20),
-              type: PortType.output,
-              position: PortPosition.right,
-            ),
-          ],
-        ),
-        NodeFlowCanvasNode(
-          id: 'node-2',
-          type: 'output',
-          position: const Offset(400, 100),
-          data: 'End',
-          size: const Size(100, 50),
-          ports: [
-            Port(
-              id: 'in',
-              name: 'Input',
-              offset: const Offset(-2, 20),
-              type: PortType.input,
-            ),
-          ],
-        ),
-      ],
+      nodes: [start, end],
       connections: [
         NodeFlowCanvasConnection(
           id: 'conn-1',
-          sourceNodeId: 'node-1',
-          sourcePortId: 'out',
-          targetNodeId: 'node-2',
-          targetPortId: 'in',
+          sourceNodeId: start.id,
+          sourcePortId: start.ports.first.id,
+          targetNodeId: end.id,
+          targetPortId: end.ports.first.id,
         ),
       ],
     );
