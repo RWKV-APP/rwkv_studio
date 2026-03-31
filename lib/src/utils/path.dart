@@ -24,6 +24,14 @@ String fileName(String path) {
   return path.split(Platform.pathSeparator).last;
 }
 
+extension DirectoryPath on Directory {
+  String get fileName => path.split(Platform.pathSeparator).last;
+
+  Directory childDirectory(String name) => Directory(pathJoin(path, name));
+
+  File childFile(String name) => File(pathJoin(path, name));
+}
+
 extension StringPath on String {
   String get fileName => split(Platform.pathSeparator).last;
 

@@ -1,5 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rwkv_studio/src/app/init_config.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/repository/setting_repository.dart';
@@ -51,6 +52,9 @@ class SettingCubit extends Cubit<SettingState> {
 
   void setAppearance(AppearanceSettingsModel appearance) {
     emit(state.copyWith(appearance: appearance));
+    InitConfig.update(
+      isDark: appearance.theme.brightness == Brightness.dark,
+    );
   }
 
   void setServiceSetting(ModelSettingsModel model) {
