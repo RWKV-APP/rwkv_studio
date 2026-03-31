@@ -10,9 +10,22 @@ class WorkFlowTheme {
 
   const WorkFlowTheme._();
 
-  static NodeFlowTheme get darkTheme => NodeFlowTheme.dark.copyWith(
+  static NodeFlowTheme darkTheme = NodeFlowTheme.dark.copyWith(
     connectionTheme: ConnectionTheme.dark.copyWith(
       style: ConnectionStyles.bezier,
+      strokeWidth: 1,
+      selectedStrokeWidth: 2,
+      color: Colors.grey[120],
+      endPoint: ConnectionEndPoint.none,
+      endGap: -2,
+    ),
+    temporaryConnectionTheme: ConnectionTheme.dark.copyWith(
+      style: ConnectionStyles.bezier,
+      strokeWidth: 1,
+      selectedStrokeWidth: 2,
+      color: Colors.grey[100],
+      endPoint: ConnectionEndPoint.none,
+      endGap: -2,
     ),
     gridTheme: GridTheme.light.copyWith(
       style: GridStyles.hierarchical,
@@ -23,6 +36,8 @@ class WorkFlowTheme {
       contentStyle: const TextStyle(fontSize: 12),
       borderWidth: 1,
       selectedBorderWidth: 1,
+      borderColor: Colors.grey[140],
+      backgroundColor: Colors.grey[160],
     ),
   );
 
@@ -32,16 +47,30 @@ class WorkFlowTheme {
       style: ConnectionStyles.bezier,
       strokeWidth: 1,
       selectedStrokeWidth: 2,
+      color: Colors.grey[100],
+      endPoint: ConnectionEndPoint.circle,
+      endGap: -2,
+    ),
+    temporaryConnectionTheme: ConnectionTheme.light.copyWith(
+      style: ConnectionStyles.bezier,
+      strokeWidth: 1,
+      selectedStrokeWidth: 2,
+      color: Colors.grey[100],
+      endpointColor: Colors.grey[90],
+      endPoint: ConnectionEndPoint.circle,
+      endGap: -2,
     ),
     gridTheme: GridTheme.light.copyWith(
       style: GridStyles.hierarchical,
-      thickness: 0.4,
+      thickness: 0.3,
       color: Colors.grey[40],
     ),
     nodeTheme: NodeTheme.light.copyWith(
       contentStyle: const TextStyle(fontSize: 12),
       borderWidth: 1,
       selectedBorderWidth: 1,
+      borderColor: Colors.grey[40],
+      backgroundColor: Colors.white,
     ),
   );
 }

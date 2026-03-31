@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:fluent_ui/fluent_ui.dart';
@@ -5,7 +6,9 @@ import 'package:rwkv_studio/src/bloc/node_flow/node_flow_bloc.dart';
 import 'package:rwkv_studio/src/graph/node_factory.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/theme/work_flow.dart';
+import 'package:rwkv_studio/src/utils/file_util.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/toast_util.dart';
 import 'package:rwkv_studio/src/widget/resizable_split_layout.dart';
 import 'package:vyuh_node_flow/vyuh_node_flow.dart';
 
@@ -50,7 +53,7 @@ class FlowPage extends StatelessWidget {
         connection: ConnectionEvents(
           onConnectEnd: (node, port, pos) {
             logd('${node?.id}, ${port?.id}, $pos');
-          }
+          },
         ),
         node: NodeEvents<String>(
           onSelected: (s) {
@@ -62,6 +65,9 @@ class FlowPage extends StatelessWidget {
         ),
       ),
       connectionStyleBuilder: (conn, node1, node2) {
+        if (node1.type == 'Tools') {
+          //
+        }
         return ConnectionStyles.bezier;
       },
       portBuilder: (ctx, node, port) {
@@ -91,7 +97,57 @@ class FlowPage extends StatelessWidget {
       maxSize: 600,
       flexible: Stack(
         fit: .expand,
-        children: [FlyoutTarget(controller: flyoutController, child: editor)],
+        children: [
+          FlyoutTarget(controller: flyoutController, child: editor),
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Card(
+              padding: const .symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: .min,
+                children: [
+                  IconButton(
+                    icon: const Icon(FluentIcons.focus_view),
+                    onPressed: () {
+                      context.nodeFlow.controller.centerViewport();
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(FluentIcons.folder_open),
+                    onPressed: () async {
+                      final file = await FileUtils.openFileString(
+                        extension: ".json",
+                      ).withToast(context);
+                      if (file != null && context.mounted) {
+                        context.nodeFlow.add(
+                          NodeFlowGraphImportFile(jsonDecode(file)),
+                        );
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(FluentIcons.download_document),
+                    onPressed: () {
+                      final graph = context.nodeFlow.controller.exportGraph();
+                      final json = graph.toJsonString();
+                      FileUtils.saveFileString(
+                        content: json,
+                        extension: ".json",
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(FluentIcons.play, color: Colors.green.lightest),
+                    onPressed: () {
+                      //
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

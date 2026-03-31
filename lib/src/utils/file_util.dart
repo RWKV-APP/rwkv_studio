@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:file_selector/file_selector.dart';
 
 extension Ext on File {
   String get name => path.split(Platform.pathSeparator).last;
@@ -53,6 +54,40 @@ class DirFileInfo {
 
 class FileUtils {
   FileUtils._();
+
+  static Future<String?> openFileString({String? extension}) async {
+    final l = await openFile(
+      acceptedTypeGroups: [
+        if (extension != null)
+          XTypeGroup(label: extension, extensions: [extension]),
+      ],
+    );
+    if (l == null) return null;
+    final f = File(l.path);
+    return await f.readAsString();
+  }
+
+  static Future saveFileString({
+    required String content,
+    String? name,
+    String? extension,
+  }) async {
+    final l = await getSaveLocation(
+      acceptedTypeGroups: [
+        if (extension != null)
+          XTypeGroup(label: extension, extensions: [extension]),
+      ],
+      suggestedName: name,
+      canCreateDirectories: true,
+    );
+    if (l == null) return;
+    String path = l.path;
+    if (extension != null && !l.path.endsWith(extension)) {
+      path += extension;
+    }
+    final f = File(path);
+    await f.writeAsString(content);
+  }
 
   static Future<DirFileInfo> getDirectoryFileInfo(
     String path, {

@@ -23,6 +23,12 @@ final class NodeFlowGraphReplaced extends NodeFlowEvent {
   final bool fitToView;
 }
 
+final class NodeFlowGraphImportFile extends NodeFlowEvent {
+  final Map<String, dynamic> raw;
+
+  const NodeFlowGraphImportFile(this.raw);
+}
+
 final class NodeFlowGraphCleared extends NodeFlowEvent {
   const NodeFlowGraphCleared();
 }

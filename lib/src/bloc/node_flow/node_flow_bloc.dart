@@ -1,6 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/graph/node_factory.dart';
+import 'package:rwkv_studio/src/ui/flow/_example.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vyuh_node_flow/vyuh_node_flow.dart';
@@ -46,6 +47,15 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
       );
       controller.addNode(node);
       emit(_snapshot());
+    });
+    on<NodeFlowGraphImportFile>((event, emit) {
+      final graph = NodeGraph.fromJson(
+        event.raw,
+        (c) => c.toString(),
+        (c) => c.toString(),
+      );
+      controller.loadGraph(graph);
+      emit(_snapshot(status: NodeFlowStatus.ready));
     });
     controller.minimap?.setVisible(true);
 
@@ -231,7 +241,12 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
     if (event.graph != null) {
       controller.loadGraph(event.graph!);
     } else if (controller.nodeCount == 0 && controller.connectionCount == 0) {
-      controller.loadGraph(_buildInitialGraph());
+      final graph = NodeGraph.fromJson(
+        exampleGraphJson,
+        (c) => c.toString(),
+        (c) => c.toString(),
+      );
+      controller.loadGraph(graph);
     }
 
     emit(_snapshot(status: NodeFlowStatus.ready));
@@ -333,32 +348,6 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
         controller.selectedConnectionIds,
       ),
       viewport: controller.viewport,
-    );
-  }
-
-  NodeFlowCanvasGraph _buildInitialGraph() {
-    final start = NodeFactory.create(
-      'Start',
-      data: '',
-      position: const Offset(0, 0),
-    );
-    final end = NodeFactory.create(
-      'End',
-      data: '',
-      position: const Offset(400, 0),
-    );
-
-    return NodeFlowCanvasGraph(
-      nodes: [start, end],
-      connections: [
-        NodeFlowCanvasConnection(
-          id: 'conn-1',
-          sourceNodeId: start.id,
-          sourcePortId: start.ports.first.id,
-          targetNodeId: end.id,
-          targetPortId: end.ports.first.id,
-        ),
-      ],
     );
   }
 
