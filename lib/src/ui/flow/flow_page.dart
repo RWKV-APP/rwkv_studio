@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,6 +14,8 @@ import 'package:vyuh_node_flow/vyuh_node_flow.dart';
 
 part '_node_widget.dart';
 
+part '_tool_bar.dart';
+
 part '_viewport_cxt_menu.dart';
 
 class FlowPage extends StatelessWidget {
@@ -22,69 +23,27 @@ class FlowPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ResizableSplitLayout(
-      restoreId: 'node-flow-sidebar',
-      fixed: Container(color: context.fluent.scaffoldBackgroundColor),
-      flexibleAlignEnd: false,
-      hideFixedWidget: false,
-      direction: .horizontal,
-      size: 400,
-      minSize: 200,
-      maxSize: 600,
-      flexible: Stack(
-        fit: .expand,
-        children: [
-          const _Editor(),
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Card(
-              padding: const .symmetric(horizontal: 6, vertical: 4),
-              child: Row(
-                mainAxisSize: .min,
-                children: [
-                  IconButton(
-                    icon: const Icon(FluentIcons.focus_view),
-                    onPressed: () {
-                      context.nodeFlow.controller.centerViewport();
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(FluentIcons.folder_open),
-                    onPressed: () async {
-                      final file = await FileUtils.openFileString(
-                        extension: ".json",
-                      ).withToast(context);
-                      if (file != null && context.mounted) {
-                        context.nodeFlow.add(
-                          NodeFlowGraphImportFile(jsonDecode(file)),
-                        );
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(FluentIcons.download_document),
-                    onPressed: () {
-                      final graph = context.nodeFlow.exportGraph();
-                      final json = graph.toJsonString();
-                      FileUtils.saveFileString(
-                        content: json,
-                        extension: ".json",
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(FluentIcons.play, color: Colors.green.lightest),
-                    onPressed: () {
-                      //
-                    },
-                  ),
-                ],
-              ),
-            ),
+    return BlocBuilder<NodeFlowBloc, NodeFlowState>(
+      buildWhen: (p, c) => p.showDebugPane != c.showDebugPane,
+      builder: (context, state) {
+        return ResizableSplitLayout(
+          restoreId: 'node-flow-sidebar',
+          fixed: Container(color: context.fluent.scaffoldBackgroundColor),
+          flexibleAlignEnd: false,
+          hideFixedWidget: !state.showDebugPane,
+          direction: .horizontal,
+          size: 400,
+          minSize: 200,
+          maxSize: 600,
+          flexible: Stack(
+            fit: .expand,
+            children: [
+              const _Editor(),
+              Positioned(right: 0, left: 0, top: 8, child: _Toolbar()),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -99,7 +58,7 @@ class _Editor extends StatelessWidget {
     Offset screenPos,
     Offset graphPos,
   ) {
-    flyoutController.showFlyout(
+    _Editor.flyoutController.showFlyout(
       position: screenPos,
       builder: (c) => _AddNodeMenu(position: graphPos),
     );
@@ -107,18 +66,18 @@ class _Editor extends StatelessWidget {
 
   @override
   Widget build(BuildContext ctx) {
-    final controller = ctx.nodeFlow.controller;
     return FlyoutTarget(
-      controller: flyoutController,
+      controller: _Editor.flyoutController,
       child: BlocBuilder<NodeFlowBloc, NodeFlowState>(
         buildWhen: (p, c) => p.theme != c.theme,
         builder: (context, state) {
+          final controller = context.nodeFlow.controller;
           return NodeFlowEditor<String, dynamic>(
             controller: controller,
             theme: state.theme,
             events: NodeFlowEvents<String, dynamic>(
               onInit: () {
-                context.nodeFlow.add(const NodeFlowEditorReady());
+                logi('NodeFlowEditor widget initialized');
               },
               viewport: ViewportEvents(
                 onCanvasContextMenu: (c) => _showCanvasContextMenu(

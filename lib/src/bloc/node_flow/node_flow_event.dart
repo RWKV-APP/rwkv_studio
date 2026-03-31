@@ -55,3 +55,18 @@ final class NodeFlowNodeAdded extends NodeFlowEvent {
 
   const NodeFlowNodeAdded(this.position, this.type);
 }
+
+final class NodeFlowThemeChanged extends NodeFlowEvent {
+  final NodeFlowTheme theme;
+  final bool isDark;
+
+  const NodeFlowThemeChanged(this.theme, {required this.isDark});
+}
+
+final class NodeFlowEditorReady extends NodeFlowEvent {
+  const NodeFlowEditorReady();
+}
+
+final class NodeFlowToggleDebug extends NodeFlowEvent {
+  const NodeFlowToggleDebug();
+}

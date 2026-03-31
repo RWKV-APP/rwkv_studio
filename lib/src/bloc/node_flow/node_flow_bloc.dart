@@ -26,12 +26,14 @@ extension Ext on BuildContext {
 class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
   final NodeFlowCanvasController controller;
   final uuid = const Uuid();
+  bool _started = false;
 
   NodeFlowBloc()
     : controller = NodeFlowCanvasController(
-        config: NodeFlowConfig.defaultConfig.copyWith(showAttribution: false),
+        config: NodeFlowConfig(showAttribution: false),
       ),
       super(NodeFlowState.initial()) {
+    on<NodeFlowEditorReady>(_onEditorReady);
     on<NodeFlowStarted>(_onStarted);
     on<NodeFlowGraphReplaced>(_onGraphReplaced);
     on<NodeFlowGraphCleared>(_onGraphCleared);
@@ -39,6 +41,10 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
     on<NodeFlowViewportFitRequested>(_onViewportFitRequested);
     on<NodeFlowSelectionCleared>(_onSelectionCleared);
     on<NodeFlowStateRefreshed>(_onStateRefreshed);
+    on<NodeFlowThemeChanged>(_onThemeChanged);
+    on<NodeFlowToggleDebug>((event, emit) {
+      emit(state.copyWith(showDebugPane: !state.showDebugPane));
+    });
     on<NodeFlowNodeAdded>((event, emit) {
       final node = NodeFactory.create(
         event.type,
@@ -57,18 +63,8 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
       controller.loadGraph(graph);
       emit(_snapshot(status: NodeFlowStatus.ready));
     });
-    controller.minimap?.setVisible(true);
 
-    start();
-  }
-
-  bool _started = false;
-
-  void start({NodeFlowCanvasGraph? graph, bool force = false}) {
-    logd(
-      'NodeFlowBloc start called with graph: ${graph != null}, force: $force',
-    );
-    add(NodeFlowStarted(graph: graph, force: force));
+    add(const NodeFlowStarted(graph: null, force: false));
   }
 
   void replaceGraph(
@@ -227,6 +223,11 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
     ).allowed;
   }
 
+  void _onEditorReady(NodeFlowEditorReady event, Emitter<NodeFlowState> emit) {
+    controller.updateTheme(state.theme);
+    emit(state.copyWith(initialized: true));
+  }
+
   Future<void> _onStarted(
     NodeFlowStarted event,
     Emitter<NodeFlowState> emit,
@@ -303,6 +304,30 @@ class NodeFlowBloc extends Bloc<NodeFlowEvent, NodeFlowState> {
     Emitter<NodeFlowState> emit,
   ) async {
     emit(_snapshot());
+  }
+
+  void _onThemeChanged(
+    NodeFlowThemeChanged event,
+    Emitter<NodeFlowState> emit,
+  ) async {
+    logd('Theme changed: ${event.theme}, isDark: ${event.isDark}');
+    emit(state.copyWith(theme: event.theme));
+    var minimap = controller.getPlugin<MinimapPlugin>();
+    if (minimap != null) {
+      controller.config.pluginRegistry.remove(minimap.id);
+      controller.removePlugin(minimap.id);
+    }
+
+    minimap = MinimapPlugin(
+      visible: true,
+      theme: event.isDark ? MinimapTheme.dark : MinimapTheme.light,
+    );
+    controller.config.pluginRegistry.register(minimap);
+    controller.addPlugin(minimap);
+
+    if (controller.isEditorInitialized) {
+      controller.updateTheme(event.theme);
+    }
   }
 
   ConnectionValidationResult _onBeforeConnectionComplete(

@@ -1,4 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:rwkv_studio/src/app/init_config.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/utils/equatable.dart';
 
@@ -23,7 +24,9 @@ class AppearanceSettingsModel extends Equatable {
 
   factory AppearanceSettingsModel.initial() {
     return AppearanceSettingsModel(
-      theme: AppearanceSettingsModel.lightTheme,
+      theme: InitConfig.instance.isDark
+          ? AppearanceSettingsModel.darkTheme
+          : AppearanceSettingsModel.lightTheme,
       fontFamily: 'NotoSansSC',
       fontSize: 16,
       userType: UserType.user,

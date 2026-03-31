@@ -11,8 +11,13 @@ class NodeFlowState {
     required this.selectedNodeIds,
     required this.selectedConnectionIds,
     required this.viewport,
+    required this.theme,
+    required this.initialized,
+    required this.showDebugPane,
   });
 
+  final bool showDebugPane;
+  final bool initialized;
   final NodeFlowStatus status;
   final int revision;
   final int nodeCount;
@@ -20,6 +25,7 @@ class NodeFlowState {
   final List<String> selectedNodeIds;
   final List<String> selectedConnectionIds;
   final GraphViewport viewport;
+  final NodeFlowTheme theme;
 
   bool get isReady => status == NodeFlowStatus.ready;
 
@@ -27,14 +33,17 @@ class NodeFlowState {
       selectedNodeIds.isNotEmpty || selectedConnectionIds.isNotEmpty;
 
   factory NodeFlowState.initial() {
-    return const NodeFlowState(
+    return NodeFlowState(
       status: NodeFlowStatus.initial,
       revision: 0,
       nodeCount: 0,
       connectionCount: 0,
       selectedNodeIds: [],
       selectedConnectionIds: [],
-      viewport: GraphViewport(),
+      viewport: const GraphViewport(),
+      theme: NodeFlowTheme.light,
+      initialized: false,
+      showDebugPane: false,
     );
   }
 
@@ -46,6 +55,9 @@ class NodeFlowState {
     List<String>? selectedNodeIds,
     List<String>? selectedConnectionIds,
     GraphViewport? viewport,
+    NodeFlowTheme? theme,
+    bool? initialized,
+    bool? showDebugPane,
   }) {
     return NodeFlowState(
       status: status ?? this.status,
@@ -56,6 +68,9 @@ class NodeFlowState {
       selectedConnectionIds:
           selectedConnectionIds ?? this.selectedConnectionIds,
       viewport: viewport ?? this.viewport,
+      theme: theme ?? this.theme,
+      initialized: initialized ?? this.initialized,
+      showDebugPane: showDebugPane ?? this.showDebugPane,
     );
   }
 }

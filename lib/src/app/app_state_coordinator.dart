@@ -10,12 +10,14 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
+import 'package:rwkv_studio/src/bloc/node_flow/node_flow_bloc.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/repository/mcp_repository.dart';
 import 'package:rwkv_studio/src/repository/remote_service_repository.dart';
+import 'package:rwkv_studio/src/theme/work_flow.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:window_manager/window_manager.dart';
@@ -27,6 +29,8 @@ class AppStateCoordinator {
   final LlmCubit llm;
   final SettingCubit setting;
   final TextGenerationCubit textGen;
+  final NodeFlowBloc nodeFlow;
+
   final RemoteServiceRepository remoteServiceRepository;
   final McpRepository mcpRepository;
   bool _initializing = false;
@@ -41,6 +45,7 @@ class AppStateCoordinator {
     required this.chat,
     required this.modelManage,
     required this.llm,
+    required this.nodeFlow,
     required this.setting,
     required this.textGen,
     required this.remoteServiceRepository,
@@ -57,6 +62,7 @@ class AppStateCoordinator {
       textGen: context.read<TextGenerationCubit>(),
       remoteServiceRepository: context.read<RemoteServiceRepository>(),
       mcpRepository: context.read<McpRepository>(),
+      nodeFlow: context.read<NodeFlowBloc>(),
     );
   }
 
@@ -209,6 +215,10 @@ class AppStateCoordinator {
   }
 
   void syncAppearance(AppearanceSettingsModel appearance) {
+    final isDark = appearance.theme.brightness == .dark;
+    final theme = isDark ? WorkFlowTheme.darkTheme : WorkFlowTheme.lightTheme;
+    nodeFlow.add(NodeFlowThemeChanged(theme, isDark: isDark));
+
     if (kIsWeb) {
       return;
     }
