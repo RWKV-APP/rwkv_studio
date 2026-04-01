@@ -19,10 +19,10 @@ class ModelListPage extends StatefulWidget {
 }
 
 enum _SortType {
-  modelSize('Model size'),
-  updateAt('Updated time'),
-  fileSize('File size'),
-  download('Download');
+  modelSize('模型大小'),
+  updateAt('更新时间'),
+  fileSize('文件大小'),
+  download('下载状态');
 
   final String name;
 
@@ -58,12 +58,12 @@ class _ModelListPageState extends State<ModelListPage> {
       tabs: [
         Tab(
           icon: const Icon(FluentIcons.bulleted_list),
-          text: const Text('Catalog'),
+          text: const Text('模型列表'),
           body: const _LocalModel(),
         ),
         Tab(
           icon: const Icon(FluentIcons.plug_connected),
-          text: const Text('Remote Providers'),
+          text: const Text('模型服务提供商'),
           body: const RemoteModelProviderTabBody(),
         ),
       ],
@@ -223,7 +223,7 @@ class _LocalModelState extends State<_LocalModel> {
             crossAxisAlignment: .center,
             children: [
               Expanded(
-                child: Text('Model Catalog', style: AppTextStyle.heading),
+                child: Text('模型列表', style: AppTextStyle.heading),
               ),
               Button(
                 onPressed: _refreshCatalog,
@@ -258,7 +258,7 @@ class _LocalModelState extends State<_LocalModel> {
               width: 320,
               child: TextBox(
                 controller: _catalogSearchController,
-                placeholder: 'Search name, group, tag, backend...',
+                placeholder: '搜索 name, group, tag, backend...',
                 suffix: const Padding(
                   padding: EdgeInsets.only(right: 12),
                   child: Icon(FluentIcons.search, size: 16),
@@ -297,7 +297,7 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
     builder: (context) {
       return MenuFlyout(
         items: [
-          MenuFlyoutItem(text: const Text('Download source'), onPressed: null),
+          MenuFlyoutItem(text: const Text('下载源'), onPressed: null),
           for (final s in [
             DownloadSource.auto,
             DownloadSource.aiFastHub,
@@ -306,7 +306,7 @@ void _showDownloadMenu(BuildContext ctx, DownloadSource selected) {
             DownloadSource.googleApis,
           ])
             ToggleMenuFlyoutItem(
-              text: Text(s == DownloadSource.auto ? 'Auto' : s.name),
+              text: Text(s == DownloadSource.auto ? '自动' : s.name),
               value: s == selected,
               onChanged: (bool value) async {
                 if (!value) {
@@ -414,7 +414,7 @@ class _FilterButton extends StatelessWidget {
           children: [
             const Icon(FluentIcons.filter),
             const SizedBox(width: 8),
-            Text(filter.isEmpty ? 'No filters' : '${filter.length} filters'),
+            Text(filter.isEmpty ? '无过滤' : '${filter.length} filters'),
           ],
         ),
       ),

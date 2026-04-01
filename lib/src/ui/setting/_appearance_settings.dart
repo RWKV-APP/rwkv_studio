@@ -103,18 +103,15 @@ class AppearanceSettings extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          const Row(
             children: [
-              const Text('语言'),
-              const SizedBox(width: 12),
-              const Spacer(),
+              Text('语言'),
+              SizedBox(width: 12),
+              Spacer(),
               ComboBox(
                 value: 'zh',
-                onChanged: (v) {
-                  //
-                },
                 items: [
-                  const ComboBoxItem(value: 'zh', child: Text('简体中文')),
+                  ComboBoxItem(value: 'zh', child: Text('简体中文')),
                   // ComboBoxItem(value: 'en', child: Text('English')),
                 ],
               ),

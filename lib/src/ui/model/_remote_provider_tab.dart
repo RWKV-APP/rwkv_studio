@@ -5,6 +5,7 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/models/model/model_identity.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/theme/text_theme.dart';
+import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 
 class RemoteModelProviderTabBody extends StatefulWidget {
@@ -51,6 +52,7 @@ class _RemoteModelProviderTabBodyState
             children: [
               TextBox(
                 controller: _controllerSearch,
+                placeholder: '搜索模型',
                 onChanged: (v) {
                   _keywords = v;
                   setState(() {});
@@ -66,9 +68,9 @@ class _RemoteModelProviderTabBodyState
                         padding: const .symmetric(vertical: 12),
                         child: Row(
                           children: [
-                            Expanded(child: Text(item)),
+                            Expanded(child: Text(item, style: context.fluent.typography.bodyStrong)),
                             IconButton(
-                              icon: const Text('Disable All'),
+                              icon: const Text('全部禁用'),
                               onPressed: () {
                                 final ids = list
                                     .whereType<ModelInfo>()
@@ -87,7 +89,7 @@ class _RemoteModelProviderTabBodyState
                             ),
                             const SizedBox(width: 6),
                             IconButton(
-                              icon: const Text('Enable All'),
+                              icon: const Text('全部启用'),
                               onPressed: () {
                                 final provider = item.split(' ').first;
                                 _disabled.removeWhere(
