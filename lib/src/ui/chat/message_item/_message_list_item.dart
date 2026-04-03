@@ -108,6 +108,8 @@ class _AssistantMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lastCompleted = message.contents.lastOrNull?.completed == true;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,13 +122,13 @@ class _AssistantMessageBubble extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (message.showProgress)
+              ..._buildContents(context),
+              if ((!message.stopped && lastCompleted) || message.showProgress)
                 const SizedBox(
                   height: 18,
                   width: 18,
                   child: ProgressRing(strokeWidth: 3),
                 ),
-              ..._buildContents(context),
             ],
           ),
         ),
@@ -169,6 +171,7 @@ class _AssistantMessageBubble extends StatelessWidget {
                   color: Colors.errorPrimaryColor,
                   fontSize: 12,
                 ),
+                maxLines: 3,
               ),
             ),
           );

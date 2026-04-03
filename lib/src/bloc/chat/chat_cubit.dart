@@ -636,6 +636,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         newContent = .answer(event.deltaMessage);
       }
     }
+    if (newContent.data == '') {
+      return;
+    }
+
     contents.add(newContent);
 
     assistant = assistant.copyWith(contents: contents);
@@ -736,9 +740,12 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     required ChatToolCallEvent event,
   }) {
     var assistant = state.messages[conversationId]!.last;
+
     assistant = assistant.copyWith(
       contents: [
-        ...assistant.contents,
+        ...assistant.contents.map(
+          (e) => e.completed ? e : e.copyWith(completed: true),
+        ),
         MessageContent.toolCall(ToolCallInfo.fromCall(event.toolCall)),
       ],
     );

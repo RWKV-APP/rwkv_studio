@@ -39,6 +39,7 @@ class NavBarItem {
           NavBarItem(type: NavBarItemType.textGeneration),
           NavBarItem(type: NavBarItemType.batchInfer),
           NavBarItem(type: NavBarItemType.modelManage),
+          NavBarItem(type: NavBarItemType.mcp),
           NavBarItem(type: NavBarItemType.downloadTask),
           NavBarItem(type: NavBarItemType.settings),
         ];

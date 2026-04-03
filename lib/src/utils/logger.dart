@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
+import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/utils/date_utils.dart';
 
 final _logger = Logger('STUDIO');
@@ -57,6 +58,11 @@ class AppLog with ChangeNotifier {
   }
 
   static void captureZone(Function() entry) {
+    setRWKVCallback((record) {
+      print(
+        "${record.time.displayTime}: ${record.loggerName}/${record.level.name}: ${_formatRecordMessage(record)}",
+      );
+    });
     runZonedGuarded(
       entry,
       (error, stackTrace) {
