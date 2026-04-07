@@ -137,7 +137,7 @@ class _McpBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('MCP', style: theme.typography.subtitle),
+        Text('MCP Server', style: theme.typography.subtitle),
         const SizedBox(height: 16),
         Expander(
           header: const Text('Runtime'),

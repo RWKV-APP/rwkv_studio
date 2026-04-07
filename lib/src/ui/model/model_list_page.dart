@@ -50,23 +50,37 @@ class _ModelListPageState extends State<ModelListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return TabView(
-      currentIndex: _selectedTabIndex,
-      onChanged: (index) => setState(() => _selectedTabIndex = index),
-      closeButtonVisibility: CloseButtonVisibilityMode.never,
-      tabWidthBehavior: TabWidthBehavior.sizeToContent,
-      tabs: [
-        Tab(
-          icon: const Icon(FluentIcons.bulleted_list),
-          text: const Text('模型列表'),
-          body: const _LocalModel(),
-        ),
-        Tab(
-          icon: const Icon(FluentIcons.plug_connected),
-          text: const Text('模型服务提供商'),
-          body: const RemoteModelProviderTabBody(),
-        ),
-      ],
+    final dark = context.fluent.brightness == Brightness.dark;
+    final bgColor = dark ? context.fluent.cardColor : Colors.white;
+    return ColoredBox(
+      color: dark ? Colors.transparent : Colors.grey[20].withAlpha(100),
+      child: TabView(
+        currentIndex: _selectedTabIndex,
+        onChanged: (index) => setState(() => _selectedTabIndex = index),
+        closeButtonVisibility: CloseButtonVisibilityMode.never,
+        tabWidthBehavior: TabWidthBehavior.sizeToContent,
+        tabs: [
+          Tab(
+            icon: const Icon(FluentIcons.bulleted_list),
+            text: const Text('模型列表'),
+            body: ColoredBox(color: bgColor, child: const _LocalModel()),
+            selectedBackgroundColor: WidgetStateColor.resolveWith(
+              (s) => bgColor,
+            ),
+          ),
+          Tab(
+            icon: const Icon(FluentIcons.plug_connected),
+            text: const Text('模型服务提供商'),
+            body: ColoredBox(
+              color: bgColor,
+              child: const RemoteModelProviderTabBody(),
+            ),
+            selectedBackgroundColor: WidgetStateColor.resolveWith(
+              (s) => bgColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -211,30 +225,7 @@ class _LocalModelState extends State<_LocalModel> {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          margin: const .symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: context.fluent.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: context.fluent.inactiveBackgroundColor),
-          ),
-          child: Row(
-            crossAxisAlignment: .center,
-            children: [
-              Expanded(
-                child: Text('模型列表', style: AppTextStyle.heading),
-              ),
-              Button(
-                onPressed: _refreshCatalog,
-                child: const Icon(FluentIcons.refresh),
-              ),
-              const SizedBox(width: 6),
-              const _SourceSelector(),
-            ],
-          ),
-        ),
-
+        const SizedBox(height: 16),
         Row(
           children: [
             const SizedBox(width: 12),
@@ -265,6 +256,13 @@ class _LocalModelState extends State<_LocalModel> {
                 ),
               ),
             ),
+            const SizedBox(width: 12),
+            Button(
+              onPressed: _refreshCatalog,
+              child: const Row(children: [Icon(FluentIcons.refresh), Text("")]),
+            ),
+            const SizedBox(width: 6),
+            const _SourceSelector(),
             const SizedBox(width: 12),
           ],
         ),
@@ -335,7 +333,7 @@ class _SourceSelector extends StatelessWidget {
           controller: _controller,
           child: Button(
             onPressed: () => _showDownloadMenu(context, state),
-            child: const Icon(FluentIcons.server),
+            child: const Row(children: [Icon(FluentIcons.server), Text("")]),
           ),
         );
       },

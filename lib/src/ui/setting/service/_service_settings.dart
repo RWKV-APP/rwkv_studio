@@ -216,6 +216,7 @@ class _ServiceItem extends StatelessWidget {
             flex: 2,
             child: Text(
               service.apiKey.isEmpty ? '-' : ('*' * service.apiKey.length),
+              maxLines: 1,
               textAlign: .start,
             ),
           ),
