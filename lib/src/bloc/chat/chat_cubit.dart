@@ -70,6 +70,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       await newChat();
     }
     selectConversation(state.conversations.first);
+
+    state.inputController.addListener(() {
+      _updateInputTokenCount();
+    });
   }
 
   void _initStatePersistence() {
@@ -148,24 +152,18 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
             emit(state.copyWith(modelState: e));
             // RWKV is not supported tool-call yet
             if (e.isRWKV && state.generationConfig.enableMcp) {
-              emit(
-                state.copyWith(
-                  generationConfig: state.generationConfig.copyWith(
-                    enableMcp: false,
-                  ),
-                ),
-              );
+              final gc = state.generationConfig.copyWith(enableMcp: false);
+              emit(state.copyWith(generationConfig: gc));
             }
+            _updateInputTokenCount();
           },
           onError: (e, s) {
-            emit(
-              state.copyWith(
-                modelState: ModelLoadState.error(
-                  model.id,
-                  AppException.wrap(e, s),
-                ),
-              ),
+            final modelState = ModelLoadState.error(
+              model.id,
+              AppException.wrap(e, s),
             );
+            emit(state.copyWith(modelState: modelState));
+            _updateInputTokenCount();
           },
         );
     addSubscription(sp);
@@ -801,5 +799,14 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         },
       ),
     );
+  }
+
+  void _updateInputTokenCount() {
+    final text = state.inputController.text.trim();
+    final tokenCount = _llmSessionRepository.getTokenCount(
+      state.modelInstanceId,
+      text,
+    );
+    emit(state.copyWith(inputTokenCount: tokenCount));
   }
 }

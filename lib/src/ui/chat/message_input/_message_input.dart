@@ -48,12 +48,29 @@ class ChatMessageInput extends StatelessWidget {
             const SizedBox(width: 6),
             _McpToggleButton(),
             const Spacer(),
+
             BlocBuilder<ChatCubit, ChatState>(
-              buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
+              buildWhen: (p, c) => p.inputTokenCount != c.inputTokenCount,
               builder: (context, state) {
-                return DecodeSpeedInfo(modelInstanceId: state.modelInstanceId);
+                if (state.inputTokenCount <= 0) {
+                  return const SizedBox.shrink();
+                }
+                return Text(
+                  "${state.inputTokenCount} token(s)",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[100],
+                    height: 1,
+                  ),
+                );
               },
             ),
+            // BlocBuilder<ChatCubit, ChatState>(
+            //   buildWhen: (p, c) => p.modelInstanceId != c.modelInstanceId,
+            //   builder: (context, state) {
+            //     return DecodeSpeedInfo(modelInstanceId: state.modelInstanceId);
+            //   },
+            // ),
             const SizedBox(width: 12),
             _SendButton(),
             const SizedBox(width: 16),

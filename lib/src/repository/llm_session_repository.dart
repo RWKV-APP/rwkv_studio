@@ -13,6 +13,7 @@ import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 
 class AlbatrossLaunchConfig {
   final Python python;
@@ -86,6 +87,16 @@ class LlmSessionRepository {
     _models = {..._models}..remove(instanceId);
     logd('model released $instanceId');
     _emitSnapshot();
+  }
+
+  int getTokenCount(String instanceId, String prompt) {
+    final instance = _requireInstance(instanceId);
+    // todo adapt non-rwkv models
+    if (!instance.info.name.toLowerCase().contains("rwkv")) {
+      return -1;
+    }
+    final tokens = RwkvTokenizer.default_.tokenCount(prompt);
+    return tokens;
   }
 
   Stream<ModelLoadState> loadModel(

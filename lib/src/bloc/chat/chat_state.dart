@@ -11,6 +11,7 @@ class ChatState {
   final bool showSettingPanel;
   final bool showConversationList;
 
+  final int inputTokenCount;
   final int maxChatHistoryLength;
 
   final TextEditingController inputController;
@@ -27,6 +28,7 @@ class ChatState {
   bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;
 
   const ChatState({
+    required this.inputTokenCount,
     required this.initialized,
     required this.showSettingPanel,
     required this.conversations,
@@ -43,6 +45,7 @@ class ChatState {
 
   ChatState.empty()
     : this(
+        inputTokenCount: -1,
         initialized: false,
         showSettingPanel: false,
         conversations: [],
@@ -70,8 +73,10 @@ class ChatState {
     FocusNode? inputFocusNode,
     bool? showConversationList,
     int? maxChatHistoryLength,
+    int? inputTokenCount,
   }) {
     return ChatState(
+      inputTokenCount: inputTokenCount ?? this.inputTokenCount,
       initialized: initialized ?? this.initialized,
       conversations: conversations ?? this.conversations,
       messages: messages ?? this.messages,
