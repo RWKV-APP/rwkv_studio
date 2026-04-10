@@ -112,7 +112,7 @@ class _ModelListItemState extends State<_ModelListItem> {
                       ),
                     ),
 
-                  if (!model.isRemote && !model.isImportManually)
+                  if (!model.isRemote)
                     ModelItemActions(model: model, compact: true),
                 ],
               ),

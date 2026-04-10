@@ -269,9 +269,9 @@ class _LocalModelState extends State<_LocalModel> {
         const SizedBox(height: 12),
         Expanded(
           child: BlocBuilder<ModelManageCubit, ModelManageState>(
-            buildWhen: (p, c) => p.models != c.models,
+            buildWhen: (p, c) => p.models != c.models || p.importedModels != c.importedModels,
             builder: (context, state) {
-              final models = _applyFilters(state.models);
+              final models = _applyFilters(state.models + state.importedModels);
               return ModelList(models: models);
             },
           ),
