@@ -273,6 +273,9 @@ class AppException implements Exception {
         stackTrace: stackTrace,
       );
     }
+    if (e is Exception) {
+      return AppException.unknown(e.toString(), stackTrace: stackTrace);
+    }
     return AppException.unknown(e.toString(), cause: e, stackTrace: stackTrace);
   }
 
@@ -334,6 +337,31 @@ class AppException implements Exception {
         );
     }
   }
+
+  static AppException fromMap(dynamic map) {
+    if (map == null) {
+      return const AppException.unknown('Unknown error');
+    }
+    return AppException(
+      map['message'],
+      kind:
+          AppExceptionKind.values
+              .where((name) => name.name == map['kind'])
+              .firstOrNull ??
+          AppExceptionKind.unknown,
+      code: map['code'],
+      cause: map['cause'],
+      stackTrace: StackTrace.fromString(map['stackTrace'] ?? ''),
+    );
+  }
+
+  Map toMap() => {
+    'message': message,
+    'kind': kind.name,
+    'code': code,
+    'cause': cause?.toString(),
+    'stackTrace': stackTrace.toString(),
+  };
 
   @override
   String toString() {

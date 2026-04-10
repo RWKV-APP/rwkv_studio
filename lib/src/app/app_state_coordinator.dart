@@ -82,7 +82,7 @@ class AppStateCoordinator {
       ]);
       _bindRemoteServiceSync();
       await _syncInitialSettings(setting.state);
-      onLlmStateChanged(llm.state);
+      onLlmInstanceListChanged(llm.state);
       _initialized = true;
 
       _restoreConversationSelectedModelOnInitialized();
@@ -277,18 +277,15 @@ class AppStateCoordinator {
     logd('model-server setting updated: ${modelServer.toMap()}');
 
     if (!kIsWeb && modelServer.enabled) {
-      _syncModelServerInstances(modelServer: modelServer, state: llm.state);
+      _syncModelServerInstances(state: llm.state);
     }
 
     app.onModelServerSettingChanged(modelServer);
   }
 
-  void onLlmStateChanged(LlmState state) {
+  void onLlmInstanceListChanged(LlmState state) {
     if (!kIsWeb) {
-      _syncModelServerInstances(
-        modelServer: setting.state.model.modelServer,
-        state: state,
-      );
+      _syncModelServerInstances(state: state);
     }
 
     final chatInstanceId = chat.state.modelInstanceId;
@@ -302,10 +299,8 @@ class AppStateCoordinator {
     }
   }
 
-  void _syncModelServerInstances({
-    required ModelServerSettingsModel modelServer,
-    required LlmState state,
-  }) {
+  void _syncModelServerInstances({required LlmState state}) {
+    final modelServer = setting.state.model.modelServer;
     final models = modelServer.onlyLocalModel
         ? state.localInstances
         : state.models.values;

@@ -327,27 +327,8 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   Future pause(LlmInterface llm, {String? conversationId}) async {
-    final convId = conversationId ?? state.selected.id;
     await llm.stop(state.modelInstanceId);
     emit(state.copyWith(generating: false));
-    await Future.delayed(const Duration(milliseconds: 100));
-    final history = state.messages[convId] ?? [];
-    final last = history.lastOrNull;
-    if (last == null) {
-      logw('pause message cannot be found');
-      return;
-    }
-    emit(
-      state.copyWith(
-        messages: {
-          ...state.messages,
-          convId: [
-            ...history.take(history.length - 1),
-            last.copyWith(stopReason: StopReason.canceled),
-          ],
-        },
-      ),
-    );
   }
 
   Future resume(LlmInterface llm) async {
@@ -719,7 +700,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     var assistant = state.messages[conversationId]!.last;
     assistant = assistant.copyWith(updateAt: DateTime.now());
     if (isCanceledException(error)) {
-      assistant = assistant.copyWith(stopReason: StopReason.canceled);
+      assistant = assistant.copyWith(
+        stopReason: StopReason.canceled,
+        contents: [...assistant.contents, .error(e)],
+      );
     } else {
       assistant = assistant.copyWith(
         error: error.displayMessage,

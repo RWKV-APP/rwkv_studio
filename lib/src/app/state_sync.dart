@@ -69,9 +69,10 @@ class _WithGlobalStateSyncState extends State<WithGlobalStateSync> {
             },
           ),
           BlocListener<LlmCubit, LlmState>(
-            listenWhen: (p, c) => p.models != c.models,
+            listenWhen: (p, c) =>
+                p.models.keys.toSet() != c.models.keys.toSet(),
             listener: (context, state) {
-              coordinator.onLlmStateChanged(state);
+              coordinator.onLlmInstanceListChanged(state);
             },
           ),
         ],

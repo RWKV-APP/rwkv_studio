@@ -2,6 +2,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/chat/chat_cubit.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
+import 'package:rwkv_studio/src/errors/assert.dart';
 import 'package:rwkv_studio/src/models/chat/message_content.dart';
 import 'package:rwkv_studio/src/ui/chat/message_item/_message_context_menu.dart';
 import 'package:rwkv_studio/src/ui/chat/message_item/_text_message_content.dart';
@@ -145,7 +146,7 @@ class _AssistantMessageBubble extends StatelessWidget {
     final contents = <Widget>[];
 
     for (final content in message.contents) {
-      if (!content.showDisplay) {
+      if (!content.shouldDisplay) {
         continue;
       }
 
@@ -163,18 +164,32 @@ class _AssistantMessageBubble extends StatelessWidget {
         case ContentType.question:
           contents.add(Text('Question: ${content.text}'));
         case ContentType.error:
-          contents.add(
-            _ErrorMessageBox(
-              child: SelectableText(
-                '错误: ${content.text}',
-                style: const TextStyle(
-                  color: Colors.errorPrimaryColor,
-                  fontSize: 12,
+          if (isCanceledException(content.data)) {
+            contents.add(
+              const _ErrorMessageBox(
+                child: Text(
+                  "生成已取消",
+                  style: TextStyle(
+                    color: Colors.errorPrimaryColor,
+                    fontSize: 12,
+                  ),
                 ),
-                maxLines: 3,
               ),
-            ),
-          );
+            );
+          } else {
+            contents.add(
+              _ErrorMessageBox(
+                child: SelectableText(
+                  '错误: ${content.text}',
+                  style: const TextStyle(
+                    color: Colors.errorPrimaryColor,
+                    fontSize: 12,
+                  ),
+                  maxLines: 3,
+                ),
+              ),
+            );
+          }
       }
       contents.add(const SizedBox(height: 12));
     }
@@ -224,7 +239,7 @@ class _ErrorMessageBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         crossAxisAlignment: .start,
         children: [
           const Icon(FluentIcons.error, color: Colors.errorPrimaryColor),
@@ -273,13 +288,6 @@ class _LastAssistantFooter extends StatelessWidget {
 
     return Row(
       children: [
-        if (paused)
-          IconButton(
-            icon: const Icon(WindowsIcons.play),
-            onPressed: () async {
-              await context.chat.resume(context.llm).withToast(context);
-            },
-          ),
         IconButton(
           icon: const Icon(WindowsIcons.refresh),
           onPressed: () async {

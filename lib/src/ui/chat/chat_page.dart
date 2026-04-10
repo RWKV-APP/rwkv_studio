@@ -110,6 +110,7 @@ class _Chat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settingPaneColor = context.fluent.cardColor;
     return BlocBuilder<ChatCubit, ChatState>(
       buildWhen: (p, c) => p.showSettingPanel != c.showSettingPanel,
       builder: (context, state) {
@@ -119,7 +120,10 @@ class _Chat extends StatelessWidget {
             context.chat.toggleSettingPanelVisible();
           },
           divider: const Divider(direction: .vertical),
-          sidebar: const ChatSettingPanel(),
+          sidebar: ColoredBox(
+            color: settingPaneColor,
+            child: const ChatSettingPanel(),
+          ),
           content: LayoutBuilder(
             builder: (ctx, cs) {
               final float = cs.maxWidth > maxWidth;

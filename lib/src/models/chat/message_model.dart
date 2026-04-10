@@ -15,7 +15,8 @@ class MessageModel {
   final ReasoningEffort reasoning;
   final Map<String, dynamic> extra;
 
-  bool get showProgress => role == 'assistant' && contents.isEmpty;
+  bool get showProgress =>
+      !stopped && (role == 'assistant' && contents.isEmpty);
 
   bool get isUser => role == 'user';
 

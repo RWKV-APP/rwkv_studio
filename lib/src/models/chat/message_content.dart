@@ -1,3 +1,4 @@
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/tool_call_info.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
@@ -30,7 +31,7 @@ class MessageContent {
   Duration get duration =>
       updatedAt != null ? updatedAt!.difference(createdAt) : .zero;
 
-  bool get showDisplay {
+  bool get shouldDisplay {
     if (type == .think && text.trim() == '') {
       return false;
     }
@@ -154,6 +155,8 @@ class MessageContent {
 
     if (type == ContentType.toolCall) {
       data = ToolCallInfo.fromMap(data);
+    } else if (type == .error) {
+      data = AppException.fromMap(data);
     }
     return MessageContent._(
       type,
@@ -181,8 +184,11 @@ class MessageContent {
   }
 
   dynamic _searchableData() {
-    if (type == ContentType.toolCall) {
+    if (type == .toolCall) {
       return (data as ToolCallInfo).toMap();
+    }
+    if (type == .error) {
+      return (data as AppException).toMap();
     }
     return data;
   }

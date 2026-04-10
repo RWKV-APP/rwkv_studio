@@ -233,7 +233,7 @@ class LlmSessionRepository {
       }
     } catch (e, s) {
       loge(e, s);
-      rethrow;
+      throw AppException.wrap(e, s);
     }
   }
 
