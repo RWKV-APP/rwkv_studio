@@ -20,6 +20,8 @@ class ChatState {
 
   String get modelInstanceId => modelState.instanceId;
 
+  bool get supportMCP => !modelState.isRWKV;
+
   List<MessageModel> get currentChat => messages[selected.id] ?? [];
 
   bool get sendButtonEnabled => modelInstanceId.isNotEmpty && !generating;

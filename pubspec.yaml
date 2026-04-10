@@ -1,7 +1,7 @@
 name: rwkv_studio
 description: "RWKV Studio"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: ^3.10.0
@@ -21,8 +21,12 @@ dependencies:
 #    git:
 #      url: https://github.com/RWKV-APP/rwkv_downloader.git
 #      ref: dev
+
   rwkv_libs:
     path: ../rwkv_libs
+#    git:
+#      url: https://github.com/dengzii/rwkv_libs.git
+#      ref: dev
 
   flutter_bloc: ^9.1.1
   freezed_annotation: ^3.1.0
@@ -36,7 +40,7 @@ dependencies:
   window_manager: ^0.5.1
   fluent_ui: ^4.15.1
   flutter_acrylic: ^1.1.4
-  gpt_markdown: ^1.1.5
+  gpt_markdown: ^1.1.6
   vyuh_node_flow: ^0.27.3
 
   file_selector: ^1.1.0

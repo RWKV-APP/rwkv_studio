@@ -70,7 +70,7 @@ class _ModelListPageState extends State<ModelListPage> {
           ),
           Tab(
             icon: const Icon(FluentIcons.plug_connected),
-            text: const Text('模型服务提供商'),
+            text: const Text('提供商模型'),
             body: ColoredBox(
               color: bgColor,
               child: const RemoteModelProviderTabBody(),

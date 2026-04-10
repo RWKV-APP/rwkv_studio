@@ -146,6 +146,16 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         .listen(
           (e) {
             emit(state.copyWith(modelState: e));
+            // RWKV is not supported tool-call yet
+            if (e.isRWKV && state.generationConfig.enableMcp) {
+              emit(
+                state.copyWith(
+                  generationConfig: state.generationConfig.copyWith(
+                    enableMcp: false,
+                  ),
+                ),
+              );
+            }
           },
           onError: (e, s) {
             emit(
