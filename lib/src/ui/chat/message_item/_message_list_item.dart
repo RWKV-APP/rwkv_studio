@@ -160,6 +160,9 @@ class _AssistantMessageBubble extends StatelessWidget {
         case ContentType.toolCall:
           contents.add(MessageToolCall(content: content));
         case ContentType.answer:
+          if (content.text.isEmpty && !message.stopped) {
+            continue;
+          }
           contents.add(_AssistantMessageContent(content: content));
         case ContentType.question:
           contents.add(Text('Question: ${content.text}'));
@@ -279,10 +282,7 @@ class _LastAssistantFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paused = message.stopReason == StopReason.canceled;
-    final generating = !message.stopped;
-
-    if (generating) {
+    if (!message.stopped) {
       return const SizedBox(height: 12);
     }
 
@@ -321,10 +321,7 @@ class _AssistantMetaText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metaStyle = TextStyle(fontSize: 10, color: Colors.grey[80]);
-    final completed = !{
-      StopReason.none,
-      StopReason.canceled,
-    }.contains(message.stopReason);
+    final completed = message.stopped;
 
     final items = <Widget>[
       if (leadingSpacing) const SizedBox(width: 8),
@@ -332,6 +329,10 @@ class _AssistantMetaText extends StatelessWidget {
       if (message.stopReason == StopReason.eos) ...[
         const SizedBox(width: 4),
         Text('· EOS', style: metaStyle),
+      ],
+      if (message.stopReason == StopReason.canceled) ...[
+        const SizedBox(width: 4),
+        Text('· Canceled', style: metaStyle),
       ],
       if (completed) ...[
         const SizedBox(width: 4),

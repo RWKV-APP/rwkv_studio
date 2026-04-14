@@ -174,6 +174,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   void setDecodeParam(String param) {
+    logi('set decode param preset to: $param');
     updateConversation(
       state.selected.id,
       (e) => e.copyWith(decodeParmaId: param),
@@ -367,6 +368,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
       ),
     );
 
+    logi(
+      'start chat regeneration, ${model.name} ${model.id}, history length: ${history.length}',
+    );
     await _sendInternal(llm, history, assistant, convId);
   }
 
@@ -442,7 +446,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     final systemPrompt = conv.useGlobalSystemPrompt ? null : conv.systemPrompt;
 
     assistant = assistant.copyWith(stopReason: StopReason.none);
-    logd("start chat: conv-id:$convId, history=${history.length}");
+    logd(
+      "start chat: conv-id:$convId, model:${state.modelState.modelName}, decode_param=${conv.decodeParamId}",
+    );
     final stream = llm.chat(
       history,
       state.modelInstanceId,
@@ -481,14 +487,13 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         _onGenerateDone(conversationId: convId, history: history);
       }
     } catch (e, s) {
-      logw('chat generation error');
       final error = AppException.wrap(e, s);
+      logw('chat generation error: ${error.kind}, ${error.message}');
       _onGenerateError(conversationId: convId, history: history, e: error);
       // Error.throwWithStackTrace(error, error.stackTrace ?? s);
     } finally {
-      logd('chat generation completed');
-
       var assistant = state.messages[convId]!.last;
+      logd('chat generation completed: stop_reason:${assistant.stopReason}');
 
       if (state.modelState.isRWKV) {
         try {
@@ -539,10 +544,10 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
         );
         return false;
       case ChatCompletedEvent():
-        _onChatCompleted(
+        _onGenerateDone(
           conversationId: conversationId,
           history: history,
-          event: event,
+          stopReason: event.stopReason,
         );
         return true;
       case ChatFailedEvent():
@@ -575,61 +580,29 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     required ChatAssistantEvent event,
   }) {
     var assistant = state.messages[conversationId]!.last;
-    final lastContent = assistant.contents.lastOrNull;
-    final data = lastContent?.text ?? '';
-    final contents = assistant.contents.toList();
-    MessageContent newContent;
+    var contents = assistant.contents.toList();
 
-    if (lastContent != null) {
-      if (lastContent.type == .think) {
-        if (lastContent.completed) {
-          newContent = .answer(event.deltaMessage);
-        } else {
-          newContent = lastContent.copyWith(data: data + event.deltaMessage);
-          final index = newContent.text.indexOf('</think>');
-          if (index != -1) {
-            final think = newContent.text.substring(0, index);
-            final answer = newContent.text
-                .substring(index)
-                .replaceFirst('</think>', '');
-            newContent = lastContent.copyWith(data: think, completed: true);
-            contents.removeLast();
-            if (answer.trim().isNotEmpty) {
-              contents.add(newContent);
-              newContent = .answer(answer);
-            }
-          } else {
-            contents.removeLast();
-          }
-        }
-      } else if (lastContent.type == .answer) {
-        contents.removeLast();
-        newContent = .answer(data + event.deltaMessage);
-      } else if (lastContent.type == .unknown) {
-        contents.removeLast();
-        newContent = lastContent.copyWith(data: data + event.deltaMessage);
-        if (newContent.text.startsWith('<think>')) {
-          newContent = .think(newContent.text);
-        }
-      } else {
-        if (event.deltaMessage.startsWith('<think>')) {
-          newContent = .think(event.deltaMessage);
-        } else {
-          newContent = .answer(event.deltaMessage);
-        }
-      }
-    } else {
-      if (event.deltaMessage.startsWith('<think>')) {
-        newContent = .think(event.deltaMessage);
-      } else {
-        newContent = .answer(event.deltaMessage);
-      }
+    if (event.hasReasoningDelta) {
+      contents = _appendAssistantTextContent(
+        contents,
+        type: ContentType.think,
+        delta: event.reasoningDelta,
+        round: event.round,
+      );
     }
-    if (newContent.data == '') {
+    if (event.hasContentDelta) {
+      contents = _completeAssistantReasoning(contents);
+      contents = _appendAssistantTextContent(
+        contents,
+        type: ContentType.answer,
+        delta: event.contentDelta,
+        round: event.round,
+      );
+    }
+
+    if (!event.hasDelta && event.tokenCount <= 0) {
       return;
     }
-
-    contents.add(newContent);
 
     assistant = assistant.copyWith(contents: contents);
     if (event.tokenCount > 0) {
@@ -646,29 +619,54 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
   }
 
-  void _onChatCompleted({
-    required String conversationId,
-    required List<MessageModel> history,
-    required ChatCompletedEvent event,
-  }) {
-    var assistant = state.messages[conversationId]!.last;
-    if (event.text.isNotEmpty) {
-      emit(
-        state.copyWith(
-          generating: true,
-          messages: {
-            ...state.messages,
-            conversationId: [...history, assistant],
-          },
-        ),
-      );
+  List<MessageContent> _completeAssistantReasoning(
+    List<MessageContent> contents,
+  ) {
+    final last = contents.lastOrNull;
+    if (last?.type != ContentType.think || last!.completed) {
+      return contents;
     }
-    _onGenerateDone(conversationId: conversationId, history: history);
+
+    final next = contents.toList();
+    next[next.length - 1] = last.copyWith(completed: true);
+    return next;
+  }
+
+  List<MessageContent> _appendAssistantTextContent(
+    List<MessageContent> contents, {
+    required ContentType type,
+    required String delta,
+    int? round,
+  }) {
+    if (delta.isEmpty) {
+      return contents;
+    }
+
+    final next = contents.toList();
+    final last = next.lastOrNull;
+
+    if (last?.type == type && last!.isTextContent) {
+      next[next.length - 1] = last.copyWith(
+        data: last.text + delta,
+        round: round ?? last.round,
+        completed: false,
+      );
+      return next;
+    }
+
+    final newContent = switch (type) {
+      ContentType.think => MessageContent.think(delta, round: round),
+      ContentType.answer => MessageContent.answer(delta, round: round),
+      _ => throw StateError('Unsupported assistant content type: $type'),
+    };
+    next.add(newContent);
+    return next;
   }
 
   void _onGenerateDone({
     required String conversationId,
     required List<MessageModel> history,
+    StopReason? stopReason,
   }) {
     var assistant = state.messages[conversationId]!.last;
     updateConversation(
@@ -677,7 +675,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     );
     var ns = state.copyWith(generating: false);
     if (assistant.stopReason == StopReason.none) {
-      assistant = assistant.copyWith(stopReason: StopReason.unknown);
+      assistant = assistant.copyWith(
+        stopReason: stopReason ?? StopReason.unknown,
+      );
     }
     assistant = assistant.copyWith(updateAt: DateTime.now());
     ns = ns.copyWith(

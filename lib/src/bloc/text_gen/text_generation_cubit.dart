@@ -94,11 +94,11 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
           return;
         }
         if (fim) {
-          result += e.text;
+          result += e.content;
           final r = prefix + result + suffix;
           state.controllerText.text = r;
         } else {
-          result += e.text;
+          result += e.content;
           if (!result.startsWith(prompt)) {
             result = prompt + result;
           }

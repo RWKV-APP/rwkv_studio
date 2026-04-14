@@ -197,7 +197,7 @@ class LlmSessionRepository {
 
     await _syncModelConfig(instanceId, decodeParam);
 
-    logi('chat: ${instance.id}');
+    logi('llm chat: ${instance.info.name} ${instance.id}');
 
     if (mcpRunner != null && instance.info.supportFunctionCall) {
       yield* _chatWithMcp(
@@ -226,7 +226,8 @@ class LlmSessionRepository {
 
       await for (final response in stream) {
         yield ChatAssistantEvent(
-          deltaMessage: response.text,
+          reasoningDelta: response.reasoningContent,
+          contentDelta: response.content,
           stopReason: response.stopReason,
           tokenCount: response.tokenCount,
         );
@@ -326,15 +327,26 @@ class LlmSessionRepository {
     await for (final event in events) {
       switch (event) {
         case McpAssistantEvent():
+          if (event.reasoningDelta.isNotEmpty) {
+            yield ChatAssistantEvent(
+              reasoningDelta: event.reasoningDelta,
+              stopReason: event.stopReason,
+              round: event.rounds,
+            );
+          }
           if (event.delta.isNotEmpty) {
             yield ChatAssistantEvent(
-              deltaMessage: event.delta,
-              stopReason: StopReason.none,
+              contentDelta: event.delta,
+              stopReason: event.stopReason,
               round: event.rounds,
             );
           }
           if (event.isFinal) {
-            yield ChatCompletedEvent(text: event.content, round: event.rounds);
+            yield ChatCompletedEvent(
+              text: event.content,
+              round: event.rounds,
+              stopReason: event.stopReason,
+            );
           }
         case McpToolCallEvent():
           yield ChatToolCallEvent(

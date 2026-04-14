@@ -11,22 +11,31 @@ sealed class ChatEvent extends Equatable {
 }
 
 final class ChatAssistantEvent extends ChatEvent {
-  final String deltaMessage;
+  final String reasoningDelta;
+  final String contentDelta;
   final StopReason stopReason;
   final int tokenCount;
   final int? round;
 
   ChatAssistantEvent({
-    required this.deltaMessage,
+    this.reasoningDelta = '',
+    this.contentDelta = '',
     required this.stopReason,
     this.tokenCount = -1,
     this.round,
   });
 
+  bool get hasReasoningDelta => reasoningDelta.isNotEmpty;
+
+  bool get hasContentDelta => contentDelta.isNotEmpty;
+
+  bool get hasDelta => hasReasoningDelta || hasContentDelta;
+
   @override
   List<Object?> get props => [
     ...super.props,
-    deltaMessage,
+    reasoningDelta,
+    contentDelta,
     stopReason,
     tokenCount,
     round,
@@ -64,11 +73,12 @@ final class ChatToolResultEvent extends ChatEvent {
 final class ChatCompletedEvent extends ChatEvent {
   final String text;
   final int? round;
+  final StopReason stopReason;
 
-  ChatCompletedEvent({required this.text, this.round, super.createdAt});
+  ChatCompletedEvent({required this.text, this.round, super.createdAt, required this.stopReason});
 
   @override
-  List<Object?> get props => [...super.props, text, round];
+  List<Object?> get props => [...super.props, text, round, stopReason];
 }
 
 final class ChatFailedEvent extends ChatEvent {
