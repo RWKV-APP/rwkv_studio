@@ -4,16 +4,18 @@ import 'package:file_selector/file_selector.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/setting/_appearance_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/_behavior_setting.dart';
-import 'package:rwkv_studio/src/ui/setting/service/_model_server_setting.dart';
 import 'package:rwkv_studio/src/ui/setting/_model_settings.dart';
 import 'package:rwkv_studio/src/ui/setting/_python_settings.dart';
+import 'package:rwkv_studio/src/ui/setting/service/_model_server_setting.dart';
 import 'package:rwkv_studio/src/ui/setting/service/_service_settings.dart';
 import 'package:rwkv_studio/src/utils/file_util.dart';
+import 'package:rwkv_studio/src/utils/native_utils.dart';
 
 part '_cache_settings.dart';
 
@@ -130,20 +132,61 @@ class _SettingBody extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        Container(
-          alignment: .bottomCenter,
-          height: 600,
-          child: Text('RWKV-Studio', style: theme.typography.caption),
-        ),
-        Center(
-          child: HyperlinkButton(
-            onPressed: () {
-              context.settings.reset();
-            },
-            child: const Text('重置设置'),
-          ),
-        ),
+        _Footer(),
       ],
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  Future<String> _applicationInfo() async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String appName = packageInfo.appName;
+    String version = packageInfo.version;
+    String buildNumber = packageInfo.buildNumber;
+    return '$appName $version ($buildNumber)';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
+
+    return FutureBuilder(
+      future: _applicationInfo(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Container(
+            alignment: .bottomCenter,
+            height: 600,
+            child: Wrap(
+              crossAxisAlignment: .center,
+              children: [
+                Text(
+                  snapshot.data ?? 'rwkv_studio',
+                  style: theme.typography.caption,
+                ),
+                const SizedBox(width: 12),
+                HyperlinkButton(
+                  onPressed: () {
+                    context.settings.reset();
+                  },
+                  child: const Text('重置设置'),
+                ),
+                HyperlinkButton(
+                  onPressed: () {
+                    NativeUtils.openUri(
+                      "https://github.com/RWKV-APP/rwkv_studio",
+                    );
+                  },
+                  child: const Text('GitHub'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return const SizedBox();
+        }
+      },
     );
   }
 }

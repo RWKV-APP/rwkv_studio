@@ -1,7 +1,7 @@
 name: rwkv_studio
 description: "RWKV Studio"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.3+4
+version: 1.0.4+5
 
 environment:
   sdk: ^3.10.0
@@ -36,6 +36,7 @@ dependencies:
   hive_ce_flutter: ^2.3.4
   uuid: ^4.5.3
 
+  package_info_plus: ^10.0.0
   flutter_svg: ^2.2.4
   window_manager: ^0.5.1
   fluent_ui: ^4.15.1

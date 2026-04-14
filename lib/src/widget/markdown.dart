@@ -235,6 +235,7 @@ class _CodeBlockMd extends BlockMd {
         ),
         child: Column(
           crossAxisAlignment: .stretch,
+          mainAxisSize: .min,
           children: [
             const SizedBox(height: 6),
             Row(
@@ -261,15 +262,20 @@ class _CodeBlockMd extends BlockMd {
                 const SizedBox(width: 12),
               ],
             ),
-            SingleChildScrollView(
-              scrollDirection: .horizontal,
-              padding: const .only(top: 6, left: 12, right: 12),
-              child: Text(
-                codes,
-                style: const TextStyle(
-                  fontFamily: 'JetBrainsMono',
-                  package: "gpt_markdown",
-                  height: 1.5,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 400),
+              child: SingleChildScrollView(
+                child: SingleChildScrollView(
+                  scrollDirection: .horizontal,
+                  padding: const .only(top: 6, left: 12, right: 12),
+                  child: Text(
+                    codes,
+                    style: const TextStyle(
+                      fontFamily: 'JetBrainsMono',
+                      package: "gpt_markdown",
+                      height: 1.5,
+                    ),
+                  ),
                 ),
               ),
             ),
