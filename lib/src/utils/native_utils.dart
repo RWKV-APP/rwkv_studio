@@ -1,8 +1,20 @@
 import 'dart:io';
 
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NativeUtils {
+  static Future openUri(String uri) async {
+    if (uri.isEmpty) {
+      throw const AppException.validation('URI is empty');
+    }
+    try {
+      launchUrl(Uri.parse(uri));
+    } catch (e, s) {
+      throw AppException.wrap(e, s);
+    }
+  }
+
   static Future<void> showInFolder(String path) async {
     if (path.isEmpty) {
       throw const AppException.validation('Local path is empty');

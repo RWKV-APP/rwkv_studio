@@ -6,38 +6,12 @@ import 'package:gpt_markdown/custom_widgets/custom_divider.dart';
 import 'package:gpt_markdown/custom_widgets/markdown_config.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
+import 'package:rwkv_studio/src/utils/native_utils.dart';
+import 'package:rwkv_studio/src/widget/markdown_table.dart';
 
 class Markdown extends StatelessWidget {
   final String text;
   final TextStyle? style;
-
-  static final List<MarkdownComponent> _components = [
-    _CodeBlockMd(),
-    LatexMathMultiLine(),
-    NewLines(),
-    BlockQuote(),
-    TableMd(),
-    _HeadingTag(),
-    UnOrderedList(),
-    OrderedList(),
-    RadioButtonMd(),
-    CheckBoxMd(),
-    HrLine(),
-    IndentMd(),
-
-    //
-    ATagMd(),
-    ImageMd(),
-    TableMd(),
-    StrikeMd(),
-    BoldMd(),
-    ItalicMd(),
-    UnderLineMd(),
-    LatexMath(),
-    LatexMathMultiLine(),
-    _HighlightedText(),
-    SourceTag(),
-  ];
 
   const Markdown({super.key, required this.text, this.style});
 
@@ -46,7 +20,50 @@ class Markdown extends StatelessWidget {
     return GptMarkdown(
       text,
       style: style,
-      components: _components,
+      components: [
+        _CodeBlockMd(),
+        _LatexMathMultiLine(),
+        _LatexMathMultiLine2(),
+        NewLines(),
+        BlockQuote(),
+        AppTableMd(),
+        _HeadingTag(),
+        UnOrderedList(),
+        OrderedList(),
+        RadioButtonMd(),
+        _CheckBoxMd(),
+        HrLine(),
+        IndentMd(),
+      ],
+      inlineComponents: [
+        ATagMd(),
+        ImageMd(),
+        AppTableMd(),
+        StrikeMd(),
+        BoldMd(),
+        ItalicMd(),
+        UnderLineMd(),
+        _LatexMath(),
+        _LatexMath2(),
+        _LatexMathMultiLine(),
+        _LatexMathMultiLine2(),
+        _HighlightedText(),
+        SourceTag(),
+      ],
+      linkBuilder: (ctx, span, a, style) {
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              NativeUtils.openUri(a);
+            },
+            child: Text(
+              span.toPlainText(),
+              style: style.copyWith(color: Colors.blue),
+            ),
+          ),
+        );
+      },
       imageBuilder: (ctx, uri) {
         if (uri.startsWith("http://") || uri.startsWith("https://")) {
           return ConstrainedBox(
@@ -54,7 +71,6 @@ class Markdown extends StatelessWidget {
             child: Image.network(uri),
           );
         } else {
-
           return ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
             child: Image.file(File(uri.replaceFirst('file:///', ''))),
@@ -65,10 +81,40 @@ class Markdown extends StatelessWidget {
   }
 }
 
-class _HeadingTag extends BlockMd {
+class _LatexMath extends LatexMath {
   @override
-  String get expString => (r"(?<hash>#{1,6})\ (?<data>[^\n]+?)$");
+  RegExp get exp => RegExp(r"\\\((.*?)\\\)", dotAll: true);
+}
 
+class _LatexMath2 extends LatexMath {
+  @override
+  RegExp get exp => RegExp(r"(?<!\\)\$((?:\\.|[^$])*?)\$(?!\\)", dotAll: true);
+}
+
+class _LatexMathMultiLine extends LatexMathMultiLine {
+  @override
+  RegExp get exp =>
+      RegExp(r"\s*\\\[([\s\S]*?)\\\]", dotAll: true, multiLine: true);
+
+  @override
+  Widget build(BuildContext context, String text, GptMarkdownConfig config) {
+    final s = super.build(context, text, config);
+    return Container(
+      alignment: .center,
+      width: .infinity,
+      margin: const .symmetric(vertical: 12),
+      child: s,
+    );
+  }
+}
+
+class _LatexMathMultiLine2 extends _LatexMathMultiLine {
+  @override
+  RegExp get exp =>
+      RegExp(r"\s*\$\$([\s\S]*?)\$\$", dotAll: true, multiLine: true);
+}
+
+class _HeadingTag extends HTag {
   @override
   Widget build(
     BuildContext context,
@@ -87,7 +133,7 @@ class _HeadingTag extends BlockMd {
         theme.h6,
       ][match![1]!.length - 1],
     );
-    return config.getRich(
+    final rich = config.getRich(
       TextSpan(
         children: [
           ...(MarkdownComponent.generate(
@@ -108,6 +154,55 @@ class _HeadingTag extends BlockMd {
               ),
             ),
           ],
+        ],
+      ),
+    );
+    return Container(
+      padding: const .only(bottom: 6),
+      margin: const .only(bottom: 12),
+      width: .infinity,
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey[40], width: .5)),
+      ),
+      child: rich,
+    );
+  }
+}
+
+class _CheckBoxMd extends BlockMd {
+  @override
+  String get expString => (r"\[((?:\x|\ ))\]\ (\S[^\n]*?)$");
+
+  @override
+  Widget build(
+    BuildContext context,
+    String text,
+    final GptMarkdownConfig config,
+  ) {
+    var match = exp.firstMatch(text.trim());
+
+    return Directionality(
+      textDirection: .ltr,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        textBaseline: TextBaseline.alphabetic,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        children: [
+          Text.rich(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 6, end: 6),
+                child: Checkbox(
+                  checked: ("${match?[1]}" == "x"),
+                  onChanged: (value) {},
+                ),
+              ),
+            ),
+          ),
+          Flexible(
+            child: MdWidget(context, "${match?[2]}", false, config: config),
+          ),
         ],
       ),
     );
