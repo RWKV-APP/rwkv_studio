@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=@APPLICATION_NAME@
+Comment=RWKV Studio
+Terminal=false
+Exec=@CMAKE_INSTALL_PREFIX@/@BINARY_NAME@
+Icon=@CMAKE_INSTALL_PREFIX@/@APP_ICON_NAME@.png
+Categories=Utility;Development;
+StartupWMClass=@APPLICATION_ID@
+StartupNotify=true

@@ -224,17 +224,13 @@ class AppStateCoordinator {
     }
     final isLight = appearance.theme == AppearanceSettingsModel.lightTheme;
 
-    if (!Platform.isMacOS) {
-      if (isLight) {
-        WindowManager.instance.setBrightness(Brightness.light);
-      } else {
-        WindowManager.instance.setBrightness(Brightness.dark);
-      }
-      Window.setEffect(effect: WindowEffect.mica, dark: !isLight);
+    if (isLight) {
+      WindowManager.instance.setBrightness(Brightness.light);
     } else {
-      Window.setEffect(effect: WindowEffect.hudWindow, dark: !isLight);
-      Window.overrideMacOSBrightness(dark: !isLight);
-      Window.setWindowBackgroundColorToClear();
+      WindowManager.instance.setBrightness(Brightness.dark);
+    }
+    if (Platform.isWindows) {
+      Window.setEffect(effect: WindowEffect.mica, dark: !isLight);
     }
   }
 

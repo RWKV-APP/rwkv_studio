@@ -14,34 +14,31 @@ void main() async {
 
   final initialConfig = await InitConfig.load();
 
-  await Window.initialize();
-  if (Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    WindowOptions windowOptions = const WindowOptions(
-      center: true,
-      // size: Size(1000, 800),
-      title: 'RWKV Studio',
+  WindowOptions windowOptions = const WindowOptions(
+    center: true,
+    // size: Size(1000, 800),
+    title: 'RWKV Studio',
+    windowButtonVisibility: true,
+  );
+
+  await windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+
+    windowManager.setBrightness(
+      initialConfig.isDark ? Brightness.dark : Brightness.light,
     );
+  });
 
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-
-      if (Platform.isWindows) {
-        windowManager.setBrightness(
-          initialConfig.isDark ? Brightness.dark : Brightness.light,
-        );
-      }
-      await Window.setEffect(
-        effect: Platform.isMacOS ? WindowEffect.hudWindow : WindowEffect.mica,
-        dark: initialConfig.isDark,
-      );
-    });
-  }
-
-  if (Platform.isMacOS || Platform.isIOS) {
+  if (Platform.isWindows) {
+    await Window.initialize();
+    await Window.setEffect(
+      effect: Platform.isMacOS ? WindowEffect.hudWindow : WindowEffect.mica,
+      dark: initialConfig.isDark,
+    );
+  } else {
     try {
-      appDataDir = await getApplicationDocumentsDirectory();
+      appDataDir = await getApplicationSupportDirectory();
     } catch (e) {
       loge(e);
     }

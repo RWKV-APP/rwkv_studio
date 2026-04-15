@@ -1,5 +1,6 @@
+import 'dart:io';
+
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/app/global_providers.dart';
 import 'package:rwkv_studio/src/app/router.dart';
@@ -28,7 +29,7 @@ class RWKVApp extends StatelessWidget {
             initialRoute: AppRouter.initialRoute,
             routes: AppRouter.routes,
             builder: (ctx, child) {
-              if (kIsWeb) {
+              if (!Platform.isWindows) {
                 return RandomMicaBackground(
                   seed: 1,
                   brightness: theme.brightness,

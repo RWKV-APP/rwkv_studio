@@ -237,7 +237,7 @@ class _McpBody extends StatelessWidget {
                   height: 140,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: context.fluent.cardColor.withAlpha(160),
+                    color: context.fluent.inactiveBackgroundColor.withAlpha(100),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: context.fluent.inactiveBackgroundColor,

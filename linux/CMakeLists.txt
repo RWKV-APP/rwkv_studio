@@ -5,9 +5,13 @@ project(runner LANGUAGES CXX)
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "rwkv_studio")
+set(APPLICATION_NAME "RWKV Studio")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.example.rwkv_studio")
+set(APPLICATION_ID "com.rwkv.studio")
+set(APP_ICON_NAME "${APPLICATION_ID}")
+set(APP_ICON_SOURCE
+  "${CMAKE_CURRENT_SOURCE_DIR}/runner/resources/${APP_ICON_NAME}.png")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -83,6 +87,12 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
 endif()
 
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/runner/${APPLICATION_ID}.desktop.in"
+  "${PROJECT_BINARY_DIR}/${APPLICATION_ID}.desktop"
+  @ONLY
+)
+
 # Start with a clean build bundle directory every time.
 install(CODE "
   file(REMOVE_RECURSE \"${BUILD_BUNDLE_DIR}/\")
@@ -94,10 +104,26 @@ set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+install(FILES "${PROJECT_BINARY_DIR}/${APPLICATION_ID}.desktop"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)
+
+install(FILES "${APP_ICON_SOURCE}"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  COMPONENT Runtime)
+
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 
 install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+install(FILES "${PROJECT_BINARY_DIR}/${APPLICATION_ID}.desktop"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications"
+  COMPONENT Runtime)
+
+install(FILES "${APP_ICON_SOURCE}"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps"
   COMPONENT Runtime)
 
 foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})

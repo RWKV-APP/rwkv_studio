@@ -13,7 +13,7 @@ dependencies:
   rwkv_dart:
     path: ../rwkv_dart
 #    git:
-#      url: https://github.com/RWKV-APP/rwkv_dart.git
+#      url: https://github.com/dengzii/rwkv_dart.git
 #      ref: dev
 
   rwkv_downloader:

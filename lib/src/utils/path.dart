@@ -1,11 +1,5 @@
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
-
-Future<String> appDocumentsDir() => getApplicationDocumentsDirectory().then(
-  (value) => Directory(pathJoin(value.path, 'rwkv_music')).path,
-);
-
 Directory? _appDataDir;
 
 set appDataDir(Directory dir) => _appDataDir = dir;
