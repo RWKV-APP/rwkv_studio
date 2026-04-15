@@ -132,6 +132,7 @@ class LlmCubit extends Cubit<LlmState> with LlmInterface {
     String decodeParamId, {
     int batch = 1,
     String? fimSuffix,
+    List<int>? stopTokenIds,
   }) async* {
     final decodeParam = _resolveDecodeParam(decodeParamId);
     yield* _llmSessionRepository.generate(

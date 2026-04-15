@@ -256,6 +256,7 @@ class LlmSessionRepository {
           ChatRequest(
             contents: [for (int i = 0; i < batch; i++) prompt],
             stopTokens: [0, 261],
+            // stopTokens: [], // FOR TEST ONLY
             maxTokens: decodeParam.maxTokens,
           ),
         );
@@ -280,6 +281,7 @@ class LlmSessionRepository {
           'FIM is only supported by Albatross',
         );
       }
+      return;
     }
 
     logi('start generate: $prompt');

@@ -56,6 +56,7 @@ mixin class LlmInterface {
     String decodeParamId, {
     int batch = 1,
     String? fimSuffix,
+    List<int>? stopTokenIds,
   }) async* {
     throw const AppException.unimplemented('generate is not implemented');
   }

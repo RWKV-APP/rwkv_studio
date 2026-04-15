@@ -82,7 +82,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
       result = '';
     }
     final stream = llm.generate(
-      prompt,
+      fim ? prefix : prompt,
       state.modelInstanceId,
       state.decodeParamId,
       fimSuffix: fim ? suffix : null,
