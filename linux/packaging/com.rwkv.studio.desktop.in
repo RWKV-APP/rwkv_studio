@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=@APP_NAME@
+GenericName=AI Studio
+Comment=Offline-first AI studio for RWKV and compatible LLM services
+Terminal=false
+TryExec=@EXEC_COMMAND@
+Exec=@EXEC_COMMAND@
+Icon=@ICON_NAME@
+Categories=Utility;Development;
+Keywords=RWKV;LLM;AI;MCP;Chat;Models;
+StartupWMClass=@APP_ID@
+StartupNotify=true
+X-AppInstall-Package=@PACKAGE_NAME@

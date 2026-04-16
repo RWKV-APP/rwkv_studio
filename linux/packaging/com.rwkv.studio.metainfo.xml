@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.rwkv.studio</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <name>RWKV Studio</name>
+  <summary>Offline-first AI studio for RWKV and compatible LLM services</summary>
+  <developer_name>RWKV Studio</developer_name>
+  <update_contact>dengzixx@gmail.com</update_contact>
+  <launchable type="desktop-id">com.rwkv.studio.desktop</launchable>
+  <icon type="stock">com.rwkv.studio</icon>
+  <description>
+    <p>
+      RWKV Studio is a desktop application for running, managing, and integrating
+      RWKV and OpenAI-compatible models with local-first workflows.
+    </p>
+    <p>
+      It combines chat, text generation, model lifecycle management, MCP
+      connectivity, workflow editing, and local service integration in one UI.
+    </p>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source" width="1558" height="1054">https://raw.githubusercontent.com/RWKV-APP/rwkv_studio/refs/heads/master/docs/chat.png</image>
+      <caption>Multi-session chat with local and remote model support</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1454" height="990">https://raw.githubusercontent.com/RWKV-APP/rwkv_studio/refs/heads/master/docs/completion.png</image>
+      <caption>Text completion workspace for prompt iteration</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source" width="1558" height="1054">https://raw.githubusercontent.com/RWKV-APP/rwkv_studio/refs/heads/master/docs/setting.png</image>
+      <caption>Settings for models, services, cache and MCP integration</caption>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <url type="homepage">https://github.com/RWKV-APP/rwkv_studio</url>
+  <url type="bugtracker">https://github.com/RWKV-APP/rwkv_studio/issues</url>
+  <url type="vcs-browser">https://github.com/RWKV-APP/rwkv_studio</url>
+  <categories>
+    <category>Development</category>
+    <category>Utility</category>
+  </categories>
+</component>

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+APPDIR=${APPDIR:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}
+APP_ROOT="$APPDIR/usr/lib/@PACKAGE_NAME@"
+cd "$APP_ROOT"
+exec "$APP_ROOT/@BINARY_NAME@" "$@"
