@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   just_audio_windows
   media_kit_libs_windows_audio
+  proxy_setting_windows
   screen_retriever_windows
   url_launcher_windows
   window_manager

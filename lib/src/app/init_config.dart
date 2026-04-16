@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,7 +20,7 @@ class InitConfig {
       return _instance;
     }
 
-    final dir = await getApplicationCacheDirectory();
+    final dir = appDataDir;
     final file = dir
         .childDirectory('rwkv_studio')
         .childFile('init_config.json');
@@ -30,6 +31,10 @@ class InitConfig {
         _instance = InitConfig.fromMap(map);
       } catch (e, s) {
         loge("load init config error", e, s);
+      }
+    } else {
+      if (!Platform.isWindows) {
+        _instance = InitConfig._(isDark: true);
       }
     }
     return _instance;
