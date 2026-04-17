@@ -9,6 +9,7 @@ import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 
 class AppAssets {
   static String rwkvVocab20230424Path = '';
+  static String appInfoPath = '';
 
   AppAssets._();
 
@@ -27,20 +28,30 @@ class AppAssets {
     if (!kIsWeb) {
       final f = await _assetsPath('assets/rwkv/$name', name);
       rwkvVocab20230424Path = f.path;
+      final appInfoFile = await _assetsPath(
+        'assets/config/app_info.json',
+        'app_info.json',
+      );
+      appInfoPath = appInfoFile.path;
     }
   }
 
   static Future<File> _assetsPath(String assets, String file) async {
-    final dir = appDataDir.path;
-    final f = File(pathJoin(dir, pathJoin('data', file)));
-    if (await f.exists()) {
+    try {
+      final dir = appDataDir.path;
+      final f = File(pathJoin(dir, pathJoin('data', file)));
+      if (await f.exists()) {
+        return f;
+      } else {
+        await f.create(recursive: true);
+      }
+      final asset = await rootBundle.load(assets);
+      await f.writeAsBytes(asset.buffer.asUint8List());
+      logd('assets copied: ${f.path}');
       return f;
-    } else {
-      await f.create(recursive: true);
+    } catch (e) {
+      loge('copy asset failed: $assets, $e');
+      return File('');
     }
-    final asset = await rootBundle.load(assets);
-    await f.writeAsBytes(asset.buffer.asUint8List());
-    logd('assets copied: ${f.path}');
-    return f;
   }
 }

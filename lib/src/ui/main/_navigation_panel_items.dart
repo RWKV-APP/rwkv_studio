@@ -34,6 +34,8 @@ String _itemTitle(NavBarItemType type) {
       return '并行模式';
     case .mcp:
       return 'MCP';
+    case NavBarItemType.updates:
+      return '更新';
   }
 }
 
@@ -56,6 +58,8 @@ Widget _itemIcon(NavBarItemType type) {
         controller: _downloadTaskFlyoutController,
         child: const WindowsIcon(WindowsIcons.download),
       );
+    case NavBarItemType.updates:
+      return const WindowsIcon(WindowsIcons.dev_update);
     case NavBarItemType.settings:
       return const WindowsIcon(WindowsIcons.settings);
     case NavBarItemType.tools:
@@ -98,6 +102,8 @@ Widget? _itemBody(NavBarItemType type) {
       return const FlowPage();
     case NavBarItemType.downloadTask:
       return const SizedBox();
+    case NavBarItemType.updates:
+      return const SizedBox();
     case NavBarItemType.settings:
       return const SettingPage();
     case NavBarItemType.tools:
@@ -113,7 +119,7 @@ Widget? _itemBody(NavBarItemType type) {
   }
 }
 
-VoidCallback? _itemOnTap(NavBarItemType type) {
+VoidCallback? _itemOnTap(BuildContext context, NavBarItemType type) {
   switch (type) {
     case NavBarItemType.downloadTask:
       return () {
@@ -129,6 +135,10 @@ VoidCallback? _itemOnTap(NavBarItemType type) {
           },
         );
       };
+    case NavBarItemType.updates:
+      return () {
+        ComponentInfoDialog.show(context);
+      };
     default:
       return null;
   }
@@ -143,12 +153,14 @@ Widget? _itemBadge(NavBarItemType type) {
   }
 }
 
-NavigationPaneItem _buildNavItem(NavBarItem item) {
+NavigationPaneItem _buildNavItem(BuildContext context, NavBarItem item) {
   if (item.subitems != null) {
     return PaneItemExpander(
       icon: _itemIcon(item.type),
       title: Text(_itemTitle(item.type)),
-      items: item.subitems!.map((item) => _buildNavItem(item)).toList(),
+      items: item.subitems!
+          .map((item) => _buildNavItem(context, item))
+          .toList(),
       body: const SizedBox(),
       onTap: () {},
     );
@@ -156,7 +168,7 @@ NavigationPaneItem _buildNavItem(NavBarItem item) {
     return PaneItem(
       icon: _itemIcon(item.type),
       body: _itemBody(item.type) ?? const SizedBox(),
-      onTap: _itemOnTap(item.type),
+      onTap: _itemOnTap(context, item.type),
       infoBadge: _itemBadge(item.type),
       title: Text(_itemTitle(item.type)),
     );
@@ -166,7 +178,7 @@ NavigationPaneItem _buildNavItem(NavBarItem item) {
 List<NavigationPaneItem> buildNavItems(BuildContext context, AppState state) =>
     state.navBarItems
         .where((item) => !item.type.footer)
-        .map((item) => _buildNavItem(item))
+        .map((item) => _buildNavItem(context, item))
         .toList();
 
 List<NavigationPaneItem> buildNavFooterItems(
@@ -176,5 +188,5 @@ List<NavigationPaneItem> buildNavFooterItems(
   PaneItemSeparator(),
   ...state.navBarItems
       .where((item) => item.type.footer)
-      .map((item) => _buildNavItem(item)),
+      .map((item) => _buildNavItem(context, item)),
 ];

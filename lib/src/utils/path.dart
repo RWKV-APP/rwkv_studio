@@ -24,6 +24,13 @@ extension DirectoryPath on Directory {
   Directory childDirectory(String name) => Directory(pathJoin(path, name));
 
   File childFile(String name) => File(pathJoin(path, name));
+
+  bool isAppPrivate() {
+    final appData = appDataDir.absolute.path;
+    final current = absolute.path;
+    return current == appData ||
+        current.startsWith('$appData${Platform.pathSeparator}');
+  }
 }
 
 extension StringPath on String {

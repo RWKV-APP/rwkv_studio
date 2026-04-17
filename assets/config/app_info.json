@@ -1,0 +1,27 @@
+{
+  "components": [
+    {
+      "component_name": "rwkv_lightning",
+      "description": "High performance inference engine for RWKV implementation based on albatross and libtorch",
+      "version_name": "1.0.0",
+      "version_code": 1,
+      "download_url": "https://github.com/Alic-Li/rwkv_lightning_libtorch/releases/download/V1.0.0/rwkv_lightning_libtorch2.10.0+cu132_sm75-120_Windows_amd64.zip",
+      "release_notes": "New release",
+      "size_bytes": 1320702443,
+      "sha256": "e4957c0dc771ea949d24f1d15123848dc2243546db62f4928c695c799c99e881",
+      "timestamp": 1776406156615
+    }
+  ],
+  "app": {
+    "component_name": "RWKV Studio",
+    "description": "",
+    "version_name": "1.0.4",
+    "version_code": 5,
+    "download_url": "https://github.com/RWKV-APP/rwkv_studio/releases/download/1.0.4/rwkv_studio_1.0.4_windows_amd64.zip",
+    "release_notes": "no release notes",
+    "size_bytes": 55574528,
+    "sha256": "",
+    "timestamp": 1776406156615
+  },
+  "update_url": "https://aifasthub.com/meta-logic/config/resolve/main/studio/app_update.json"
+}

@@ -2,8 +2,8 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
-import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_state.dart';
+import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/chat/message_model.dart';
@@ -101,7 +101,12 @@ mixin class LlmInterface {
   Future<AlbatrossLaunchConfig> _resolveAlbatrossLaunchConfig(
     BuildContext context,
   ) async {
-    final scriptPath = context.app.state.albatrossPath;
+    final scriptPath =
+        context.app.state.components
+            .where((e) => e.type == .rwkvLightningPython)
+            .firstOrNull
+            ?.path ??
+        '';
     if (scriptPath.isEmpty) {
       throw const AppException.configuration(
         'Albatross script path is not configured',

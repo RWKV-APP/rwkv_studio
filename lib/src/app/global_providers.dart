@@ -8,6 +8,7 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/node_flow/node_flow_bloc.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/bloc/text_gen/text_generation_cubit.dart';
+import 'package:rwkv_studio/src/repository/common_repository.dart';
 import 'package:rwkv_studio/src/repository/flow_repository.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
 
@@ -21,6 +22,7 @@ class WithGlobalProviders extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider(create: (_) => const ChatRepository()),
+        RepositoryProvider(create: (_) => CommonRepository()),
         RepositoryProvider(create: (_) => const NodeFlowRepository()),
         RepositoryProvider(create: (_) => const SettingRepository()),
         RepositoryProvider(create: (_) => LocalMachineRepository()),
@@ -57,6 +59,7 @@ class WithGlobalProviders extends StatelessWidget {
             create: (context) => AppCubit(
               context.read<LocalMachineRepository>(),
               context.read<RemoteServiceRepository>(),
+              context.read<CommonRepository>(),
             ),
           ),
           BlocProvider(

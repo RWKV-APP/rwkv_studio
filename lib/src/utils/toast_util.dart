@@ -50,17 +50,7 @@ bool _shouldToast(AppException exception) {
   switch (exception.kind) {
     case AppExceptionKind.cancelled:
       return false;
-    case AppExceptionKind.validation:
-    case AppExceptionKind.configuration:
-    case AppExceptionKind.notFound:
-    case AppExceptionKind.network:
-    case AppExceptionKind.timeout:
-    case AppExceptionKind.storage:
-    case AppExceptionKind.unsupported:
-    case AppExceptionKind.externalProcess:
-    case AppExceptionKind.internal:
-    case AppExceptionKind.unimplemented:
-    case AppExceptionKind.unknown:
+    default:
       return true;
   }
 }

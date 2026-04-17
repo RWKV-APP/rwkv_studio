@@ -24,6 +24,7 @@ enum AppExceptionKind {
   unsupported,
   externalProcess,
   internal,
+  illegalState,
   unimplemented,
   unknown,
 }
@@ -42,6 +43,9 @@ class AppException implements Exception {
     this.code,
     this.cause,
   });
+
+  const AppException.illegalState(String message)
+    : this(message, kind: AppExceptionKind.illegalState);
 
   const AppException.validation(
     String message, {

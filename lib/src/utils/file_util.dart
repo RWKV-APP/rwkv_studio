@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart' as crypto;
@@ -55,6 +56,20 @@ class DirFileInfo {
 class FileUtils {
   FileUtils._();
 
+  static Future<Map?> readFileJson(String path) async {
+    final s = await readFileString(path);
+    if (s == null) return null;
+    return jsonDecode(s) as Map;
+  }
+
+  static Future<String?> readFileString(String path) async {
+    final f = File(path);
+    if (await f.exists()) {
+      return await f.readAsString();
+    }
+    return null;
+  }
+
   static Future<String?> openFileString({String? extension}) async {
     final l = await openFile(
       acceptedTypeGroups: [
@@ -67,7 +82,7 @@ class FileUtils {
     return await f.readAsString();
   }
 
-  static Future saveFileString({
+  static Future openSaveFileString({
     required String content,
     String? name,
     String? extension,

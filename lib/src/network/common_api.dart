@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:rwkv_studio/src/models/common/app_info.dart';
 import 'package:rwkv_studio/src/network/bean/model_provider_bean.dart';
 import 'package:rwkv_studio/src/network/http.dart';
 
@@ -15,4 +18,12 @@ interface class CommonApi {
 
   static Future downloadProviderLogoSvg(String providerName, String savePath) =>
       HTTP.download('https://models.dev/logos/$providerName.svg', savePath);
+
+  static Future<AppInfo> getAppUpdates(String url) => HTTP.get(
+    url,
+    decoder: (v) {
+      var json = v is String ? jsonDecode(v) : v;
+      return AppInfo.fromJson(json);
+    },
+  );
 }

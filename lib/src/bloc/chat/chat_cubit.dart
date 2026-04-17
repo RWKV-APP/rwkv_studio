@@ -786,6 +786,9 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
   }
 
   void _updateInputTokenCount() {
+    if (state.modelInstanceId.isEmpty) {
+      return;
+    }
     final text = state.inputController.text.trim();
     final tokenCount = _llmSessionRepository.getTokenCount(
       state.modelInstanceId,

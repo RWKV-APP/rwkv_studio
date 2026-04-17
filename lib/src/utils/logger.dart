@@ -11,6 +11,22 @@ bool _loggerInitialized = false;
 
 bool loggerIsWeb = false;
 
+extension LogFutureExt<T> on Future<T> {
+  Future<T?> logCatchError({String msg = ''}) {
+    return catchError((error, stackTrace) {
+      loge(msg, error, stackTrace);
+      return null;
+    });
+  }
+
+  Future<T> logError({String msg = ''}) {
+    return catchError((error, stackTrace) {
+      loge(msg, error, stackTrace);
+      throw error;
+    });
+  }
+}
+
 class Log {
   final String tag;
   final String level;

@@ -66,7 +66,7 @@ class _DebugActionGroup extends StatelessWidget {
             onPressed: () {
               final graph = context.nodeFlow.exportGraph();
               final json = graph.toJsonString();
-              FileUtils.saveFileString(content: json, extension: ".json");
+              FileUtils.openSaveFileString(content: json, extension: ".json");
             },
           ),
           IconButton(

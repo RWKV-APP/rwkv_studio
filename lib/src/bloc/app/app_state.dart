@@ -15,6 +15,7 @@ enum NavBarItemType {
 
   /// footer
   downloadTask(title: '下载任务', footer: true, hasBody: false),
+  updates(title: '更新', footer: true, hasBody: false),
   settings(title: '设置', footer: true);
 
   final String title;
@@ -40,6 +41,7 @@ class NavBarItem {
           NavBarItem(type: NavBarItemType.batchInfer),
           NavBarItem(type: NavBarItemType.modelManage),
           NavBarItem(type: NavBarItemType.mcp),
+          NavBarItem(type: NavBarItemType.updates),
           NavBarItem(type: NavBarItemType.downloadTask),
           NavBarItem(type: NavBarItemType.settings),
         ];
@@ -65,6 +67,7 @@ class NavBarItem {
         NavBarItem(type: NavBarItemType.convert),
       ],
     ),
+    NavBarItem(type: NavBarItemType.updates),
     NavBarItem(type: NavBarItemType.downloadTask),
     NavBarItem(type: NavBarItemType.settings),
   ];
@@ -93,13 +96,16 @@ class NavBarItem {
 class AppState {
   final int pane;
   final String selectedPythonId;
-  final String albatrossPath;
   final List<NavBarItem> navBarItems;
   final bool fullScreen;
   final bool showNavBar;
   final RwkvHttpApiService rwkvModelService;
   final List<String> ipAddresses;
   final Map<String, RemoteServiceStatus> remoteServiceStatuses;
+  final AppInfo appInfo;
+  final AppInfo appUpdate;
+  final List<AppComponent> components;
+  final List<DownloadTaskInfo> downloadTasks;
 
   List<NavBarItem> expandedItems() {
     return navBarItems
@@ -110,44 +116,52 @@ class AppState {
   AppState({
     required this.pane,
     required this.selectedPythonId,
-    required this.albatrossPath,
     required this.navBarItems,
     required this.fullScreen,
     required this.showNavBar,
     required this.rwkvModelService,
     required this.ipAddresses,
     required this.remoteServiceStatuses,
+    required this.appInfo,
+    required this.appUpdate,
+    required this.components,
+    required this.downloadTasks,
   });
 
   factory AppState.initial() {
     return AppState(
       pane: -1,
       selectedPythonId: '',
-      albatrossPath: 'app.py',
       navBarItems: NavBarItem.defaultNavItems(),
       fullScreen: false,
       showNavBar: true,
       rwkvModelService: RwkvHttpApiService(),
       ipAddresses: [],
       remoteServiceStatuses: const {},
+      appInfo: AppInfo.empty,
+      appUpdate: AppInfo.empty,
+      components: AppComponent.defaultComponents,
+      downloadTasks: [],
     );
   }
 
   AppState copyWith({
     int? pane,
     String? selectedPythonId,
-    String? albatrossPath,
     List<NavBarItem>? navBarItems,
     bool? fullScreen,
     bool? showNavBar,
     RwkvHttpApiService? rwkvModelService,
     List<String>? ipAddresses,
     Map<String, RemoteServiceStatus>? remoteServiceStatuses,
+    AppInfo? appInfo,
+    AppInfo? appUpdate,
+    List<AppComponent>? components,
+    List<DownloadTaskInfo>? downloadTasks,
   }) {
     return AppState(
       pane: pane ?? this.pane,
       selectedPythonId: selectedPythonId ?? this.selectedPythonId,
-      albatrossPath: albatrossPath ?? this.albatrossPath,
       navBarItems: navBarItems ?? this.navBarItems,
       fullScreen: fullScreen ?? this.fullScreen,
       showNavBar: showNavBar ?? this.showNavBar,
@@ -155,6 +169,10 @@ class AppState {
       ipAddresses: ipAddresses ?? this.ipAddresses,
       remoteServiceStatuses:
           remoteServiceStatuses ?? this.remoteServiceStatuses,
+      appInfo: appInfo ?? this.appInfo,
+      appUpdate: appUpdate ?? this.appUpdate,
+      components: components ?? this.components,
+      downloadTasks: downloadTasks ?? this.downloadTasks,
     );
   }
 }
