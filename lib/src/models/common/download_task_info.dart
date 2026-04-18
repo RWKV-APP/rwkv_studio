@@ -31,14 +31,15 @@ class DownloadTaskInfo {
   }
 
   factory DownloadTaskInfo.fromMap(Map<String, dynamic> map) {
+    final status = TaskUpdate.fromMap(map['status']);
     return DownloadTaskInfo(
       id: map['id'] as String,
       name: map['name'] as String,
       url: map['url'] as String,
       path: map['path'] as String,
-      status: TaskUpdate.fromMap(
-        map['status'],
-      ).copyWith(state: TaskState.stopped),
+      status: status.isRunning
+          ? status.copyWith(state: TaskState.stopped, speed: 0)
+          : status,
       type:
           DownloadTaskType.values
               .where((e) => e.name == map['type'])

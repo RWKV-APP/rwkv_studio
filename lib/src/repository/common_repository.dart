@@ -16,8 +16,25 @@ import 'package:rwkv_studio/src/utils/path.dart';
 class _DownloadTask {
   final DownloadTaskInfo info;
   final DownloadTask instance;
+  final StreamSubscription<TaskUpdate>? subscription;
 
-  _DownloadTask({required this.info, required this.instance});
+  _DownloadTask({
+    required this.info,
+    required this.instance,
+    this.subscription,
+  });
+
+  _DownloadTask copyWith({
+    DownloadTaskInfo? info,
+    DownloadTask? instance,
+    StreamSubscription<TaskUpdate>? subscription,
+  }) {
+    return _DownloadTask(
+      info: info ?? this.info,
+      instance: instance ?? this.instance,
+      subscription: subscription ?? this.subscription,
+    );
+  }
 }
 
 class CommonRepository {
@@ -60,12 +77,15 @@ class CommonRepository {
         url: task.url,
         path: task.path,
       );
-      _cachedDownloadTasks[task.id] = _DownloadTask(
-        info: task,
-        instance: instance,
+      final restored = task.copyWith(
+        status: _restoreTaskStatus(task.status, instance.update),
       );
+      _bindTask(restored, instance);
+      if (restored.status != task.status) {
+        unawaited(_updateTask(restored));
+      }
     }
-    return tasks;
+    return _cachedDownloadTasks.values.map((e) => e.info).toList();
   }
 
   Future pauseDownloadTask(String id) async {
@@ -81,7 +101,11 @@ class CommonRepository {
     if (task == null) {
       throw const AppException.illegalState('task not found');
     }
-    await task.instance.start();
+    final info = await _syncTaskInfo(task.info.id);
+    if (info.status.isRunning || info.status.isCompleted) {
+      return;
+    }
+    await _startTask(info);
   }
 
   Future<DownloadTaskInfo> download({
@@ -94,36 +118,32 @@ class CommonRepository {
       final f = appDataDir.childFile(name);
       path = f.absolute.path;
     }
+    final taskType = type ?? DownloadTaskType.other;
+    await getDownloadTasks();
+
+    final existed = _findDownloadTask(
+      url: url,
+      path: path,
+      name: name,
+      type: taskType,
+    );
+    if (existed != null) {
+      final info = await _syncTaskInfo(existed.info.id);
+      if (info.status.isRunning || info.status.isCompleted) {
+        return info;
+      }
+      return _startTask(info);
+    }
+
     final info = DownloadTaskInfo(
       id: DateTime.timestamp().millisecondsSinceEpoch.toString(),
       name: name,
       path: path,
-      type: type ?? DownloadTaskType.other,
+      type: taskType,
       url: url,
       status: TaskUpdate.initial(),
     );
-
-    final instance = await DownloadTask.create(url: info.url, path: info.path);
-    _cachedDownloadTasks[info.id] = _DownloadTask(
-      info: info,
-      instance: instance,
-    );
-    instance.events().listen((e) {
-      logi('download task update: $e');
-      final task = _cachedDownloadTasks[info.id];
-      if (task == null) {
-        return;
-      }
-      final newInfo = task.info.copyWith(status: e);
-      _cachedDownloadTasks[info.id] = _DownloadTask(
-        info: newInfo,
-        instance: task.instance,
-      );
-      _downloadTasksController.add(newInfo);
-      _updateTask(newInfo);
-    });
-    await instance.start();
-    return info;
+    return _startTask(info);
   }
 
   Future _updateTask(DownloadTaskInfo task) async {
@@ -140,10 +160,94 @@ class CommonRepository {
     if (task == null) {
       return;
     }
-    await task.instance.stop().logError(msg: 'failed to stop download task');
+    await task.instance.cancel().logError(
+      msg: 'failed to cancel download task',
+    );
+    await task.subscription?.cancel();
     _cachedDownloadTasks.remove(id);
 
     await StateCacheBox.delete(id, nameSpace: StateCacheBox.nsDownloadTask);
+  }
+
+  _DownloadTask? _findDownloadTask({
+    required String url,
+    required String path,
+    required String name,
+    required DownloadTaskType type,
+  }) {
+    return _cachedDownloadTasks.values
+        .where(
+          (task) =>
+              task.info.url == url &&
+              task.info.path == path &&
+              task.info.name == name &&
+              task.info.type == type,
+        )
+        .firstOrNull;
+  }
+
+  void _bindTask(DownloadTaskInfo info, DownloadTask instance) {
+    final old = _cachedDownloadTasks[info.id];
+    if (old?.subscription != null) {
+      unawaited(old!.subscription!.cancel());
+    }
+    final subscription = instance.events().listen(
+      (e) {
+        logi('download task update: $e');
+        final task = _cachedDownloadTasks[info.id];
+        if (task == null) {
+          return;
+        }
+        final newInfo = task.info.copyWith(status: e);
+        _cachedDownloadTasks[info.id] = task.copyWith(info: newInfo);
+        _downloadTasksController.add(newInfo);
+        unawaited(_updateTask(newInfo));
+      },
+      onError: (error, stackTrace) {
+        loge('download task update error', error, stackTrace);
+      },
+    );
+    _cachedDownloadTasks[info.id] = _DownloadTask(
+      info: info,
+      instance: instance,
+      subscription: subscription,
+    );
+  }
+
+  TaskUpdate _restoreTaskStatus(TaskUpdate cached, TaskUpdate current) {
+    if (!current.isStopped || current.totalSize > 0 || cached.totalSize <= 0) {
+      return current;
+    }
+    return current.copyWith(totalSize: cached.totalSize, speed: 0);
+  }
+
+  Future<DownloadTaskInfo> _syncTaskInfo(String id) async {
+    final task = _cachedDownloadTasks[id];
+    if (task == null) {
+      throw const AppException.illegalState('task not found');
+    }
+    final status = _restoreTaskStatus(task.info.status, task.instance.update);
+    if (status == task.info.status) {
+      return task.info;
+    }
+    final info = task.info.copyWith(status: status);
+    _cachedDownloadTasks[id] = task.copyWith(info: info);
+    await _updateTask(info);
+    return info;
+  }
+
+  Future<DownloadTaskInfo> _startTask(DownloadTaskInfo info) async {
+    final instance = await DownloadTask.create(url: info.url, path: info.path);
+    final restored = info.copyWith(
+      status: _restoreTaskStatus(info.status, instance.update),
+    );
+    _bindTask(restored, instance);
+    await _updateTask(restored);
+    if (restored.status.isRunning || restored.status.isCompleted) {
+      return restored;
+    }
+    await instance.start();
+    return _cachedDownloadTasks[info.id]?.info ?? restored;
   }
 
   Future<AppInfo?> loadCurrentAppInfo() async {

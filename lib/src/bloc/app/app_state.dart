@@ -41,7 +41,6 @@ class NavBarItem {
           NavBarItem(type: NavBarItemType.batchInfer),
           NavBarItem(type: NavBarItemType.modelManage),
           NavBarItem(type: NavBarItemType.mcp),
-          NavBarItem(type: NavBarItemType.updates),
           NavBarItem(type: NavBarItemType.downloadTask),
           NavBarItem(type: NavBarItemType.settings),
         ];
@@ -67,7 +66,6 @@ class NavBarItem {
         NavBarItem(type: NavBarItemType.convert),
       ],
     ),
-    NavBarItem(type: NavBarItemType.updates),
     NavBarItem(type: NavBarItemType.downloadTask),
     NavBarItem(type: NavBarItemType.settings),
   ];
@@ -105,6 +103,7 @@ class AppState {
   final AppInfo appInfo;
   final AppInfo appUpdate;
   final List<AppComponent> components;
+  final bool hasAvailableUpdate;
   final List<DownloadTaskInfo> downloadTasks;
 
   List<NavBarItem> expandedItems() {
@@ -125,6 +124,7 @@ class AppState {
     required this.appInfo,
     required this.appUpdate,
     required this.components,
+    required this.hasAvailableUpdate,
     required this.downloadTasks,
   });
 
@@ -141,6 +141,7 @@ class AppState {
       appInfo: AppInfo.empty,
       appUpdate: AppInfo.empty,
       components: AppComponent.defaultComponents,
+      hasAvailableUpdate: false,
       downloadTasks: [],
     );
   }
@@ -157,6 +158,7 @@ class AppState {
     AppInfo? appInfo,
     AppInfo? appUpdate,
     List<AppComponent>? components,
+    bool? hasAvailableUpdate,
     List<DownloadTaskInfo>? downloadTasks,
   }) {
     return AppState(
@@ -172,6 +174,7 @@ class AppState {
       appInfo: appInfo ?? this.appInfo,
       appUpdate: appUpdate ?? this.appUpdate,
       components: components ?? this.components,
+      hasAvailableUpdate: hasAvailableUpdate ?? this.hasAvailableUpdate,
       downloadTasks: downloadTasks ?? this.downloadTasks,
     );
   }

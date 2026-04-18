@@ -114,8 +114,16 @@ class AppCubit extends Cubit<AppState> {
     final task = await _commonRepo.download(
       url: info.downloadUrl,
       name: '${info.componentName}_${info.versionName}_${info.versionCode}.zip',
+      type: DownloadTaskType.component,
     );
-    emit(state.copyWith(downloadTasks: [...state.downloadTasks, task]));
+    final tasks = [...state.downloadTasks];
+    final index = tasks.indexWhere((e) => e.id == task.id);
+    if (index == -1) {
+      tasks.add(task);
+    } else {
+      tasks[index] = task;
+    }
+    emit(state.copyWith(downloadTasks: tasks));
   }
 
   Future resumeTask(String id) async {
@@ -136,9 +144,13 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void onUserTypeChanged(UserType userType) {
-    final navItems = userType == UserType.developer
+    final baseNavItems = userType == UserType.developer
         ? NavBarItem.devNavItems()
         : NavBarItem.defaultNavItems();
+    final navItems = _syncUpdateNavItems(
+      baseNavItems,
+      hasAvailableUpdate: state.hasAvailableUpdate,
+    );
     final expand = navItems.flatten(
       (e) => <NavBarItem>[e, ...(e.subitems ?? [])],
     );
@@ -221,10 +233,12 @@ class AppCubit extends Cubit<AppState> {
     if (info != null) {
       emit(state.copyWith(appInfo: info));
       logd('app info loaded: ${info.app.versionName} ${info.app.description}');
+      _refreshUpdateState();
     }
     final update = await _commonRepo.getAppUpdateInfo();
     if (update != null) {
       emit(state.copyWith(appUpdate: update));
+      _refreshUpdateState();
     }
   }
 
@@ -245,9 +259,13 @@ class AppCubit extends Cubit<AppState> {
     final cs = state.components.map((c) {
       final dir = componentPath[c.type];
       if (dir != null) {
+        final installed = c.path.isEmpty
+            ? dir.existsSync()
+            : File(dir.absolute.path.joinPath(c.path)).existsSync();
         return c.copyWith(
           dir: dir.absolute.path,
           external: !dir.isAppPrivate(),
+          missing: !installed,
           info: current[c.type.name],
           latest: latest[c.type.name],
         );
@@ -255,6 +273,7 @@ class AppCubit extends Cubit<AppState> {
       return c;
     }).toList();
     emit(state.copyWith(components: cs));
+    _refreshUpdateState();
   }
 
   Future _initDownloadTasks() async {
@@ -264,12 +283,13 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void _onDownloadUpdated(DownloadTaskInfo task) {
-    final ts = state.downloadTasks.map((t) {
-      if (t.id == task.id) {
-        return task;
-      }
-      return t;
-    }).toList();
+    final ts = [...state.downloadTasks];
+    final index = ts.indexWhere((t) => t.id == task.id);
+    if (index == -1) {
+      ts.add(task);
+    } else {
+      ts[index] = task;
+    }
     emit(state.copyWith(downloadTasks: ts));
 
     if (task.status.isCompleted) {
@@ -304,6 +324,108 @@ class AppCubit extends Cubit<AppState> {
       }
       await Directory('${comp.dir}_tmp').rename(comp.dir);
       Directory('${comp.dir}_bak').deleteSync(recursive: true);
+
+      final components = state.components.map((e) {
+        if (e.type != comp.type) {
+          return e;
+        }
+        return e.copyWith(info: e.latest, missing: false);
+      }).toList();
+      emit(state.copyWith(components: components));
+      _refreshUpdateState();
     }
+  }
+
+  void _refreshUpdateState() {
+    final hasAvailableUpdate = _hasAvailableUpdate();
+    final navBarItems = _syncUpdateNavItems(
+      state.navBarItems,
+      hasAvailableUpdate: hasAvailableUpdate,
+    );
+    final pane = _remapPane(navBarItems);
+    if (state.hasAvailableUpdate == hasAvailableUpdate &&
+        identical(navBarItems, state.navBarItems) &&
+        pane == state.pane) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        hasAvailableUpdate: hasAvailableUpdate,
+        navBarItems: navBarItems,
+        pane: pane,
+      ),
+    );
+  }
+
+  bool _hasAvailableUpdate() {
+    final hasAppUpdate =
+        state.appUpdate.app.versionCode > state.appInfo.app.versionCode;
+    return hasAppUpdate || state.components.any((e) => e.hasUpdate);
+  }
+
+  List<NavBarItem> _syncUpdateNavItems(
+    List<NavBarItem> navBarItems, {
+    required bool hasAvailableUpdate,
+  }) {
+    final updateIndex = navBarItems.indexWhere(
+      (item) => item.type == NavBarItemType.updates,
+    );
+    if (!hasAvailableUpdate) {
+      if (updateIndex == -1) {
+        return navBarItems;
+      }
+      return [...navBarItems]..removeAt(updateIndex);
+    }
+
+    if (updateIndex != -1) {
+      return navBarItems;
+    }
+
+    final downloadTaskIndex = navBarItems.indexWhere(
+      (item) => item.type == NavBarItemType.downloadTask,
+    );
+    if (downloadTaskIndex == -1) {
+      return navBarItems;
+    }
+
+    final next = [...navBarItems];
+    next.insert(downloadTaskIndex, NavBarItem(type: NavBarItemType.updates));
+    return next;
+  }
+
+  int _remapPane(List<NavBarItem> navBarItems) {
+    if (state.pane < 0) {
+      return state.pane;
+    }
+
+    final currentItems = state.expandedItems();
+    final currentItem = state.pane < currentItems.length
+        ? currentItems[state.pane]
+        : null;
+    final nextItems = navBarItems.flatten(
+      (e) => <NavBarItem>[e, ...(e.subitems ?? [])],
+    );
+
+    if (currentItem != null) {
+      final nextIndex = nextItems.indexWhere((e) => e.type == currentItem.type);
+      if (nextIndex != -1) {
+        return nextIndex;
+      }
+    }
+
+    return _clampPane(state.pane, nextItems.length);
+  }
+
+  int _clampPane(int pane, int count) {
+    if (count <= 0) {
+      return -1;
+    }
+    if (pane < 0) {
+      return 0;
+    }
+    if (pane >= count) {
+      return count - 1;
+    }
+    return pane;
   }
 }

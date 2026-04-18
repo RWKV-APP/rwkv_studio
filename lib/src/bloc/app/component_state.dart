@@ -20,6 +20,7 @@ class AppComponent {
   final AppComponentInfo latest;
 
   bool get hasUpdate =>
+      missing ||
       latest != AppComponentInfo.empty && latest.versionCode > info.versionCode;
 
   static const List<AppComponent> defaultComponents = [
