@@ -31,7 +31,7 @@ class RwkvLightningLauncher {
     ]);
 
     final wrap = _AlbatrossWrap('http://127.0.0.1:$port', process: process);
-    await wrap._waitStart(port);
+    await wrap._waitStart();
 
     logd('RWKV Lightning started.');
     return wrap;
@@ -56,7 +56,7 @@ class _AlbatrossWrap extends AlbatrossClient {
     );
   }
 
-  Future _waitStart(String port) async {
+  Future _waitStart() async {
     try {
       await Future.any([
         process.outputs.firstWhere(
