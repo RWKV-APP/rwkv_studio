@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/python/process.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 class CondaEnv {
@@ -120,17 +121,10 @@ class Python {
     return output;
   }
 
-  Future<PythonProcess> start(List<String> args, {String? workingDir}) async {
-    Process process;
+  Future<AppProcess> start(List<String> args, {String? workingDir}) async {
     final args_ = _formatArgs(args);
     logd('starting process: ${args_.join(' ')}');
-    if (condaEnv != null) {
-      process = await Process.start('cmd', args_, workingDirectory: workingDir);
-    } else {
-      process = await Process.start(path, args_, workingDirectory: workingDir);
-    }
-
-    return PythonProcess._(process);
+    return AppProcess.start('cmd', args_, workingDir: workingDir);
   }
 
   List<String> _formatArgs(List<String> args) {

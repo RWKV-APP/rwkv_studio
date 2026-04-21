@@ -16,10 +16,10 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
 
 class AlbatrossLaunchConfig {
-  final Python python;
+  final Python? python;
   final String scriptPath;
 
-  const AlbatrossLaunchConfig({required this.python, required this.scriptPath});
+  const AlbatrossLaunchConfig({this.python, required this.scriptPath});
 }
 
 class LlmSessionSnapshot {

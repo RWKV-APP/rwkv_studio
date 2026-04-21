@@ -102,9 +102,10 @@ class AppState {
   final Map<String, RemoteServiceStatus> remoteServiceStatuses;
   final AppInfo appInfo;
   final AppInfo appUpdate;
-  final List<AppComponent> components;
+  final Map<ComponentType, AppComponent> components;
   final bool hasAvailableUpdate;
   final List<DownloadTaskInfo> downloadTasks;
+  final HardwareInfoState hardware;
 
   List<NavBarItem> expandedItems() {
     return navBarItems
@@ -126,6 +127,7 @@ class AppState {
     required this.components,
     required this.hasAvailableUpdate,
     required this.downloadTasks,
+    required this.hardware,
   });
 
   factory AppState.initial() {
@@ -143,6 +145,7 @@ class AppState {
       components: AppComponent.defaultComponents,
       hasAvailableUpdate: false,
       downloadTasks: [],
+      hardware: HardwareInfoState.empty,
     );
   }
 
@@ -157,9 +160,10 @@ class AppState {
     Map<String, RemoteServiceStatus>? remoteServiceStatuses,
     AppInfo? appInfo,
     AppInfo? appUpdate,
-    List<AppComponent>? components,
+    Map<ComponentType, AppComponent>? components,
     bool? hasAvailableUpdate,
     List<DownloadTaskInfo>? downloadTasks,
+    HardwareInfoState? hardware,
   }) {
     return AppState(
       pane: pane ?? this.pane,
@@ -176,6 +180,7 @@ class AppState {
       components: components ?? this.components,
       hasAvailableUpdate: hasAvailableUpdate ?? this.hasAvailableUpdate,
       downloadTasks: downloadTasks ?? this.downloadTasks,
+      hardware: hardware ?? this.hardware,
     );
   }
 }

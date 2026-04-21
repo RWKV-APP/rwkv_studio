@@ -2,34 +2,47 @@ import 'dart:io';
 
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
+import 'package:rwkv_studio/src/python/process.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 import 'interpreter.dart';
 
 class AlbatrossLauncher {
-  static int _startPort = 9527;
+  static int _startPort = 19527;
 
-  final Python python;
+  final Python? python;
   final String scriptPath;
   final String modelPath;
   final int port;
 
   AlbatrossLauncher({
-    required this.python,
+    this.python,
     required this.scriptPath,
     required this.modelPath,
   }) : port = _startPort++;
 
   Future<AlbatrossClient> startup() async {
-
     final workingDir = File(scriptPath).parent.path;
-    final process = await python.start([
-      scriptPath,
-      '--model-path',
-      modelPath,
-      '--port',
-      port.toString(),
-    ], workingDir: workingDir);
+
+    AppProcess process;
+    if (scriptPath.endsWith(".py")) {
+      process = await python!.start([
+        scriptPath,
+        '--model-path',
+        modelPath,
+        '--port',
+        port.toString(),
+      ], workingDir: workingDir);
+    } else {
+      process = await AppProcess.start('cmd', [
+        '/c',
+        scriptPath,
+        '--model-path',
+        modelPath,
+        '--port',
+        port.toString(),
+      ], workingDir: workingDir);
+    }
     final wrap = _AlbatrossWrap('http://127.0.0.1:$port', process: process);
     await wrap._waitStart();
     return wrap;
@@ -37,7 +50,7 @@ class AlbatrossLauncher {
 }
 
 class _AlbatrossWrap extends AlbatrossClient {
-  final PythonProcess process;
+  final AppProcess process;
   final List<String> _outputs = [];
 
   _AlbatrossWrap(super.baseUrl, {required this.process}) {

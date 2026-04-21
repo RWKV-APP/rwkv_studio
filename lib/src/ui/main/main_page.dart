@@ -18,7 +18,10 @@ import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';
 import 'package:rwkv_studio/src/ui/mcp/mcp_page.dart';
 import 'package:rwkv_studio/src/ui/model/model_list_page.dart';
 import 'package:rwkv_studio/src/ui/setting/setting_page.dart';
+import 'package:rwkv_studio/src/utils/native_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
+
+import '_bottom_bar.dart';
 
 part '_download_flyout.dart';
 
@@ -43,7 +46,6 @@ class MainPage extends StatelessWidget {
             children: [
               if (isWindows) const SizedBox(height: 12),
               Expanded(child: _buildContent(context, dark, state)),
-              // const BottomBar(),
             ],
           );
         },
@@ -58,7 +60,12 @@ class MainPage extends StatelessWidget {
           color: dark
               ? Colors.black.withAlpha(180)
               : Colors.white.withAlpha(180),
-          child: child ?? const SizedBox(),
+          child: Column(
+            children: [
+              Expanded(child: child ?? const SizedBox()),
+              const BottomBar(),
+            ],
+          ),
         );
       },
       contentShape: isWindows ? null : const BeveledRectangleBorder(),

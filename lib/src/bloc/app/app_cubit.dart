@@ -8,7 +8,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
+import 'package:rwkv_studio/src/component/toolkit.dart';
+import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/common/app_component_update.dart';
 import 'package:rwkv_studio/src/models/common/app_info.dart';
 import 'package:rwkv_studio/src/models/common/download_task_info.dart';
@@ -16,29 +19,29 @@ import 'package:rwkv_studio/src/models/settings/settings_models.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 import 'package:rwkv_studio/src/repository/common_repository.dart';
 import 'package:rwkv_studio/src/repository/repositories.dart';
-import 'package:rwkv_studio/src/utils/archive_utils.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
+import 'package:rwkv_studio/src/utils/equatable.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 
 part 'app_state.dart';
-
 part 'component_state.dart';
+part 'hardware.dart';
 
 extension Ext on BuildContext {
   AppCubit get app => read<AppCubit>();
 }
 
 class AppCubit extends Cubit<AppState> {
-  final LocalMachineRepository _localMachineRepository;
+  final LocalMachineRepository _localMachineRep;
   final RemoteServiceRepository _remoteServiceRepository;
   final CommonRepository _commonRepo;
   late final StreamSubscription<RemoteServiceSnapshot>
   _remoteServiceSubscription;
 
   AppCubit(
-    this._localMachineRepository,
+    this._localMachineRep,
     this._remoteServiceRepository,
     this._commonRepo,
   ) : super(AppState.initial()) {
@@ -58,10 +61,12 @@ class AppCubit extends Cubit<AppState> {
 
     () async {
       _commonRepo.watchDownloadTasks().listen(_onDownloadUpdated);
+      _localMachineRep.watchHardwareUsageInfo().listen(_onHardwareUsageUpdate);
 
       await _initAppInfo();
       await _initComponentInfo();
       await _initDownloadTasks();
+      await _initComponents();
     }();
   }
 
@@ -70,16 +75,14 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future<List<Python>> detectPythonInterpreters() async {
-    final pythons = await _localMachineRepository
-        .detectPythonInterpreters()
-        .onError((e, st) => <Python>[]);
+    final pythons = await _localMachineRep.detectPythonInterpreters().onError(
+      (e, st) => <Python>[],
+    );
     return pythons;
   }
 
   Future<Python?> getSelectedPython() async {
-    return await _localMachineRepository.resolvePythonById(
-      state.selectedPythonId,
-    );
+    return await _localMachineRep.resolvePythonById(state.selectedPythonId);
   }
 
   void onModelServerSettingChanged(ModelServerSettingsModel setting) async {
@@ -109,6 +112,10 @@ class AppCubit extends Cubit<AppState> {
     ]);
   }
 
+  Future updateComponent(AppComponent component) {
+    return downloadComponent(component);
+  }
+
   Future downloadComponent(AppComponent component) async {
     final info = component.latest;
     final task = await _commonRepo.download(
@@ -124,6 +131,18 @@ class AppCubit extends Cubit<AppState> {
       tasks[index] = task;
     }
     emit(state.copyWith(downloadTasks: tasks));
+  }
+
+  Future installComponentUpdate(AppComponent component) async {
+    final t = state.downloadTasks
+        .where((e) => e.url == component.latest.downloadUrl)
+        .firstOrNull;
+    if (t == null) {
+      throw const AppException.illegalState(
+        'component download info not found',
+      );
+    }
+    await _onComponentDownloaded(t);
   }
 
   Future resumeTask(String id) async {
@@ -223,7 +242,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   void _initIPAddress() async {
-    final ips = await _localMachineRepository.getInterfaceIPAddress();
+    final ips = await _localMachineRep.getInterfaceIPAddress();
     logd('interfaces: $ips');
     emit(state.copyWith(ipAddresses: ips));
   }
@@ -242,6 +261,15 @@ class AppCubit extends Cubit<AppState> {
     }
   }
 
+  Future _initComponents() async {
+    final toolkit = state.components[ComponentType.toolkit];
+    if (toolkit != null && !toolkit.missing) {
+      _localMachineRep
+          .initHardwareTools(pathJoin(toolkit.dir, toolkit.bin))
+          .logCatchError(msg: 'init hardware tools failed');
+    }
+  }
+
   Future _initComponentInfo() async {
     if (kIsWeb) return;
 
@@ -252,37 +280,43 @@ class AppCubit extends Cubit<AppState> {
       for (final e in state.appUpdate.components) e.componentName: e,
     };
 
-    final lightning = await _commonRepo.getRWKVLightningDirectory();
-    final componentPath = <ComponentType, Directory>{
-      if (lightning != null) ComponentType.rwkvLightning: lightning,
-    };
-    final cs = state.components.map((c) {
+    final componentPath = await _commonRepo.getLocalComponentDir();
+    final components = <ComponentType, AppComponent>{};
+    for (final entry in state.components.entries) {
+      final c = entry.value;
       final dir = componentPath[c.type];
-      if (dir != null) {
-        final installed = c.path.isEmpty
-            ? dir.existsSync()
-            : File(dir.absolute.path.joinPath(c.path)).existsSync();
-        return c.copyWith(
-          dir: dir.absolute.path,
-          external: !dir.isAppPrivate(),
-          missing: !installed,
-          info: current[c.type.name],
-          latest: latest[c.type.name],
-        );
+      if (dir == null) {
+        continue;
       }
-      return c;
-    }).toList();
-    emit(state.copyWith(components: cs));
+      final bin = dir.path.joinPath(c.bin);
+      final installed = await File(bin).exists();
+      logd(
+        'init component ${c.type.name}, '
+        'installed=$installed, '
+        'bin: $bin',
+      );
+      final nc = c.copyWith(
+        dir: dir.absolute.path,
+        external: !dir.isAppPrivate(),
+        missing: !installed,
+        info: current[c.type.name],
+        latest: latest[c.type.name],
+      );
+      components[nc.type] = nc;
+    }
+    emit(state.copyWith(components: components));
     _refreshUpdateState();
   }
 
   Future _initDownloadTasks() async {
     final ts = await _commonRepo.getDownloadTasks();
     emit(state.copyWith(downloadTasks: ts));
-    logd('load download tasks: ${ts.length} tasks');
+    for (final t in ts) {
+      logd('download task restored: ${t.toMap()}');
+    }
   }
 
-  void _onDownloadUpdated(DownloadTaskInfo task) {
+  Future _onDownloadUpdated(DownloadTaskInfo task) async {
     final ts = [...state.downloadTasks];
     final index = ts.indexWhere((t) => t.id == task.id);
     if (index == -1) {
@@ -295,18 +329,26 @@ class AppCubit extends Cubit<AppState> {
     if (task.status.isCompleted) {
       logd('download completed: ${task.name}');
       if (task.type == .component) {
-        _onComponentDownloaded(
+        await _onComponentDownloaded(
           task,
         ).logCatchError(msg: 'component upgrade failed');
-        return;
       }
+      emit(
+        state.copyWith(
+          downloadTasks: state.downloadTasks
+              .where((e) => e.id != task.id)
+              .toList(),
+        ),
+      );
+      _commonRepo.deleteTask(task.id);
     }
   }
 
   Future _onComponentDownloaded(DownloadTaskInfo task) async {
-    final comp = state.components
-        .where((e) => task.name.contains(e.type.name))
-        .firstOrNull;
+    final type = ComponentType.values.firstWhere(
+      (e) => task.name.contains(e.name),
+    );
+    final comp = state.components[type];
     if (comp == null) {
       loge('download component not found: ${task.name}, ${task.path}');
       return;
@@ -314,24 +356,26 @@ class AppCubit extends Cubit<AppState> {
     if (comp.external) {
       logw('overwrite external component: ${comp.type.name}');
     } else {
-      await ArchiveUtils.extractZip(
-        path: task.path,
-        outDir: '${comp.dir}_tmp',
-      ).last;
-      final old = Directory(comp.dir);
-      if (old.existsSync()) {
-        await old.rename('${comp.dir}_bak');
+      if (type == .toolkit) {
+        Toolkit.kill();
       }
-      await Directory('${comp.dir}_tmp').rename(comp.dir);
-      Directory('${comp.dir}_bak').deleteSync(recursive: true);
 
-      final components = state.components.map((e) {
-        if (e.type != comp.type) {
-          return e;
-        }
-        return e.copyWith(info: e.latest, missing: false);
-      }).toList();
-      emit(state.copyWith(components: components));
+      await _localMachineRep.installComponent(comp, task.path);
+
+      final components = {
+        ...state.components,
+        type: comp.copyWith(info: comp.latest, missing: false),
+      };
+
+      final appInfo = state.appInfo.copyWith(
+        components: components.values.map((e) => e.info).toList(),
+      );
+      _commonRepo.updateLocalAppInfo(appInfo);
+
+      /// check
+      _initComponents();
+
+      emit(state.copyWith(components: components, appInfo: appInfo));
       _refreshUpdateState();
     }
   }
@@ -360,7 +404,7 @@ class AppCubit extends Cubit<AppState> {
   bool _hasAvailableUpdate() {
     final hasAppUpdate =
         state.appUpdate.app.versionCode > state.appInfo.app.versionCode;
-    return hasAppUpdate || state.components.any((e) => e.hasUpdate);
+    return hasAppUpdate || state.components.values.any((e) => e.hasUpdate);
   }
 
   List<NavBarItem> _syncUpdateNavItems(
@@ -391,6 +435,17 @@ class AppCubit extends Cubit<AppState> {
     final next = [...navBarItems];
     next.insert(downloadTaskIndex, NavBarItem(type: NavBarItemType.updates));
     return next;
+  }
+
+  void _onHardwareUsageUpdate(HardwareUsageModel info) {
+    final hardware = state.hardware.copyWith(
+      cpuPercent: info.cpu!.percent,
+      memFree: info.memory!.free,
+      memTotal: info.memory!.total,
+      memProcessPercent: info.process?.memoryPercent,
+      cpuProcessPercent: info.process?.cpuPercent,
+    );
+    emit(state.copyWith(hardware: hardware));
   }
 
   int _remapPane(List<NavBarItem> navBarItems) {

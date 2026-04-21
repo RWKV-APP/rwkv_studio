@@ -1,12 +1,104 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
+import 'package:rwkv_studio/src/component/toolkit.dart';
+import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
+import 'package:rwkv_studio/src/utils/archive_utils.dart';
+import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/path.dart';
 
 class LocalMachineRepository {
   List<Python> _pythons = [];
 
   LocalMachineRepository();
+
+  Future initHardwareTools(String bin) async {
+    await Toolkit.init(bin);
+  }
+
+  Stream<HardwareUsageModel> watchHardwareUsageInfo() async* {
+    yield* Toolkit.watchHardwareUsage(pid: pid, interval: 2);
+  }
+
+  Future installComponent(AppComponent comp, String zip) async {
+    final compDirPath = comp.dir;
+    final tmpPath = '${compDirPath}_tmp';
+    final bakPath = '${compDirPath}_bak';
+    logd('start install component: ${comp.type.name}, $zip => ${comp.dir}');
+
+    if (comp.type == .toolkit) {
+      await Toolkit.kill();
+    }
+
+    final tmp = Directory(tmpPath);
+    if (await tmp.exists()) {
+      await tmp.delete(recursive: true);
+    }
+
+    await ArchiveUtils.extractZip(path: zip, outDir: tmpPath).last;
+    final old = Directory(compDirPath);
+    final isUpgrade = await old.exists();
+    final bak = Directory(bakPath);
+    if (isUpgrade) {
+      if (await bak.exists()) {
+        await bak.delete(recursive: true);
+      }
+      await old.rename(bakPath);
+    }
+    try {
+      await tmp.rename(compDirPath);
+    } catch (e, st) {
+      if (isUpgrade) {
+        await _rollbackComponentUpgrade(
+          compDirPath: compDirPath,
+          bakPath: bakPath,
+          tmpPath: tmpPath,
+        );
+      }
+      loge('install component failed: ${comp.type.name}', e, st);
+      rethrow;
+    }
+    if (isUpgrade) {
+      await bak.delete(recursive: true).logCatchError(
+        msg: 'remove component backup failed',
+      );
+    }
+    logd('component installed: ${comp.type.name}');
+
+    await File(zip).delete().logCatchError(msg: 'remove component zip failed');
+
+    if (comp.type == .toolkit) {
+      await Toolkit.init(pathJoin(compDirPath, comp.bin));
+    }
+  }
+
+  Future<void> _rollbackComponentUpgrade({
+    required String compDirPath,
+    required String bakPath,
+    required String tmpPath,
+  }) async {
+    final compDir = Directory(compDirPath);
+    final bak = Directory(bakPath);
+    final tmp = Directory(tmpPath);
+
+    if (await compDir.exists()) {
+      await compDir.delete(recursive: true).logCatchError(
+        msg: 'remove failed component dir before rollback failed',
+      );
+    }
+    if (await bak.exists()) {
+      await bak.rename(compDirPath).logCatchError(
+        msg: 'restore component backup failed',
+      );
+    }
+    if (await tmp.exists()) {
+      await tmp.delete(recursive: true).logCatchError(
+        msg: 'remove component tmp after rollback failed',
+      );
+    }
+  }
 
   Future<List<String>> getInterfaceIPAddress() async {
     if (kIsWeb) {

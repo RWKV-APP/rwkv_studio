@@ -102,10 +102,7 @@ mixin class LlmInterface {
     BuildContext context,
   ) async {
     final scriptPath =
-        context.app.state.components
-            .where((e) => e.type == .rwkvLightningPython)
-            .firstOrNull
-            ?.path ??
+        context.app.state.components[ComponentType.rwkvLightningPython]?.bin ??
         '';
     if (scriptPath.isEmpty) {
       throw const AppException.configuration(

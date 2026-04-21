@@ -47,6 +47,9 @@ class _DownloadTaskFlyout extends StatelessWidget {
               onResumeTap: () {
                 context.app.resumeTask(entry.id).withToast(context);
               },
+              onOpenTap: () {
+                NativeUtils.showInFolder(entry.path);
+              },
             ),
           for (final entry in state.modelStates.entries)
             _buildTaskItem(
@@ -62,6 +65,7 @@ class _DownloadTaskFlyout extends StatelessWidget {
               onResumeTap: () async {
                 await context.modelManage.resume(entry.key).withToast(context);
               },
+              onOpenTap: () {},
             ),
           if (state.modelStates.isEmpty && appDownloads.isEmpty)
             Center(
@@ -79,6 +83,7 @@ class _DownloadTaskFlyout extends StatelessWidget {
     TaskUpdate? state, {
     required VoidCallback onPauseTap,
     required VoidCallback onCancelTap,
+    required VoidCallback onOpenTap,
     required VoidCallback onResumeTap,
   }) {
     if (state == null) {
@@ -130,10 +135,17 @@ class _DownloadTaskFlyout extends StatelessWidget {
                         ),
                       ),
 
-                    IconButton(
-                      icon: const Icon(WindowsIcons.cancel),
-                      onPressed: onCancelTap,
-                    ),
+                    if (!state.isCompleted)
+                      IconButton(
+                        icon: const Icon(WindowsIcons.cancel),
+                        onPressed: onCancelTap,
+                      ),
+
+                    if (state.isCompleted)
+                      IconButton(
+                        icon: const Icon(WindowsIcons.folder_open),
+                        onPressed: onCancelTap,
+                      ),
 
                     if (state.isRunning && !state.requesting)
                       IconButton(

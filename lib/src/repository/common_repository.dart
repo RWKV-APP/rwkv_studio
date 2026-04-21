@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rwkv_downloader/rwkv_downloader.dart';
+import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/cache/state_cache_box.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/common/app_info.dart';
@@ -60,8 +61,8 @@ class CommonRepository {
     );
 
     final tasks = box
-        .map((e) {
-          final json = jsonDecode(e.value);
+        .map((b) {
+          final json = jsonDecode(b.value);
           try {
             return DownloadTaskInfo.fromMap(json);
           } catch (e) {
@@ -160,9 +161,11 @@ class CommonRepository {
     if (task == null) {
       return;
     }
-    await task.instance.cancel().logError(
-      msg: 'failed to cancel download task',
-    );
+    if (!task.instance.update.isCompleted) {
+      await task.instance.cancel().logError(
+        msg: 'failed to cancel download task',
+      );
+    }
     await task.subscription?.cancel();
     _cachedDownloadTasks.remove(id);
 
@@ -257,6 +260,7 @@ class CommonRepository {
       return null;
     }
     _cachedAppInfo = AppInfo.fromJson(json);
+    logd('app info loaded: $json');
     return _cachedAppInfo;
   }
 
@@ -265,18 +269,33 @@ class CommonRepository {
     if (url == null) {
       return null;
     }
-    final a = await CommonApi.getAppUpdates(url);
-    if (a.updateUrl != url) {
-      final f = File(AppAssets.appInfoPath);
-      final n = _cachedAppInfo!.copyWith(updateUrl: a.updateUrl);
-      _cachedAppInfo = n;
-      final json = jsonEncode(n.toJson());
-      f.writeAsString(json).logError(msg: 'failed to update app info');
+    final update = await CommonApi.getAppUpdates(url);
+    if (update.updateUrl != url && update.updateUrl.isNotEmpty) {
+      final info = _cachedAppInfo!.copyWith(updateUrl: update.updateUrl);
+      await updateLocalAppInfo(info);
     }
-    return a;
+    return update;
   }
 
-  Future<Directory?> getRWKVLightningDirectory() async {
+  Future<Map<ComponentType, Directory>> getLocalComponentDir() async {
+    final lightning = await getRWKVLightningDirectory();
+    final data = appDataDir;
+    final toolkit = data.childDirectory("toolkit");
+    return {
+      ComponentType.rwkvLightning: lightning,
+      ComponentType.toolkit: toolkit,
+    };
+  }
+
+  Future updateLocalAppInfo(AppInfo info) async {
+    _cachedAppInfo = info;
+    final f = File(AppAssets.appInfoPath);
+    final json = jsonEncode(info.toJson());
+    f.writeAsString(json).logError(msg: 'failed to update app info');
+    logd('local app info updated: $json');
+  }
+
+  Future<Directory> getRWKVLightningDirectory() async {
     final home = Platform.environment['RWKV_LIGHTNING_DIR'];
     if (home != null) {
       final dir = Directory(home);
@@ -285,7 +304,6 @@ class CommonRepository {
           'RWKV_LIGHTNING_DIR is set to "$home" but the directory does not exist',
         );
       }
-      return dir;
     }
     final cached = await _getCachedRWKVLightningDirectory();
     if (cached != null) {

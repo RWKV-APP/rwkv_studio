@@ -275,13 +275,13 @@ class ModelManageCubit extends Cubit<ModelManageState> {
 
   Future cancel(String id) async {
     await ensureRuntimeReady();
-    await _repository.cancel(id);
     emit(
       state.copyWith(
         modelStates: {...state.modelStates, id: null}
           ..removeWhere((k, v) => v == null),
       ),
     );
+    _repository.cancel(id);
   }
 
   Future pause(String id) async {
