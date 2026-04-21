@@ -101,20 +101,15 @@ mixin class LlmInterface {
   Future<AlbatrossLaunchConfig> _resolveAlbatrossLaunchConfig(
     BuildContext context,
   ) async {
-    final scriptPath =
-        context.app.state.components[ComponentType.rwkvLightningPython]?.bin ??
-        '';
-    if (scriptPath.isEmpty) {
+    final lightning = await context.app.getRwkvLightning();
+    if (lightning.missing) {
       throw const AppException.configuration(
         'Albatross script path is not configured',
       );
     }
-
-    final python = await context.app.getSelectedPython();
-    if (python == null) {
-      throw const AppException.configuration('No Python interpreter selected');
-    }
-
-    return AlbatrossLaunchConfig(python: python, scriptPath: scriptPath);
+    return AlbatrossLaunchConfig(
+      python: null,
+      scriptPath: lightning.executableAbsolutePath,
+    );
   }
 }

@@ -195,7 +195,7 @@ class AppStateCoordinator {
   Future<void> _runStep(String label, Future<void> Function() action) async {
     try {
       await action();
-      logd('AppStateCoordinator $label succeeded');
+      logi('AppStateCoordinator $label succeeded');
     } catch (e, s) {
       final error = AppException.wrap(e, s);
       loge('AppStateCoordinator $label failed', error, error.stackTrace ?? s);
@@ -208,6 +208,7 @@ class AppStateCoordinator {
     }
     _remoteServiceSubscription = remoteServiceRepository.watchSnapshot().listen(
       (snapshot) {
+        logi('AppStateCoordinator remote service snapshot changed');
         llm.syncRemoteServiceInstances(snapshot.services);
       },
     );

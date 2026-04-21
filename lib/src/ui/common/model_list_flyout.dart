@@ -3,12 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
-import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
+import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
+import 'package:rwkv_studio/src/ui/common/component_info_dialog.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
@@ -54,32 +55,10 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
 
   Future<void> _onModelSelected(BuildContext context, ModelInfo info) async {
     if (info.backend == ModelBackend.albatross && !info.isRemote) {
-      final py = await context.app.getSelectedPython();
+      final lightning = await context.app.getRwkvLightning();
       if (!context.mounted) return;
-      if (py == null) {
-        showDialog(
-          context: context,
-          builder: (ctx) => ContentDialog(
-            title: const Text('请先设置 Python 环境'),
-            content: const Text(
-              'Albatross 需要 Python 环境才能运行, 请在设置 -> Python 中设置环境',
-            ),
-            actions: [
-              Button(
-                child: const Text('取消'),
-                onPressed: () => Navigator.of(ctx).pop(),
-              ),
-              FilledButton(
-                child: const Text('去设置'),
-                onPressed: () {
-                  context.app.jump2PythonSettings();
-                  Navigator.of(ctx).pop();
-                  Navigator.of(ctx).pop();
-                },
-              ),
-            ],
-          ),
-        );
+      if (lightning.missing) {
+        ComponentInfoDialog.show(context);
         return;
       }
     }
@@ -94,12 +73,6 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ModelManageCubit, ModelManageState>(
-      buildWhen: (previous, current) =>
-          previous.runtimeLoading != current.runtimeLoading ||
-          previous.runtimeError != current.runtimeError ||
-          previous.models != current.models ||
-          previous.remoteModels != current.remoteModels ||
-          previous.disabledModelIds != current.disabledModelIds,
       builder: (context, modelManageState) {
         return BlocBuilder<LlmCubit, LlmState>(
           buildWhen: (previous, current) => previous.models != current.models,
@@ -143,6 +116,7 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
       final modelSetting = context.settings.state.model;
       final models =
           [
+                ...modelManageState.importedModels,
                 ...modelManageState.enabledRemoteModels,
                 ...modelManageState.models.where(
                   (e) =>

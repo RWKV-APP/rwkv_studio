@@ -9,6 +9,7 @@ import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_cubit.dart';
 import 'package:rwkv_studio/src/cache/hive_manager.dart';
 import 'package:rwkv_studio/src/component/toolkit.dart';
+import 'package:rwkv_studio/src/component/toolkit/pci_model.dart';
 import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
 import 'package:rwkv_studio/src/contract/user_type.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
@@ -26,7 +27,9 @@ import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/path.dart';
 
 part 'app_state.dart';
+
 part 'component_state.dart';
+
 part 'hardware.dart';
 
 extension Ext on BuildContext {
@@ -67,7 +70,21 @@ class AppCubit extends Cubit<AppState> {
       await _initComponentInfo();
       await _initDownloadTasks();
       await _initComponents();
+
+      await _initHardwareInfo().logCatchError(
+        msg: 'Failed to init hardware info',
+      );
     }();
+  }
+
+  Future<AppComponent> getRwkvLightning() async {
+    final r = state.components[ComponentType.rwkvLightning];
+    if (r == null) {
+      throw const AppException.notFound(
+        'component rwkv-lightning is not found',
+      );
+    }
+    return r;
   }
 
   void setPane(int pane) {
@@ -247,6 +264,21 @@ class AppCubit extends Cubit<AppState> {
     emit(state.copyWith(ipAddresses: ips));
   }
 
+  Future _initHardwareInfo() async {
+    final info = await _localMachineRep.getHardwareInfo();
+    final gpus = info.gpu?.cards.map((e) => e.pci).nonNulls.toList() ?? [];
+
+    for (final gpu in gpus) {
+      logi('GPU Info: ${gpu.toJson()}');
+    }
+
+    if (gpus.isEmpty) {
+      logw('No GPU found');
+    }
+
+    emit(state.copyWith(hardware: state.hardware.copyWith(gpus: gpus)));
+  }
+
   Future _initAppInfo() async {
     final info = await _commonRepo.loadCurrentAppInfo();
     if (info != null) {
@@ -265,7 +297,7 @@ class AppCubit extends Cubit<AppState> {
     final toolkit = state.components[ComponentType.toolkit];
     if (toolkit != null && !toolkit.missing) {
       _localMachineRep
-          .initHardwareTools(pathJoin(toolkit.dir, toolkit.bin))
+          .initToolkit(pathJoin(toolkit.dir, toolkit.bin))
           .logCatchError(msg: 'init hardware tools failed');
     }
   }

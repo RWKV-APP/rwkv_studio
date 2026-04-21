@@ -11,6 +11,7 @@ import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
+import 'package:rwkv_studio/src/python/rwkv_lightning.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
@@ -157,10 +158,19 @@ class LlmSessionRepository {
     await rwkv.init(InitParam(logLevel: RWKVLogLevel.verbose));
     yield ModelLoadState.loading(modelInfo.id);
     try {
+      Backend? backend;
+      if (modelInfo.backend == ModelBackend.web_rwkv) {
+        backend = .webRwkv;
+      }
+      if (modelInfo.backend == ModelBackend.qnn) {
+        backend = .qnn;
+      }
+
       await rwkv.loadModel(
         LoadModelParam(
           modelPath: modelInfo.localPath,
           tokenizerPath: AppAssets.rwkvVocab20230424Path,
+          backend: backend,
         ),
       );
     } catch (e, s) {
@@ -368,6 +378,14 @@ class LlmSessionRepository {
     AlbatrossLaunchConfig config,
     ModelInfo model,
   ) {
+    if (!config.scriptPath.endsWith(".py")) {
+      final cmd = RwkvLightningLauncher(
+        executable: config.scriptPath,
+        modelPath: model.localPath,
+        vocabPath: AppAssets.rwkvVocab20230424Path,
+      );
+      return cmd.startup();
+    }
     final cmd = AlbatrossLauncher(
       python: config.python,
       scriptPath: config.scriptPath,

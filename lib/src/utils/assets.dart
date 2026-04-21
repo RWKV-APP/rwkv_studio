@@ -28,8 +28,9 @@ class AppAssets {
     if (!kIsWeb) {
       final f = await _assetsPath('assets/rwkv/$name', name);
       rwkvVocab20230424Path = f.path;
+      final os = Platform.operatingSystem;
       final appInfoFile = await _assetsPath(
-        'assets/config/app_info.json',
+        'assets/config/app_info_$os.json',
         'app_info.json',
       );
       appInfoPath = appInfoFile.path;

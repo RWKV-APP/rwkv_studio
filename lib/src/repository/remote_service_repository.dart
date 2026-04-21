@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
@@ -83,12 +84,20 @@ class RemoteServiceConnection {
 }
 
 class RemoteServiceRepository {
+  static const Duration _snapshotEmitDelay = Duration(milliseconds: 200);
+
   final StreamController<RemoteServiceSnapshot> _snapshotController =
       StreamController<RemoteServiceSnapshot>.broadcast();
   List<RemoteServiceModel> _configs = const [];
   List<ModelServiceWrap> _services = const [];
   List<RemoteModelInfo> _cachedRemoteModels = const [];
   Map<String, RemoteServiceStatus> _statuses = const {};
+  Timer? _snapshotEmitTimer;
+  String? _lastEmittedSnapshotFingerprint;
+
+  RemoteServiceRepository() {
+    _lastEmittedSnapshotFingerprint = _snapshotFingerprint();
+  }
 
   List<ModelServiceWrap> get connectedServices => _services;
 
@@ -121,16 +130,7 @@ class RemoteServiceRepository {
   }
 
   Future<void> syncConnections(Iterable<RemoteServiceModel> configs) async {
-    _configs = configs.toList();
-    _statuses = {
-      for (final config in _configs)
-        config.id: config.enabled && config.url.trim().isNotEmpty
-            ? const RemoteServiceStatus.checking()
-            : const RemoteServiceStatus.disabled(),
-    };
-    _services = const [];
-    _cachedRemoteModels = const [];
-    _emitSnapshot();
+    _configs = configs.toList(growable: false);
     await _refreshRuntime();
   }
 
@@ -154,6 +154,8 @@ class RemoteServiceRepository {
   }
 
   Future<void> dispose() async {
+    _snapshotEmitTimer?.cancel();
+    _snapshotEmitTimer = null;
     _configs = const [];
     _services = const [];
     _cachedRemoteModels = const [];
@@ -171,8 +173,14 @@ class RemoteServiceRepository {
             : const RemoteServiceStatus.disabled(),
     };
     _statuses = statuses;
-    _services = const [];
-    _cachedRemoteModels = const [];
+    _services = _services
+        .where((service) => _activeConfigMatches(service.id, service.url))
+        .toList(growable: false);
+    _cachedRemoteModels = _cachedRemoteModels
+        .where(
+          (model) => _activeConfigMatches(model.serviceId, model.providerUrl),
+        )
+        .toList(growable: false);
     _emitSnapshot();
 
     for (final config in _configs.where(
@@ -184,8 +192,6 @@ class RemoteServiceRepository {
           statuses[config.id] = RemoteServiceStatus.unavailable(
             'service unavailable',
           );
-          _statuses = Map<String, RemoteServiceStatus>.from(statuses);
-          _emitSnapshot();
           continue;
         }
 
@@ -226,22 +232,114 @@ class RemoteServiceRepository {
         );
         loge(error, null, error.stackTrace ?? s);
       }
-      _services = List<ModelServiceWrap>.from(services);
-      _cachedRemoteModels = List<RemoteModelInfo>.from(models);
-      _statuses = Map<String, RemoteServiceStatus>.from(statuses);
-      _emitSnapshot();
     }
 
     _services = services;
     _cachedRemoteModels = models;
     _statuses = statuses;
-    _emitSnapshot();
+    _emitSnapshot(immediate: true);
   }
 
-  void _emitSnapshot() {
+  bool _activeConfigMatches(String serviceId, String serviceUrl) {
+    return _configs.any(
+      (config) =>
+          config.id == serviceId &&
+          config.enabled &&
+          config.url.trim().isNotEmpty &&
+          config.url == serviceUrl,
+    );
+  }
+
+  void _emitSnapshot({bool immediate = false}) {
     if (_snapshotController.isClosed) {
       return;
     }
+    final fingerprint = _snapshotFingerprint();
+    if (fingerprint == _lastEmittedSnapshotFingerprint) {
+      _snapshotEmitTimer?.cancel();
+      _snapshotEmitTimer = null;
+      return;
+    }
+
+    if (immediate) {
+      _snapshotEmitTimer?.cancel();
+      _snapshotEmitTimer = null;
+      _emitSnapshotNow(fingerprint);
+      return;
+    }
+
+    _snapshotEmitTimer ??= Timer(_snapshotEmitDelay, () {
+      _snapshotEmitTimer = null;
+      if (_snapshotController.isClosed) {
+        return;
+      }
+      final latestFingerprint = _snapshotFingerprint();
+      if (latestFingerprint == _lastEmittedSnapshotFingerprint) {
+        return;
+      }
+      _emitSnapshotNow(latestFingerprint);
+    });
+  }
+
+  void _emitSnapshotNow(String fingerprint) {
+    _lastEmittedSnapshotFingerprint = fingerprint;
     _snapshotController.add(snapshot);
+  }
+
+  String _snapshotFingerprint() {
+    return jsonEncode({
+      // Configs are not exposed in the snapshot, but they can change the
+      // underlying service clients even when the visible model list is same.
+      'configs': _configs
+          .map(
+            (config) => [
+              config.id,
+              config.name,
+              config.url,
+              config.enabled,
+              config.apiKey,
+            ],
+          )
+          .toList(growable: false),
+      'services': _services
+          .map(
+            (service) => [
+              service.id,
+              service.sourceName,
+              service.url,
+              service.available,
+              service.models.length,
+            ],
+          )
+          .toList(growable: false),
+      'models': _cachedRemoteModels
+          .map(_remoteModelFingerprint)
+          .toList(growable: false),
+      'statuses': {
+        for (final key in _statuses.keys.toList()..sort())
+          key: _statusFingerprint(_statuses[key]!),
+      },
+    });
+  }
+
+  List<Object?> _statusFingerprint(RemoteServiceStatus status) {
+    return [
+      status.enabled,
+      status.checking,
+      status.available,
+      status.error,
+      status.modelCount,
+    ];
+  }
+
+  List<Object?> _remoteModelFingerprint(RemoteModelInfo model) {
+    return [
+      model.serviceId,
+      model.providerName,
+      model.providerUrl,
+      model.id,
+      model.name,
+      model.modelSize,
+    ];
   }
 }

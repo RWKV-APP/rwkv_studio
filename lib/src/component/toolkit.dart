@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:rwkv_studio/src/component/toolkit/hardware_info_model.dart';
+import 'package:rwkv_studio/src/component/toolkit/hardware_model.dart';
 import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
 import 'package:rwkv_studio/src/python/process.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
@@ -27,10 +27,10 @@ class Toolkit {
     _process = null;
   }
 
-  static Future<HardwareInfoModel> getHardwareInfo() async {
+  static Future<HardwareModel> getHardwareInfo() async {
     final out = await _exec(['info']);
     final json = jsonDecode(out);
-    return HardwareInfoModel.fromJson(json);
+    return HardwareModel.fromJson(json);
   }
 
   static Stream<HardwareUsageModel> watchHardwareUsage({

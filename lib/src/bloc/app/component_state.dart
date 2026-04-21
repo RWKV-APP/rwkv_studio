@@ -24,6 +24,18 @@ class AppComponent {
       missing ||
       latest != AppComponentInfo.empty && latest.versionCode > info.versionCode;
 
+  String get executableAbsolutePath => pathJoin(dir, bin);
+
+  (bool available, String msg) get availability {
+    if (type == .rwkvLightning && !Platform.isWindows) {
+      return (false, 'RWKV Lightning is only available on Windows');
+    }
+    if (type == .rwkvLightningPython && !Platform.isWindows) {
+      return (false, 'RWKV Lightning Python is only available on Windows');
+    }
+    return (true, '');
+  }
+
   static const Map<ComponentType, AppComponent> defaultComponents = {
     ComponentType.toolkit: AppComponent(
       dir: '',

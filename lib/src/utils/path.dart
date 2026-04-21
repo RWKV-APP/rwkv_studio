@@ -9,9 +9,9 @@ Directory get appDataDir =>
 
 String pathJoin(String a, String b) {
   if (Platform.isWindows) {
-    return '$a\\$b';
+    return [a, b].join('\\');
   }
-  return '$a/$b';
+  return [a, b].join('/');
 }
 
 String fileName(String path) {

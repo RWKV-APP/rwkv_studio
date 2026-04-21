@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/component/toolkit.dart';
+import 'package:rwkv_studio/src/component/toolkit/hardware_model.dart';
 import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 import 'package:rwkv_studio/src/utils/archive_utils.dart';
@@ -14,7 +15,7 @@ class LocalMachineRepository {
 
   LocalMachineRepository();
 
-  Future initHardwareTools(String bin) async {
+  Future initToolkit(String bin) async {
     await Toolkit.init(bin);
   }
 
@@ -61,9 +62,9 @@ class LocalMachineRepository {
       rethrow;
     }
     if (isUpgrade) {
-      await bak.delete(recursive: true).logCatchError(
-        msg: 'remove component backup failed',
-      );
+      await bak
+          .delete(recursive: true)
+          .logCatchError(msg: 'remove component backup failed');
     }
     logd('component installed: ${comp.type.name}');
 
@@ -84,20 +85,26 @@ class LocalMachineRepository {
     final tmp = Directory(tmpPath);
 
     if (await compDir.exists()) {
-      await compDir.delete(recursive: true).logCatchError(
-        msg: 'remove failed component dir before rollback failed',
-      );
+      await compDir
+          .delete(recursive: true)
+          .logCatchError(
+            msg: 'remove failed component dir before rollback failed',
+          );
     }
     if (await bak.exists()) {
-      await bak.rename(compDirPath).logCatchError(
-        msg: 'restore component backup failed',
-      );
+      await bak
+          .rename(compDirPath)
+          .logCatchError(msg: 'restore component backup failed');
     }
     if (await tmp.exists()) {
-      await tmp.delete(recursive: true).logCatchError(
-        msg: 'remove component tmp after rollback failed',
-      );
+      await tmp
+          .delete(recursive: true)
+          .logCatchError(msg: 'remove component tmp after rollback failed');
     }
+  }
+
+  Future<HardwareModel> getHardwareInfo() async {
+    return await Toolkit.getHardwareInfo();
   }
 
   Future<List<String>> getInterfaceIPAddress() async {

@@ -57,7 +57,11 @@ class ComponentInfoDialog extends StatelessWidget {
     AppComponent component,
   ) {
     final task = _findDownloadTask(state.downloadTasks, component);
-    return _ComponentItem(component: component, task: task);
+    return _ComponentItem(
+      component: component,
+      task: task,
+      hardware: state.hardware,
+    );
   }
 
   static DownloadTaskInfo? _findDownloadTask(
@@ -86,13 +90,19 @@ class ComponentInfoDialog extends StatelessWidget {
 class _ComponentItem extends StatelessWidget {
   final AppComponent component;
   final DownloadTaskInfo? task;
+  final HardwareInfoState hardware;
 
-  const _ComponentItem({required this.component, this.task});
+  const _ComponentItem({
+    required this.component,
+    this.task,
+    required this.hardware,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = context.fluent;
 
+    var (available, warning) = component.availability;
     final downloading = task?.status.isRunning == true;
     final progress = task?.status.progress ?? double.nan;
     final showInstall = component.hasUpdate && task?.status.isCompleted == true;
@@ -103,6 +113,13 @@ class _ComponentItem extends StatelessWidget {
     final upgradeText = (showUpdate || showInstall)
         ? '->${component.latest.versionName}'
         : '';
+
+    if (component.type == .rwkvLightning) {
+      if (hardware.gpus.isNotEmpty && !hardware.hasNvidiaGPU) {
+        available = false;
+        warning = 'Requires NVIDIA GPU';
+      }
+    }
 
     return Container(
       margin: const .only(top: 8),
@@ -119,13 +136,15 @@ class _ComponentItem extends StatelessWidget {
             style: theme.typography.bodyLarge?.copyWith(fontWeight: .w600),
           ),
           const SizedBox(height: 6),
+          if (warning.isNotEmpty)
+            Text(warning, style: TextStyle(color: Colors.orange.light)),
           Text(component.info.description),
           if (downloading)
             Align(
               alignment: .centerRight,
               child: FilledButton(
                 child: Text(
-                  '下载中 ${progress.isNaN ? '...' : progress.toStringAsFixed(2)}%',
+                  '下载中${progress.isNaN ? '' : " ${progress.toStringAsFixed(2)}%"}',
                 ),
                 onPressed: () {
                   context.app.pauseTask(task!.id);

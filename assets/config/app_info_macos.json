@@ -1,0 +1,27 @@
+{
+  "components": [
+    {
+      "component_name": "toolkit",
+      "description": "rwkv studio integrated tools",
+      "version_name": "1.0.0",
+      "version_code": 1,
+      "download_url": "https://aifasthub.com/meta-logic/config/resolve/main/studio/macos/toolkit_1.0.0.zip?download=true",
+      "release_notes": "init release",
+      "size_bytes": 4949278,
+      "sha256": "4f4e2fefc424c2004fb83657102469475a2a108dfb091720478ed0bfe1713ca7",
+      "timestamp": 1776654038660
+    }
+  ],
+  "app": {
+    "component_name": "RWKV Studio",
+    "description": "",
+    "version_name": "1.0.1",
+    "version_code": 0,
+    "download_url": "https://github.com/RWKV-APP/rwkv_studio/releases/macos/1.0.4/rwkv_studio_1.0.4_macos.zip",
+    "release_notes": "no release notes",
+    "size_bytes": 55574528,
+    "sha256": "",
+    "timestamp": 1776654038660
+  },
+  "update_url": "https://aifasthub.com/meta-logic/config/resolve/main/studio/macos/app_info.json"
+}
