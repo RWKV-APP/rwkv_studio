@@ -11,7 +11,7 @@ import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
 import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
-import 'package:rwkv_studio/src/python/rwkv_lightning.dart';
+import 'package:rwkv_studio/src/component/rwkv_lightning.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';

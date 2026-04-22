@@ -2,6 +2,7 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+sh "$SCRIPT_DIR/check-env.sh" appimage
 . "$SCRIPT_DIR/packaging/common.sh"
 
 require_cmd appimagetool

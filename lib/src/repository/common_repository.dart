@@ -267,6 +267,7 @@ class CommonRepository {
   Future<AppInfo?> getAppUpdateInfo() async {
     final url = _cachedAppInfo?.updateUrl;
     if (url == null) {
+      logw('no app info update url');
       return null;
     }
     final update = await CommonApi.getAppUpdates(url);

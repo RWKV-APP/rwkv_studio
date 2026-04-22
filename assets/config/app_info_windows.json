@@ -5,6 +5,7 @@
       "description": "High performance inference engine for RWKV implementation based on albatross and libtorch",
       "version_name": "1.0.0",
       "version_code": 1,
+      "entry_point": "rwkv_lightning.exe",
       "download_url": "https://github.com/Alic-Li/rwkv_lightning_libtorch/releases/download/V1.0.0/rwkv_lightning_libtorch2.10.0+cu132_sm75-120_Windows_amd64.zip",
       "release_notes": "New release",
       "size_bytes": 1320702443,
@@ -13,6 +14,7 @@
     },
     {
       "component_name": "toolkit",
+      "entry_point": "toolkit.exe",
       "description": "rwkv studio integrated tools",
       "version_name": "1.0.0",
       "version_code": 1,

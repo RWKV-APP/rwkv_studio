@@ -56,6 +56,10 @@ void main() async {
 }
 
 void _detectSystemProxy() async {
+  if (Platform.isLinux) {
+    logw('detect system proxy not supported on Linux yet');
+    return;
+  }
   final ProxySetting? setting = await proxySetting();
 
   if (setting?.mode == .proxy) {

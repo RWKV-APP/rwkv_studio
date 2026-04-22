@@ -11,7 +11,7 @@ import 'package:rwkv_studio/src/models/common/download_task_info.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/ui/batch_infer/batch_infer_page.dart';
 import 'package:rwkv_studio/src/ui/chat/chat_page.dart';
-import 'package:rwkv_studio/src/ui/common/component_info_dialog.dart';
+import 'package:rwkv_studio/src/ui/common/app_update_dialog.dart';
 import 'package:rwkv_studio/src/ui/common/import_model_area.dart';
 import 'package:rwkv_studio/src/ui/flow/flow_page.dart';
 import 'package:rwkv_studio/src/ui/generation/text_generation_page.dart';

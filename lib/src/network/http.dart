@@ -33,11 +33,11 @@ class HTTP {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          logv('HTTP -> ${options.method} ${options.uri}');
+          logi('HTTP -> ${options.method} ${options.uri}');
           handler.next(options);
         },
         onResponse: (response, handler) {
-          logv(
+          logi(
             'HTTP <- ${response.statusCode ?? '-'} '
             '${response.requestOptions.method} ${response.requestOptions.uri}',
           );

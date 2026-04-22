@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
@@ -115,9 +117,12 @@ class _ComponentItem extends StatelessWidget {
         : '';
 
     if (component.type == .rwkvLightning) {
-      if (hardware.gpus.isNotEmpty && !hardware.hasNvidiaGPU) {
+      if (!Platform.isWindows) {
         available = false;
-        warning = 'Requires NVIDIA GPU';
+        warning = 'Unavailable: currently only available on Windows';
+      } else if (hardware.gpus.isNotEmpty && !hardware.hasNvidiaGPU) {
+        available = false;
+        warning = 'Unavailable: Requires NVIDIA GPU';
       }
     }
 

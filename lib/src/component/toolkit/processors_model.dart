@@ -23,8 +23,8 @@ class ProcessorsModel {
   factory ProcessorsModel.fromJson(dynamic data) {
     final json = data as Map<String, dynamic>;
     return ProcessorsModel(
-      capabilities: json['capabilities'] ?? null,
-      cores: json['cores'] ?? null,
+      capabilities: json['capabilities'],
+      cores: json['cores'],
       totalHardwareThreads: json['total_hardware_threads'] ?? 0,
       vendor: json['vendor'] ?? '',
       totalThreads: json['total_threads'] ?? 0,

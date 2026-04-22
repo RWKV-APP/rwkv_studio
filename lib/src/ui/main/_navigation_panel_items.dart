@@ -137,7 +137,7 @@ VoidCallback? _itemOnTap(BuildContext context, NavBarItemType type) {
       };
     case NavBarItemType.updates:
       return () {
-        ComponentInfoDialog.show(context);
+        AppUpdateDialog.show(context);
       };
     default:
       return null;

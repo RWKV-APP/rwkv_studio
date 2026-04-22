@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:rwkv_studio/src/component/process.dart';
 import 'package:rwkv_studio/src/component/toolkit/hardware_model.dart';
 import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
-import 'package:rwkv_studio/src/python/process.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 class Toolkit {
@@ -68,8 +69,11 @@ class Toolkit {
   }
 
   static Future<String> _exec(List<String> args) async {
-    final proc = await AppProcess.start(_bin, [...args]);
-    final out = await proc.outputs.last;
+    if (_bin.isEmpty) {
+      throw const AppException.illegalState('toolkit not initialized');
+    }
+    final proc = await AppProcess.run(_bin, [...args]);
+    final out = proc.stdoutStr;
     return out;
   }
 }

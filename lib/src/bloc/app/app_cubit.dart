@@ -68,12 +68,8 @@ class AppCubit extends Cubit<AppState> {
 
       await _initAppInfo();
       await _initComponentInfo();
-      await _initDownloadTasks();
       await _initComponents();
-
-      await _initHardwareInfo().logCatchError(
-        msg: 'Failed to init hardware info',
-      );
+      await _initDownloadTasks();
     }();
   }
 
@@ -296,14 +292,24 @@ class AppCubit extends Cubit<AppState> {
   Future _initComponents() async {
     final toolkit = state.components[ComponentType.toolkit];
     if (toolkit != null && !toolkit.missing) {
-      _localMachineRep
-          .initToolkit(pathJoin(toolkit.dir, toolkit.bin))
+      logi('start init toolkit');
+      await _localMachineRep
+          .initToolkit(toolkit.executablePath)
           .logCatchError(msg: 'init hardware tools failed');
+      await _initHardwareInfo().logCatchError(
+        msg: 'Failed to init hardware info',
+      );
+      logd('init toolkit success');
+    } else {
+      logw('component toolkit found');
     }
   }
 
   Future _initComponentInfo() async {
     if (kIsWeb) return;
+
+    final componentPath = await _commonRepo.getLocalComponentDir();
+    final components = <ComponentType, AppComponent>{};
 
     final current = {
       for (final e in state.appInfo.components) e.componentName: e,
@@ -312,32 +318,39 @@ class AppCubit extends Cubit<AppState> {
       for (final e in state.appUpdate.components) e.componentName: e,
     };
 
-    final componentPath = await _commonRepo.getLocalComponentDir();
-    final components = <ComponentType, AppComponent>{};
-    for (final entry in state.components.entries) {
+    for (final entry in current.entries) {
       final c = entry.value;
-      final dir = componentPath[c.type];
+      final type = ComponentType.values
+          .where((e) => e.name == c.componentName)
+          .firstOrNull;
+      if (type == null) {
+        logw('unknown component type: ${c.componentName}');
+        continue;
+      }
+      final dir = componentPath[type];
       if (dir == null) {
         continue;
       }
-      final bin = dir.path.joinPath(c.bin);
-      final installed = await File(bin).exists();
-      logd(
-        'init component ${c.type.name}, '
-        'installed=$installed, '
-        'bin: $bin',
-      );
-      final nc = c.copyWith(
-        dir: dir.absolute.path,
-        external: !dir.isAppPrivate(),
+      final bin = dir.childFile(c.entryPoint);
+      final installed = await bin.exists();
+      components[type] = AppComponent(
+        dir: dir.path,
+        type: type,
+        enabled: true,
         missing: !installed,
-        info: current[c.type.name],
-        latest: latest[c.type.name],
+        external: false,
+        bin: c.entryPoint,
+        info: c,
+        latest: latest[c.componentName] ?? AppComponentInfo.empty,
       );
-      components[nc.type] = nc;
+
+      logd(
+        'load component ${type.name}, '
+        'installed=$installed, '
+        'path: ${bin.path}',
+      );
     }
     emit(state.copyWith(components: components));
-    _refreshUpdateState();
   }
 
   Future _initDownloadTasks() async {
@@ -408,35 +421,28 @@ class AppCubit extends Cubit<AppState> {
       _initComponents();
 
       emit(state.copyWith(components: components, appInfo: appInfo));
-      _refreshUpdateState();
     }
   }
 
   void _refreshUpdateState() {
-    final hasAvailableUpdate = _hasAvailableUpdate();
+    final hasAppUpdate = state.hasAppUpdate;
     final navBarItems = _syncUpdateNavItems(
       state.navBarItems,
-      hasAvailableUpdate: hasAvailableUpdate,
+      hasAvailableUpdate: hasAppUpdate,
     );
     final pane = _remapPane(navBarItems);
-    if (state.hasAvailableUpdate == hasAvailableUpdate &&
+    if (state.hasAvailableUpdate == hasAppUpdate &&
         identical(navBarItems, state.navBarItems) &&
         pane == state.pane) {
       return;
     }
     emit(
       state.copyWith(
-        hasAvailableUpdate: hasAvailableUpdate,
+        hasAvailableUpdate: hasAppUpdate,
         navBarItems: navBarItems,
         pane: pane,
       ),
     );
-  }
-
-  bool _hasAvailableUpdate() {
-    final hasAppUpdate =
-        state.appUpdate.app.versionCode > state.appInfo.app.versionCode;
-    return hasAppUpdate || state.components.values.any((e) => e.hasUpdate);
   }
 
   List<NavBarItem> _syncUpdateNavItems(

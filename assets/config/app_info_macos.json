@@ -5,6 +5,7 @@
       "description": "rwkv studio integrated tools",
       "version_name": "1.0.0",
       "version_code": 1,
+      "entry_point": "toolkit",
       "download_url": "https://aifasthub.com/meta-logic/config/resolve/main/studio/macos/toolkit_1.0.0.zip?download=true",
       "release_notes": "init release",
       "size_bytes": 4949278,

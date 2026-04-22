@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:rwkv_studio/src/errors/app_exception.dart';
-import 'package:rwkv_studio/src/python/process.dart';
+import 'package:rwkv_studio/src/component/process.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
 class CondaEnv {

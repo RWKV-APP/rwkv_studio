@@ -2,7 +2,7 @@
 class MemoryModel {
   final num total;
   final num available;
-  final int usedPercent;
+  final num usedPercent;
   final num used;
   final num free;
 

@@ -107,6 +107,8 @@ class AppState {
   final List<DownloadTaskInfo> downloadTasks;
   final HardwareInfoState hardware;
 
+  bool get hasAppUpdate => appUpdate.app.versionCode > appInfo.app.versionCode;
+
   List<NavBarItem> expandedItems() {
     return navBarItems
         .flatten((e) => <NavBarItem>[e, ...(e.subitems ?? [])])
@@ -142,7 +144,7 @@ class AppState {
       remoteServiceStatuses: const {},
       appInfo: AppInfo.empty,
       appUpdate: AppInfo.empty,
-      components: AppComponent.defaultComponents,
+      components: {},
       hasAvailableUpdate: false,
       downloadTasks: [],
       hardware: HardwareInfoState.empty,

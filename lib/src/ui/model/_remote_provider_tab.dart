@@ -4,7 +4,6 @@ import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/models/model/model_identity.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
-import 'package:rwkv_studio/src/theme/text_theme.dart';
 import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
 

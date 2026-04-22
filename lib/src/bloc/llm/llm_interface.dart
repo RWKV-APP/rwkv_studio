@@ -109,7 +109,7 @@ mixin class LlmInterface {
     }
     return AlbatrossLaunchConfig(
       python: null,
-      scriptPath: lightning.executableAbsolutePath,
+      scriptPath: lightning.executablePath,
     );
   }
 }

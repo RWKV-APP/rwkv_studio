@@ -21,8 +21,8 @@ class NodeFactory {
         .input(name: 'tools', multiConnections: true),
       ],
     ),
-    NodeDefinition(type: 'Tools', ports: [.controlOut]),
-    NodeDefinition(type: 'Tool Call', ports: [.controlIn, .controlOut]),
+    const NodeDefinition(type: 'Tools', ports: [.controlOut]),
+    const NodeDefinition(type: 'Tool Call', ports: [.controlIn, .controlOut]),
     NodeDefinition(
       type: 'If',
       ports: [

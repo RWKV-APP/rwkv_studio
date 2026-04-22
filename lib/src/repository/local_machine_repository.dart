@@ -8,7 +8,6 @@ import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 import 'package:rwkv_studio/src/utils/archive_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
-import 'package:rwkv_studio/src/utils/path.dart';
 
 class LocalMachineRepository {
   List<Python> _pythons = [];
@@ -71,7 +70,7 @@ class LocalMachineRepository {
     await File(zip).delete().logCatchError(msg: 'remove component zip failed');
 
     if (comp.type == .toolkit) {
-      await Toolkit.init(pathJoin(compDirPath, comp.bin));
+      await Toolkit.init(comp.executablePath);
     }
   }
 

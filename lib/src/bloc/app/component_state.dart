@@ -24,7 +24,7 @@ class AppComponent {
       missing ||
       latest != AppComponentInfo.empty && latest.versionCode > info.versionCode;
 
-  String get executableAbsolutePath => pathJoin(dir, bin);
+  String get executablePath => pathJoin(dir, bin);
 
   (bool available, String msg) get availability {
     if (type == .rwkvLightning && !Platform.isWindows) {
@@ -35,29 +35,6 @@ class AppComponent {
     }
     return (true, '');
   }
-
-  static const Map<ComponentType, AppComponent> defaultComponents = {
-    ComponentType.toolkit: AppComponent(
-      dir: '',
-      type: ComponentType.toolkit,
-      enabled: true,
-      missing: true,
-      external: false,
-      bin: 'toolkit.exe',
-      info: AppComponentInfo.empty,
-      latest: AppComponentInfo.empty,
-    ),
-    ComponentType.rwkvLightning: AppComponent(
-      dir: '',
-      type: ComponentType.rwkvLightning,
-      enabled: true,
-      missing: true,
-      external: false,
-      bin: 'rwkv_lightning.exe',
-      info: AppComponentInfo.empty,
-      latest: AppComponentInfo.empty,
-    ),
-  };
 
   const AppComponent({
     required this.dir,

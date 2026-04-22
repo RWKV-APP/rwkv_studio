@@ -67,7 +67,7 @@ class AppLog with ChangeNotifier {
 
   void _log(Log log) {
     history.add(log);
-    if (history.length > 100) {
+    if (history.length > 1000) {
       history.removeAt(0);
     }
     notifyListeners();

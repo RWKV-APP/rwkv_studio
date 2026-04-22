@@ -2,6 +2,7 @@ import 'package:rwkv_studio/src/utils/equatable.dart';
 
 class AppComponentInfo extends Equatable {
   final String componentName;
+  final String entryPoint;
   final String description;
   final String versionName;
   final int versionCode;
@@ -14,6 +15,7 @@ class AppComponentInfo extends Equatable {
   @override
   List<Object?> get props => [
     componentName,
+    entryPoint,
     description,
     versionName,
     versionCode,
@@ -26,6 +28,7 @@ class AppComponentInfo extends Equatable {
 
   const AppComponentInfo({
     required this.componentName,
+    required this.entryPoint,
     required this.description,
     required this.versionName,
     required this.versionCode,
@@ -38,6 +41,7 @@ class AppComponentInfo extends Equatable {
 
   static const empty = AppComponentInfo(
     componentName: '',
+    entryPoint: '',
     description: '',
     versionName: '',
     versionCode: 0,
@@ -50,6 +54,7 @@ class AppComponentInfo extends Equatable {
 
   Map toJson() => {
     'component_name': componentName,
+    'entry_point': entryPoint,
     'description': description,
     'version_name': versionName,
     'version_code': versionCode,
@@ -62,6 +67,7 @@ class AppComponentInfo extends Equatable {
 
   factory AppComponentInfo.fromJson(dynamic json) => AppComponentInfo(
     componentName: json['component_name'] ?? '',
+    entryPoint: json['entry_point'] ?? '',
     description: json['description'] ?? '',
     versionName: json['version_name'] ?? '',
     versionCode: json['version_code'] ?? 0,
@@ -74,6 +80,7 @@ class AppComponentInfo extends Equatable {
 
   AppComponentInfo copyWith({
     String? componentName,
+    String? entryPoint,
     String? description,
     String? versionName,
     int? versionCode,
@@ -85,6 +92,7 @@ class AppComponentInfo extends Equatable {
   }) {
     return AppComponentInfo(
       componentName: componentName ?? this.componentName,
+      entryPoint: entryPoint ?? this.entryPoint,
       description: description ?? this.description,
       versionName: versionName ?? this.versionName,
       versionCode: versionCode ?? this.versionCode,

@@ -2,7 +2,34 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+
+extension Ext on ProcessResult {
+  String get stdoutStr {
+    if (this.stdout is String) {
+      return (this.stdout as String).trim();
+    } else if (this.stdout == null) {
+      return '';
+    } else if (this.stdout is List<int>) {
+      return utf8.decode(this.stdout).trim();
+    } else {
+      return this.stdout.toString().trim();
+    }
+  }
+
+  String get stderrStr {
+    if (this.stderr is String) {
+      return this.stderr as String;
+    } else if (this.stderr == null) {
+      return '';
+    } else if (this.stderr is List<int>) {
+      return utf8.decode(this.stderr);
+    } else {
+      return this.stderr.toString();
+    }
+  }
+}
 
 class AppProcess {
   final _output = StreamController<String>.broadcast();
@@ -19,7 +46,9 @@ class AppProcess {
     _process.exitCode.then((e) {
       _exitCode = e;
       if (e != 0 && !_output.isClosed) {
-        _output.addError('process exited with code: $e');
+        _output.addError(
+          AppException.externalProcess('process $pid exited with code: $e'),
+        );
       } else {
         logd('process exited, pid=${_process.pid}, code=$e');
       }
@@ -37,6 +66,18 @@ class AppProcess {
         _output.add(utf8.decode(e).trim());
       }
     });
+  }
+
+  static Future<ProcessResult> run(
+    String executable,
+    List<String> args, {
+    String? workingDir,
+  }) async {
+    final r = await Process.run(executable, args, workingDirectory: workingDir);
+    if (r.exitCode != 0) {
+      throw ProcessException(executable, args, r.stderr, r.exitCode);
+    }
+    return r;
   }
 
   static Future<AppProcess> start(
@@ -72,10 +113,7 @@ class AppProcess {
     if (resolvedArgs.isEmpty) {
       return (executable: executable, args: args);
     }
-    return (
-      executable: resolvedArgs.first,
-      args: resolvedArgs.sublist(1),
-    );
+    return (executable: resolvedArgs.first, args: resolvedArgs.sublist(1));
   }
 
   static Future<void> _ensureExecutablePermission(String executable) async {

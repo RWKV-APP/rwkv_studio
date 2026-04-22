@@ -1,7 +1,7 @@
 name: rwkv_studio
 description: "RWKV Studio"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.4+5
+version: 1.0.5+6
 
 environment:
   sdk: ^3.10.0
