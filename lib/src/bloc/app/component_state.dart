@@ -3,6 +3,7 @@ part of 'app_cubit.dart';
 enum ComponentType {
   toolkit(name: 'toolkit'),
   rwkvLightning(name: 'rwkv_lightning'),
+  rwkvMobile(name: 'rwkv_mobile'),
   rwkvLightningPython(name: 'rwkv_lightning_python');
 
   final String name;

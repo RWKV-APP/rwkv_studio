@@ -4,14 +4,14 @@ import 'package:rwkv_dart/rwkv_dart.dart' hide ModelBaseInfo;
 import 'package:rwkv_downloader/rwkv_downloader.dart';
 import 'package:rwkv_studio/src/bloc/llm/llm_state.dart';
 import 'package:rwkv_studio/src/bloc/llm/model_load_state.dart';
+import 'package:rwkv_studio/src/component/rwkv_lightning.dart';
+import 'package:rwkv_studio/src/component/rwkv_mobile.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/chat/chat_event.dart';
 import 'package:rwkv_studio/src/models/llm/generation_config.dart';
 import 'package:rwkv_studio/src/models/model/model_service_wrap.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
-import 'package:rwkv_studio/src/python/albatross.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
-import 'package:rwkv_studio/src/component/rwkv_lightning.dart';
 import 'package:rwkv_studio/src/utils/assets.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 import 'package:rwkv_studio/src/utils/rwkv_tokenizer.dart';
@@ -34,6 +34,8 @@ class LlmSessionRepository {
   final _subscriptions = <String, StreamSubscription>{};
   final _boundRwkvs = <String, RWKV>{};
 
+  String _rwkvLightningEntryPoint = '';
+  String _rwkvMobileEntryPoint = '';
   Map<String, ModelInstanceState> _models = const {};
 
   LlmSessionRepository();
@@ -41,6 +43,14 @@ class LlmSessionRepository {
   Map<String, ModelInstanceState> get models => _models;
 
   LlmSessionSnapshot get snapshot => LlmSessionSnapshot(models: _models);
+
+  void setRwkvLightningEntryPoint(String path) {
+    _rwkvLightningEntryPoint = path;
+  }
+
+  void setRwkvMobileEntryPoint(String path) {
+    _rwkvMobileEntryPoint = path;
+  }
 
   Stream<LlmSessionSnapshot> watchSnapshot() {
     return _snapshotController.stream;
@@ -100,43 +110,9 @@ class LlmSessionRepository {
     return tokens;
   }
 
-  Stream<ModelLoadState> loadModel(
-    ModelInfo modelInfo, {
-    AlbatrossLaunchConfig? albatrossConfig,
-  }) async* {
+  Stream<ModelLoadState> loadModel(ModelInfo modelInfo) async* {
     RWKV rwkv;
     String? instanceId;
-
-    if (modelInfo.backend == ModelBackend.albatross && !modelInfo.isRemote) {
-      if (albatrossConfig == null) {
-        yield ModelLoadState.error(
-          modelInfo.id,
-          const AppException.configuration('Missing Albatross launch config'),
-        );
-        return;
-      }
-      try {
-        yield ModelLoadState.loading(modelInfo.id);
-        rwkv = await _startAlbatross(albatrossConfig, modelInfo);
-      } catch (e, s) {
-        yield ModelLoadState.error(modelInfo.id, AppException.wrap(e, s));
-        return;
-      }
-      instanceId = modelInfo.id;
-      final instance = ModelInstanceState(
-        rwkv: rwkv,
-        id: instanceId,
-        info: ModelBaseInfo.fromModelInfo(modelInfo),
-      );
-      _upsertInstance(instance);
-      yield ModelLoadState.loaded(
-        modelInfo.id,
-        modelInfo.name,
-        instance.id,
-        modelInfo.providerName,
-      );
-      return;
-    }
 
     if (modelInfo.isRemote) {
       final model = _models[modelInfo.id];
@@ -151,6 +127,21 @@ class LlmSessionRepository {
       }
       rwkv = model.rwkv;
       instanceId = model.info.id;
+    } else if (modelInfo.backend == .albatross) {
+      if (_rwkvLightningEntryPoint.isEmpty) {
+        yield ModelLoadState.error(
+          modelInfo.id,
+          const AppException.configuration(
+            'rwkv_lightning backend entry point is not initialize',
+          ),
+        );
+        return;
+      }
+      rwkv = await RwkvLightningCpp.create(
+        executable: _rwkvLightningEntryPoint,
+      );
+    } else if (_rwkvMobileEntryPoint.isNotEmpty) {
+      rwkv = RwkvMobile(_rwkvMobileEntryPoint);
     } else {
       rwkv = RWKV.isolated();
     }
@@ -372,26 +363,6 @@ class LlmSessionRepository {
           );
       }
     }
-  }
-
-  Future<AlbatrossClient> _startAlbatross(
-    AlbatrossLaunchConfig config,
-    ModelInfo model,
-  ) {
-    if (!config.scriptPath.endsWith(".py")) {
-      final cmd = RwkvLightningLauncher(
-        executable: config.scriptPath,
-        modelPath: model.localPath,
-        vocabPath: AppAssets.rwkvVocab20230424Path,
-      );
-      return cmd.startup();
-    }
-    final cmd = AlbatrossLauncher(
-      python: config.python,
-      scriptPath: config.scriptPath,
-      modelPath: model.localPath,
-    );
-    return cmd.startup();
   }
 
   Future<void> _syncModelConfig(

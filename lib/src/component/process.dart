@@ -35,6 +35,7 @@ class AppProcess {
   final _output = StreamController<String>.broadcast();
   final Process _process;
   int _exitCode = -1;
+  bool _exited = false;
 
   Stream<String> get outputs => _output.stream;
 
@@ -42,9 +43,12 @@ class AppProcess {
 
   int get exitCode => _exitCode;
 
+  bool get existed => _exited;
+
   AppProcess._(this._process) {
     _process.exitCode.then((e) {
       _exitCode = e;
+      _exited = true;
       if (e != 0 && !_output.isClosed) {
         _output.addError(
           AppException.externalProcess('process $pid exited with code: $e'),
@@ -73,6 +77,9 @@ class AppProcess {
     List<String> args, {
     String? workingDir,
   }) async {
+    final command = _resolveCommand(executable, args);
+    await _ensureExecutablePermission(command.executable);
+
     final r = await Process.run(executable, args, workingDirectory: workingDir);
     if (r.exitCode != 0) {
       throw ProcessException(executable, args, r.stderr, r.exitCode);

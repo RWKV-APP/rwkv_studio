@@ -1,72 +1,75 @@
+import 'dart:async';
+
 import 'package:rwkv_dart/rwkv_dart.dart';
 import 'package:rwkv_studio/src/component/process.dart';
-import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
-class RwkvLightningLauncher {
+class RwkvLightningCpp extends AlbatrossClient {
   static int _startPort = 19527;
 
   final String executable;
-  final String modelPath;
-  final String vocabPath;
   final int port;
+  final List<String> _outputs = [];
 
-  RwkvLightningLauncher({
-    required this.executable,
-    required this.modelPath,
-    required this.vocabPath,
-  }) : port = _startPort++;
+  late AppProcess process;
 
-  Future<AlbatrossClient> startup() async {
-    logd('Starting RWKV Lightning...');
-    AppProcess process = await AppProcess.start(executable, [
+  RwkvLightningCpp._(super.baseUrl, this.port, {required this.executable});
+
+  static Future<RWKV> create({required String executable}) async {
+    final port = _startPort++;
+    return RwkvLightningCpp._(
+      'http://127.0.0.1:$port',
+      port,
+      executable: executable,
+    );
+  }
+
+  @override
+  Future<dynamic> init([InitParam? param]) async {
+    //
+    return super.init(param);
+  }
+
+  @override
+  Future<int> loadModel(LoadModelParam param) async {
+    logd('RWKV Lightning load model ${param.modelPath}');
+    process = await AppProcess.start(executable, [
       '--model-path',
-      modelPath,
+      param.modelPath,
       '--vocab-path',
-      vocabPath,
+      param.tokenizerPath,
       '--port',
       port.toString(),
     ]);
 
-    final wrap = _AlbatrossWrap('http://127.0.0.1:$port', process: process);
-    await wrap._waitStart();
+    Completer completer = Completer();
 
-    logd('RWKV Lightning started.');
-    return wrap;
-  }
-}
-
-class _AlbatrossWrap extends AlbatrossClient {
-  final AppProcess process;
-  final List<String> _outputs = [];
-
-  _AlbatrossWrap(super.baseUrl, {required this.process}) {
     process.outputs.listen(
       (e) {
         logd('[rwkv_lightning] $e');
+        if (!completer.isCompleted && e.contains('Model loaded successfully')) {
+          completer.complete();
+        }
         _outputs.add(e);
       },
       onError: (e, stack) {
         loge('[rwkv_lightning] $e', stack);
         _outputs.add(e.toString());
         _outputs.add(stack.toString());
+        completer.completeError(e, stack);
       },
     );
-  }
 
-  Future _waitStart() async {
-    try {
-      await Future.any([
-        process.outputs.firstWhere(
-          (e) => e.contains('Model loaded successfully'),
-        ),
-      ]);
-    } on StateError {
-      /// No output
-      throw AppException.externalProcess(
-        'albatross startup failed, exit code: ${process.exitCode}',
+    if (process.existed) {
+      completer.completeError(
+        'Process existed: ${process.pid}, code: ${process.exitCode}',
       );
     }
+
+    await completer.future;
+
+    logd('RWKV Lightning load model successfully.');
+    return super.loadModel(param);
   }
 
   @override
@@ -77,5 +80,6 @@ class _AlbatrossWrap extends AlbatrossClient {
   @override
   Future<dynamic> release() async {
     process.kill();
+    return super.release();
   }
 }

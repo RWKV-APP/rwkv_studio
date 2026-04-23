@@ -16,8 +16,8 @@ import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
 import 'package:rwkv_studio/src/repository/mcp_repository.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
 
-export 'model_load_state.dart';
 export 'llm_state.dart';
+export 'model_load_state.dart';
 
 extension Ext on BuildContext {
   LlmCubit get llm => BlocProvider.of<LlmCubit>(this);
@@ -153,14 +153,22 @@ class LlmCubit extends Cubit<LlmState> with LlmInterface {
   }
 
   @override
-  Stream<ModelLoadState> loadModel(
-    ModelInfo modelInfo, {
-    AlbatrossLaunchConfig? albatrossConfig,
-  }) {
-    return _llmSessionRepository.loadModel(
-      modelInfo,
-      albatrossConfig: albatrossConfig,
+  Stream<ModelLoadState> loadModel(ModelInfo modelInfo) async* {
+    final loaded = await getLoadedInstance(modelInfo.id);
+    logi(
+      'load or get model instance: ${modelInfo.id}, loaded: ${loaded.length}',
     );
+    if (loaded.isNotEmpty) {
+      final info = await getModelBaseInfo(loaded.first);
+      yield ModelLoadState.loaded(
+        modelInfo.id,
+        info.name,
+        loaded.first,
+        info.providerName,
+      );
+      return;
+    }
+    yield* _llmSessionRepository.loadModel(modelInfo);
   }
 
   @override

@@ -38,21 +38,18 @@ extension Ext on BuildContext {
 
 class AppCubit extends Cubit<AppState> {
   final LocalMachineRepository _localMachineRep;
-  final RemoteServiceRepository _remoteServiceRepository;
+  final RemoteServiceRepository _remoteServiceRepo;
   final CommonRepository _commonRepo;
   late final StreamSubscription<RemoteServiceSnapshot>
   _remoteServiceSubscription;
 
-  AppCubit(
-    this._localMachineRep,
-    this._remoteServiceRepository,
-    this._commonRepo,
-  ) : super(AppState.initial()) {
-    _remoteServiceSubscription = _remoteServiceRepository
-        .watchSnapshot()
-        .listen((snapshot) {
-          emit(state.copyWith(remoteServiceStatuses: snapshot.statuses));
-        });
+  AppCubit(this._localMachineRep, this._remoteServiceRepo, this._commonRepo)
+    : super(AppState.initial()) {
+    _remoteServiceSubscription = _remoteServiceRepo.watchSnapshot().listen((
+      snapshot,
+    ) {
+      emit(state.copyWith(remoteServiceStatuses: snapshot.statuses));
+    });
   }
 
   Future init() async {
@@ -72,6 +69,8 @@ class AppCubit extends Cubit<AppState> {
       await _initDownloadTasks();
     }();
   }
+
+  AppComponent? getComponent(ComponentType type) => state.components[type];
 
   Future<AppComponent> getRwkvLightning() async {
     final r = state.components[ComponentType.rwkvLightning];
@@ -203,7 +202,7 @@ class AppCubit extends Cubit<AppState> {
   }
 
   Future updateModelServices(List<RemoteServiceModel> configs) async {
-    await _remoteServiceRepository.syncConnections(configs);
+    await _remoteServiceRepo.syncConnections(configs);
   }
 
   @override

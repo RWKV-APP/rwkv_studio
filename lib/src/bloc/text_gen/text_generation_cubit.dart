@@ -38,7 +38,7 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
 
   void loadModel(BuildContext context, LlmInterface llm, ModelInfo model) {
     final sp = llm
-        .loadOrGetModelInstance(context, model)
+        .loadModel(model)
         .listen(
           (e) {
             emit(state.copyWith(modelState: e));

@@ -7,6 +7,7 @@ import 'package:rwkv_studio/src/theme/theme.dart';
 import 'package:rwkv_studio/src/utils/native_utils.dart';
 import 'package:rwkv_studio/src/utils/string_utils.dart';
 import 'package:rwkv_studio/src/utils/toast_util.dart';
+import 'package:rwkv_studio/src/widget/app_tooltip.dart';
 
 import '_model_actions.dart';
 
@@ -100,6 +101,13 @@ class _ModelListItemState extends State<_ModelListItem> {
                     ),
                   ),
                   const SizedBox(width: 12),
+
+                  if (model.isImportManually)
+                    const AppTooltip(
+                      message: "This model is imported manually",
+                      child: Icon(FluentIcons.info, size: 12),
+                    ),
+                  if (model.isImportManually) const SizedBox(width: 8),
 
                   if (model.localPath.isNotEmpty)
                     Tooltip(

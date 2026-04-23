@@ -282,9 +282,11 @@ class CommonRepository {
     final lightning = await getRWKVLightningDirectory();
     final data = appDataDir;
     final toolkit = data.childDirectory("toolkit");
+    final mobile = data.childDirectory('rwkv_mobile');
     return {
       ComponentType.rwkvLightning: lightning,
       ComponentType.toolkit: toolkit,
+      ComponentType.rwkvMobile: mobile,
     };
   }
 

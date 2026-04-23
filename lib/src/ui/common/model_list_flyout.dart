@@ -8,6 +8,7 @@ import 'package:rwkv_studio/src/bloc/model/model_manage_cubit.dart';
 import 'package:rwkv_studio/src/bloc/settings/setting_cubit.dart';
 import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/models/model/remote_model_info.dart';
+import 'package:rwkv_studio/src/repository/llm_session_repository.dart';
 import 'package:rwkv_studio/src/ui/common/backend_badge.dart';
 import 'package:rwkv_studio/src/ui/common/component_info_dialog.dart';
 import 'package:rwkv_studio/src/utils/collection_extensions.dart';
@@ -54,14 +55,29 @@ class _ModelListFlyoutState extends State<ModelListFlyout> {
   }
 
   Future<void> _onModelSelected(BuildContext context, ModelInfo info) async {
-    if (info.backend == ModelBackend.albatross && !info.isRemote) {
+    if (info.isRemote) {
+      widget.onModelSelected(info);
+      return;
+    }
+
+    final repo = RepositoryProvider.of<LlmSessionRepository>(context);
+
+    // TODO better way inject to repository
+    if (info.backend == .albatross) {
       final lightning = await context.app.getRwkvLightning();
       if (!context.mounted) return;
-      if (lightning.missing) {
+      if (lightning.missing || !lightning.enabled) {
         ComponentInfoDialog.show(context);
         return;
       }
+      repo.setRwkvLightningEntryPoint(lightning.executablePath);
+    } else {
+      final rwkvMobile = context.app.getComponent(.rwkvMobile);
+      if (rwkvMobile != null && !rwkvMobile.missing && rwkvMobile.enabled) {
+        repo.setRwkvMobileEntryPoint(rwkvMobile.executablePath);
+      }
     }
+
     widget.onModelSelected(info);
   }
 

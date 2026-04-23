@@ -146,7 +146,7 @@ class ChatCubit extends Cubit<ChatState> with SubscriptionManagerMixin {
     updateConversation(state.selected.id, (e) => e.copyWith(modelId: model.id));
 
     final sp = llm
-        .loadOrGetModelInstance(context, model)
+        .loadModel(model)
         .listen(
           (e) {
             emit(state.copyWith(modelState: e));

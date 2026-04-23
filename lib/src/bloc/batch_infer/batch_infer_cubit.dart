@@ -28,7 +28,7 @@ class BatchInferCubit extends Cubit<BatchInferState> {
     LlmInterface llm,
     ModelInfo model,
   ) async {
-    await for (var s in llm.loadOrGetModelInstance(context, model)) {
+    await for (var s in llm.loadModel(model)) {
       emit(state.copyWith(modelState: s));
     }
   }
