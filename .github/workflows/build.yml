@@ -1,13 +1,12 @@
-name: Build
+name: Build & Release
 
 on:
   push:
-    branches:
-      - ci
-      - master
-  pull_request:
-    branches:
-      - master
+    tags:
+      - '*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -114,47 +113,46 @@ jobs:
       - name: Archive (macOS)
         if: matrix.platform == 'macos'
         run: |
-          ARCHIVE="rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}.zip"
           cd build/macos/Build/Products/Release
-          zip -r "${{ github.workspace }}/$ARCHIVE" "RWKV Studio.app"
-          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
+          zip -r "${{ github.workspace }}/rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}.zip" "RWKV Studio.app"
 
       - name: Archive (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          $archive = "rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}.zip"
-          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $archive
-          "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" `
+            -DestinationPath "rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}.zip"
 
-      - name: Upload artifact (macOS)
-        if: matrix.platform == 'macos'
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}
-          path: ${{ env.ARCHIVE }}
-          retention-days: 7
+          name: build-${{ matrix.platform }}
+          retention-days: 1
+          path: |
+            rwkv-studio-*.zip
+            linux/out/deb/*.deb
+            linux/out/appimage/*.AppImage
 
-      - name: Upload artifact (Windows)
-        if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v4
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}
-          path: ${{ env.ARCHIVE }}
-          retention-days: 7
+          path: artifacts
+          merge-multiple: true
 
-      - name: Upload deb (Linux)
-        if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}-deb
-          path: linux/out/deb/*.deb
-          retention-days: 7
+      - name: List release files
+        run: find artifacts -type f | sort
 
-      - name: Upload AppImage (Linux)
-        if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v4
+      - name: Create release
+        uses: softprops/action-gh-release@v2
         with:
-          name: rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}-appimage
-          path: linux/out/appimage/*.AppImage
-          retention-days: 7
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.deb
+            artifacts/**/*.AppImage
