@@ -40,14 +40,11 @@ class AppCubit extends Cubit<AppState> {
   final LocalMachineRepository _localMachineRep;
   final RemoteServiceRepository _remoteServiceRepo;
   final CommonRepository _commonRepo;
-  late final StreamSubscription<RemoteServiceSnapshot>
-  _remoteServiceSubscription;
 
   AppCubit(this._localMachineRep, this._remoteServiceRepo, this._commonRepo)
     : super(AppState.initial()) {
-    _remoteServiceSubscription = _remoteServiceRepo.watchSnapshot().listen((
-      snapshot,
-    ) {
+    /// Watch LLM provider changes
+    _remoteServiceRepo.watchSnapshot().listen((snapshot) {
       emit(state.copyWith(remoteServiceStatuses: snapshot.statuses));
     });
   }
@@ -68,6 +65,14 @@ class AppCubit extends Cubit<AppState> {
       await _initComponents();
       await _initDownloadTasks();
     }();
+  }
+
+  Future updateAppInfo() async {
+    final update = await _commonRepo.getAppUpdateInfo();
+    if (update != null) {
+      emit(state.copyWith(appUpdate: update));
+      _refreshUpdateState();
+    }
   }
 
   AppComponent? getComponent(ComponentType type) => state.components[type];
@@ -130,6 +135,7 @@ class AppCubit extends Cubit<AppState> {
 
   Future downloadComponent(AppComponent component) async {
     final info = component.latest;
+    logi('app download component: ${info.toJson()}');
     final task = await _commonRepo.download(
       url: info.downloadUrl,
       name: '${info.componentName}_${info.versionName}_${info.versionCode}.zip',
@@ -205,12 +211,6 @@ class AppCubit extends Cubit<AppState> {
     await _remoteServiceRepo.syncConnections(configs);
   }
 
-  @override
-  Future<void> close() async {
-    await _remoteServiceSubscription.cancel();
-    return super.close();
-  }
-
   Future setFullScreen(bool fullScreen) async {
     if (state.fullScreen == fullScreen) {
       return;
@@ -281,11 +281,7 @@ class AppCubit extends Cubit<AppState> {
       logd('app info loaded: ${info.app.versionName} ${info.app.description}');
       _refreshUpdateState();
     }
-    final update = await _commonRepo.getAppUpdateInfo();
-    if (update != null) {
-      emit(state.copyWith(appUpdate: update));
-      _refreshUpdateState();
-    }
+    await updateAppInfo().logCatchError(msg: 'update app info failed');
   }
 
   Future _initComponents() async {
@@ -332,6 +328,7 @@ class AppCubit extends Cubit<AppState> {
       }
       final bin = dir.childFile(c.entryPoint);
       final installed = await bin.exists();
+      final latestInfo = latest[c.componentName];
       components[type] = AppComponent(
         dir: dir.path,
         type: type,
@@ -340,8 +337,11 @@ class AppCubit extends Cubit<AppState> {
         external: false,
         bin: c.entryPoint,
         info: c,
-        latest: latest[c.componentName] ?? AppComponentInfo.empty,
+        latest: latestInfo ?? c,
       );
+      if (latestInfo == null) {
+        logw('no latest info for ${c.componentName}');
+      }
 
       logd(
         'load component ${type.name}, '

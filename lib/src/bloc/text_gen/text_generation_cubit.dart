@@ -63,6 +63,10 @@ class TextGenerationCubit extends Cubit<TextGenerationState>
   }
 
   Future generate(LlmInterface llm, {bool fim = false}) async {
+    if (state.modelInstanceId.isEmpty) {
+      throw const AppException.configuration('Please select a model first');
+    }
+
     final prompt = state.controllerText.text.trim();
     String result = '';
 

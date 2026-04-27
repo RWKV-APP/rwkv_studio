@@ -66,7 +66,10 @@ class RwkvLightningCpp extends AlbatrossClient {
       );
     }
 
-    await completer.future;
+    await Future.any([
+      completer.future,
+      Future.delayed(const Duration(seconds: 10)),
+    ]);
 
     logd('RWKV Lightning load model successfully.');
     return super.loadModel(param);

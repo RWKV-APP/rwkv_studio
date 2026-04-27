@@ -5,9 +5,11 @@ import 'package:rwkv_studio/src/bloc/app/app_cubit.dart';
 import 'package:rwkv_studio/src/component/toolkit.dart';
 import 'package:rwkv_studio/src/component/toolkit/hardware_model.dart';
 import 'package:rwkv_studio/src/component/toolkit/usage_model.dart';
+import 'package:rwkv_studio/src/errors/app_exception.dart';
 import 'package:rwkv_studio/src/python/interpreter.dart';
 import 'package:rwkv_studio/src/utils/archive_utils.dart';
 import 'package:rwkv_studio/src/utils/logger.dart';
+import 'package:rwkv_studio/src/utils/path.dart';
 
 class LocalMachineRepository {
   List<Python> _pythons = [];
@@ -38,6 +40,11 @@ class LocalMachineRepository {
     }
 
     await ArchiveUtils.extractZip(path: zip, outDir: tmpPath).last;
+
+    if (!await File(pathJoin(tmpPath, comp.bin)).exists()) {
+      throw const AppException.validation('component is invalid');
+    }
+
     final old = Directory(compDirPath);
     final isUpgrade = await old.exists();
     final bak = Directory(bakPath);
@@ -60,6 +67,7 @@ class LocalMachineRepository {
       loge('install component failed: ${comp.type.name}', e, st);
       rethrow;
     }
+
     if (isUpgrade) {
       await bak
           .delete(recursive: true)

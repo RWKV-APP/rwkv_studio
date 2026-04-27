@@ -249,6 +249,7 @@ class CommonRepository {
     if (restored.status.isRunning || restored.status.isCompleted) {
       return restored;
     }
+    logi('common repo start task: ${info.toMap()}');
     await instance.start();
     return _cachedDownloadTasks[info.id]?.info ?? restored;
   }
