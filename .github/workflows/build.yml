@@ -74,6 +74,12 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Setup CocoaPods (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          sudo gem install cocoapods
+          pod repo update
+
       - name: Build (macOS)
         if: matrix.platform == 'macos'
         run: flutter build macos --release
@@ -90,6 +96,8 @@ jobs:
 
       - name: Package AppImage (Linux)
         if: matrix.platform == 'linux'
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
         run: |
           chmod +x linux/package-appimage.sh
           linux/package-appimage.sh
