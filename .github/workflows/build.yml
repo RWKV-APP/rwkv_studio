@@ -12,16 +12,21 @@ on:
 jobs:
   build:
     name: Build (${{ matrix.platform }})
+    continue-on-error: ${{ matrix.optional == true }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
             platform: windows
+            arch: x64
           - os: ubuntu-latest
             platform: linux
+            arch: x86_64
           - os: macos-latest
             platform: macos
+            arch: universal
+            optional: true
 
     runs-on: ${{ matrix.os }}
 
@@ -35,6 +40,13 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Get app version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //;s/+.*//')
+          echo "value=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Install Linux dependencies
         if: matrix.platform == 'linux'
         run: |
@@ -44,7 +56,6 @@ jobs:
             ninja-build \
             libblkid-dev \
             liblzma-dev \
-            wget \
             unzip
 
       - name: Fetch RWKV native libs
@@ -68,26 +79,32 @@ jobs:
         if: matrix.platform == 'windows'
         run: flutter build windows --release
 
-      - name: Upload artifact (macOS)
+      - name: Archive (macOS)
         if: matrix.platform == 'macos'
-        uses: actions/upload-artifact@v4
-        with:
-          name: rwkv-studio-macos
-          path: build/macos/Build/Products/Release/
-          retention-days: 7
+        run: |
+          ARCHIVE="rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}.zip"
+          cd build/macos/Build/Products/Release
+          zip -r "${{ github.workspace }}/$ARCHIVE" "RWKV Studio.app"
+          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
 
-      - name: Upload artifact (Linux)
+      - name: Archive (Linux)
         if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: rwkv-studio-linux
-          path: build/linux/x64/release/bundle/
-          retention-days: 7
+        run: |
+          ARCHIVE="rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}.tar.gz"
+          tar -czf "$ARCHIVE" -C build/linux/x64/release/bundle .
+          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
 
-      - name: Upload artifact (Windows)
+      - name: Archive (Windows)
         if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $archive = "rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}.zip"
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $archive
+          "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rwkv-studio-windows
-          path: build/windows/x64/runner/Release/
+          name: rwkv-studio-${{ steps.version.outputs.value }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: ${{ env.ARCHIVE }}
           retention-days: 7
