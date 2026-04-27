@@ -1,0 +1,160 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - ci
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    continue-on-error: ${{ matrix.optional == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+          - os: macos-latest
+            platform: macos
+            arch: universal
+            optional: true
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get app version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //;s/+.*//')
+          echo "value=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            libgtk-3-dev ninja-build clang cmake pkg-config \
+            libblkid-dev liblzma-dev \
+            dpkg-dev desktop-file-utils gawk unzip
+
+      - name: Install appimagetool
+        if: matrix.platform == 'linux'
+        run: |
+          curl -fSL \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+            -o /tmp/appimagetool
+          chmod 0755 /tmp/appimagetool
+          sudo mv /tmp/appimagetool /usr/local/bin/appimagetool
+
+      - name: Fetch RWKV native libs
+        shell: bash
+        run: |
+          chmod +x fetch_rwkv_libs.sh
+          ./fetch_rwkv_libs.sh ${{ matrix.platform }}
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Disable code signing (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          python3 - <<'EOF'
+          path = 'macos/Runner.xcodeproj/project.pbxproj'
+          with open(path) as f:
+              c = f.read()
+          c = c.replace('DEVELOPMENT_TEAM = 3FTQ9PH6TL;', 'DEVELOPMENT_TEAM = "";')
+          c = c.replace('"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";', 'CODE_SIGN_IDENTITY = "-";')
+          c = c.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+          with open(path, 'w') as f:
+              f.write(c)
+          print('Signing settings patched for CI')
+          EOF
+
+      - name: Build (macOS)
+        if: matrix.platform == 'macos'
+        run: flutter build macos --release
+
+      - name: Build (Windows)
+        if: matrix.platform == 'windows'
+        run: flutter build windows --release
+
+      - name: Package deb (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          chmod +x linux/package-deb.sh
+          linux/package-deb.sh
+
+      - name: Package AppImage (Linux)
+        if: matrix.platform == 'linux'
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: |
+          chmod +x linux/package-appimage.sh
+          linux/package-appimage.sh
+
+      - name: Archive (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          ARCHIVE="rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}.zip"
+          cd build/macos/Build/Products/Release
+          zip -r "${{ github.workspace }}/$ARCHIVE" "RWKV Studio.app"
+          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
+
+      - name: Archive (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $archive = "rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}.zip"
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $archive
+          "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload artifact (macOS)
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 7
+
+      - name: Upload artifact (Windows)
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 7
+
+      - name: Upload deb (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}-deb
+          path: linux/out/deb/*.deb
+          retention-days: 7
+
+      - name: Upload AppImage (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}-appimage
+          path: linux/out/appimage/*.AppImage
+          retention-days: 7
