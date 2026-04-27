@@ -10,23 +10,13 @@ dependencies:
   flutter:
     sdk: flutter
 
-  rwkv_dart:
-    path: ../rwkv_dart
-#    git:
-#      url: https://github.com/dengzii/rwkv_dart.git
-#      ref: dev
+  rwkv_dart: ^1.1.6
+  rwkv_downloader: ^1.0.2
 
-  rwkv_downloader:
-    path: ../rwkv_downloader
-#    git:
-#      url: https://github.com/RWKV-APP/rwkv_downloader.git
-#      ref: dev
-
-  rwkv_libs:
-    path: ../rwkv_libs
-#    git:
-#      url: https://github.com/dengzii/rwkv_libs.git
-#      ref: dev
+  #  rwkv_libs:
+  #    git:
+  #      url: https://github.com/dengzii/rwkv_libs.git
+  #      ref: dev
 
   flutter_bloc: ^9.1.1
   freezed_annotation: ^3.1.0
@@ -37,7 +27,7 @@ dependencies:
   uuid: ^4.5.3
 
   detect_proxy_setting: ^0.0.9
-  package_info_plus: ^10.0.0
+  package_info_plus: ^10.1.0
   flutter_svg: ^2.2.4
   window_manager: ^0.5.1
   fluent_ui: ^4.15.1
@@ -47,12 +37,8 @@ dependencies:
 
   file_selector: ^1.1.0
   path_provider: ^2.1.5
-  just_audio: ^0.10.5
-  just_audio_windows:
-  just_audio_media_kit:
-  media_kit_libs_windows_audio:
   url_launcher: ^6.3.2
-  desktop_drop: ^0.7.0
+  desktop_drop: ^0.7.1
   crypto: ^3.0.7
   logging: ^1.3.0
   archive: ^4.0.9
