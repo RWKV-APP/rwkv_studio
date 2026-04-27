@@ -89,10 +89,7 @@ jobs:
 
       - name: Archive (Linux)
         if: matrix.platform == 'linux'
-        run: |
-          ARCHIVE="rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}.tar.gz"
-          tar -czf "$ARCHIVE" -C build/linux/x64/release/bundle .
-          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
+        run: echo "ARCHIVE=build/linux/x64/release/bundle" >> $GITHUB_ENV
 
       - name: Archive (Windows)
         if: matrix.platform == 'windows'
