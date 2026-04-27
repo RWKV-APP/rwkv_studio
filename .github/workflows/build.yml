@@ -47,6 +47,10 @@ jobs:
             wget \
             unzip
 
+      - name: Install wget (macOS)
+        if: matrix.platform == 'macos'
+        run: brew install wget
+
       - name: Fetch RWKV native libs (macOS / Linux)
         if: matrix.platform != 'windows'
         run: |
@@ -74,7 +78,7 @@ jobs:
 
       - name: Build (macOS)
         if: matrix.platform == 'macos'
-        run: flutter build macos --release --no-codesign
+        run: flutter build macos --release
 
       - name: Build (Linux)
         if: matrix.platform == 'linux'
