@@ -74,11 +74,20 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Setup CocoaPods (macOS)
+      - name: Disable code signing (macOS)
         if: matrix.platform == 'macos'
         run: |
-          sudo gem install cocoapods
-          pod repo update
+          python3 - <<'EOF'
+          path = 'macos/Runner.xcodeproj/project.pbxproj'
+          with open(path) as f:
+              c = f.read()
+          c = c.replace('DEVELOPMENT_TEAM = 3FTQ9PH6TL;', 'DEVELOPMENT_TEAM = "";')
+          c = c.replace('"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";', 'CODE_SIGN_IDENTITY = "-";')
+          c = c.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+          with open(path, 'w') as f:
+              f.write(c)
+          print('Signing settings patched for CI')
+          EOF
 
       - name: Build (macOS)
         if: matrix.platform == 'macos'
