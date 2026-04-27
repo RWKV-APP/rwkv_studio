@@ -52,11 +52,18 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y \
-            libgtk-3-dev \
-            ninja-build \
-            libblkid-dev \
-            liblzma-dev \
-            unzip
+            libgtk-3-dev ninja-build clang cmake pkg-config \
+            libblkid-dev liblzma-dev \
+            dpkg-dev desktop-file-utils gawk unzip
+
+      - name: Install appimagetool
+        if: matrix.platform == 'linux'
+        run: |
+          curl -fSL \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+            -o /tmp/appimagetool
+          chmod 0755 /tmp/appimagetool
+          sudo mv /tmp/appimagetool /usr/local/bin/appimagetool
 
       - name: Fetch RWKV native libs
         shell: bash
@@ -71,13 +78,21 @@ jobs:
         if: matrix.platform == 'macos'
         run: flutter build macos --release
 
-      - name: Build (Linux)
-        if: matrix.platform == 'linux'
-        run: flutter build linux --release
-
       - name: Build (Windows)
         if: matrix.platform == 'windows'
         run: flutter build windows --release
+
+      - name: Package deb (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          chmod +x linux/package-deb.sh
+          linux/package-deb.sh
+
+      - name: Package AppImage (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          chmod +x linux/package-appimage.sh
+          linux/package-appimage.sh
 
       - name: Archive (macOS)
         if: matrix.platform == 'macos'
@@ -87,10 +102,6 @@ jobs:
           zip -r "${{ github.workspace }}/$ARCHIVE" "RWKV Studio.app"
           echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
 
-      - name: Archive (Linux)
-        if: matrix.platform == 'linux'
-        run: echo "ARCHIVE=build/linux/x64/release/bundle" >> $GITHUB_ENV
-
       - name: Archive (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
@@ -99,9 +110,34 @@ jobs:
           Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath $archive
           "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Upload artifact
+      - name: Upload artifact (macOS)
+        if: matrix.platform == 'macos'
         uses: actions/upload-artifact@v4
         with:
-          name: rwkv-studio-${{ steps.version.outputs.value }}-${{ matrix.platform }}-${{ matrix.arch }}
+          name: rwkv-studio-${{ steps.version.outputs.value }}-macos-${{ matrix.arch }}
           path: ${{ env.ARCHIVE }}
+          retention-days: 7
+
+      - name: Upload artifact (Windows)
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-windows-${{ matrix.arch }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 7
+
+      - name: Upload deb (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}-deb
+          path: linux/out/deb/*.deb
+          retention-days: 7
+
+      - name: Upload AppImage (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rwkv-studio-${{ steps.version.outputs.value }}-linux-${{ matrix.arch }}-appimage
+          path: linux/out/appimage/*.AppImage
           retention-days: 7
