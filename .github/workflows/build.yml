@@ -47,31 +47,11 @@ jobs:
             wget \
             unzip
 
-      - name: Install wget (macOS)
-        if: matrix.platform == 'macos'
-        run: brew install wget
-
-      - name: Fetch RWKV native libs (macOS / Linux)
-        if: matrix.platform != 'windows'
+      - name: Fetch RWKV native libs
+        shell: bash
         run: |
           chmod +x fetch_rwkv_libs.sh
-          ./fetch_rwkv_libs.sh
-
-      - name: Fetch RWKV native libs (Windows)
-        if: matrix.platform == 'windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path tmp\windows | Out-Null
-          Invoke-WebRequest `
-            -Uri "https://github.com/dengzii/rwkv_libs/releases/download/latest/librwkv_mobile-dev-latest-windows-x64.zip" `
-            -OutFile "tmp\win.zip"
-          Expand-Archive -Path "tmp\win.zip" -DestinationPath "tmp\windows" -Force
-          if (Test-Path "tmp\windows\Release") {
-            Copy-Item -Recurse -Force "tmp\windows\Release\*" "windows\"
-          } else {
-            Copy-Item -Recurse -Force "tmp\windows\*" "windows\"
-          }
-          Remove-Item -Recurse -Force tmp
+          ./fetch_rwkv_libs.sh ${{ matrix.platform }}
 
       - name: Get dependencies
         run: flutter pub get
