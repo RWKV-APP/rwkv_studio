@@ -19,12 +19,12 @@ jobs:
           - os: windows-latest
             platform: windows
             arch: x64
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             platform: linux
             arch: x86_64
           - os: macos-latest
             platform: macos
-            arch: universal
+            arch: arm64
             optional: true
 
     runs-on: ${{ matrix.os }}
@@ -73,16 +73,35 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Disable code signing (macOS)
+      - name: Import code signing certificate (macOS)
+        if: matrix.platform == 'macos'
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          MACOS_KEYCHAIN_PWD: ${{ secrets.MACOS_KEYCHAIN_PWD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$MACOS_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$MACOS_CERTIFICATE_PWD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$MACOS_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain
+
+      - name: Configure signing for CI (macOS)
         if: matrix.platform == 'macos'
         run: |
           python3 - <<'EOF'
           path = 'macos/Runner.xcodeproj/project.pbxproj'
           with open(path) as f:
               c = f.read()
-          c = c.replace('DEVELOPMENT_TEAM = 3FTQ9PH6TL;', 'DEVELOPMENT_TEAM = "";')
-          c = c.replace('"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";', 'CODE_SIGN_IDENTITY = "-";')
           c = c.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
+          c = c.replace('"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";',
+                        'CODE_SIGN_IDENTITY = "Developer ID Application";')
           with open(path, 'w') as f:
               f.write(c)
           print('Signing settings patched for CI')
@@ -91,6 +110,20 @@ jobs:
       - name: Build (macOS)
         if: matrix.platform == 'macos'
         run: flutter build macos --release
+
+      - name: Sign app bundle (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          APP="build/macos/Build/Products/Release/RWKV Studio.app"
+          IDENTITY="Developer ID Application: ${{ secrets.MACOS_TEAM_ID }}"
+          find "$APP/Contents/Frameworks" -name '*.framework' -or -name '*.dylib' | while read lib; do
+            codesign --force --options runtime --sign "$IDENTITY" "$lib"
+          done
+          codesign --force --options runtime --sign "$IDENTITY" "$APP"
+
+      - name: Cleanup keychain (macOS)
+        if: matrix.platform == 'macos' && always()
+        run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
 
       - name: Build (Windows)
         if: matrix.platform == 'windows'
