@@ -92,6 +92,10 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -k "$MACOS_KEYCHAIN_PWD" "$KEYCHAIN_PATH"
           security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain
 
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -1 | grep -o '".*"' | tr -d '"')
+          echo "Signing identity: $IDENTITY"
+          echo "MACOS_SIGN_IDENTITY=$IDENTITY" >> $GITHUB_ENV
+
       - name: Configure signing for CI (macOS)
         if: matrix.platform == 'macos'
         run: |
@@ -115,11 +119,10 @@ jobs:
         if: matrix.platform == 'macos'
         run: |
           APP="build/macos/Build/Products/Release/RWKV Studio.app"
-          IDENTITY="Developer ID Application: ${{ secrets.MACOS_TEAM_ID }}"
           find "$APP/Contents/Frameworks" -name '*.framework' -or -name '*.dylib' | while read lib; do
-            codesign --force --options runtime --sign "$IDENTITY" "$lib"
+            codesign --force --options runtime --sign "$MACOS_SIGN_IDENTITY" "$lib"
           done
-          codesign --force --options runtime --sign "$IDENTITY" "$APP"
+          codesign --force --options runtime --sign "$MACOS_SIGN_IDENTITY" "$APP"
 
       - name: Cleanup keychain (macOS)
         if: matrix.platform == 'macos' && always()
