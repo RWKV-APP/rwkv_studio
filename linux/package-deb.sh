@@ -21,7 +21,7 @@ pixmaps_dir="$pkg_dir/usr/share/pixmaps"
 metainfo_dir="$pkg_dir/usr/share/metainfo"
 doc_dir="$pkg_dir/usr/share/doc/$PACKAGE_NAME"
 control_dir="$pkg_dir/DEBIAN"
-deb_path="$out_dir/${PACKAGE_NAME}_${DEB_ARCH}.deb"
+deb_path="$out_dir/${PACKAGE_NAME}_${APP_VERSION}_${DEB_ARCH}.deb"
 
 recreate_dir "$pkg_dir"
 mkdir -p \
